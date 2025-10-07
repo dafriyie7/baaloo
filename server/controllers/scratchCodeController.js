@@ -101,10 +101,13 @@ export const getAllScratchCodes = async (req, res) => {
 	try {
 		const { selectedBatch } = req.query;
 
+		// Distinct batches
+		const batches = await ScratchCode.distinct("batch");
+
 		const codes =
 			selectedBatch && selectedBatch !== ""
 				? await ScratchCode.find({ batch: selectedBatch }).lean()
-				: await ScratchCode.find().lean();
+				: await ScratchCode.find(batches[0]).lean();
 
 		// Generate all QR codes in parallel
 		const withQRCodes = await Promise.all(
@@ -119,9 +122,6 @@ export const getAllScratchCodes = async (req, res) => {
 			const j = Math.floor(Math.random() * (i + 1));
 			[withQRCodes[i], withQRCodes[j]] = [withQRCodes[j], withQRCodes[i]];
 		}
-
-		// Distinct batches
-		const batches = await ScratchCode.distinct("batch");
 
 		return res
 			.status(200)
