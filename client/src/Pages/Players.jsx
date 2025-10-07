@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../lib/api";
 
-
 const Players = () => {
 	const [players, setPlayers] = useState([]);
 
@@ -33,78 +32,84 @@ const Players = () => {
 	};
 
 	useEffect(() => {
-		fetchWinners()
-	},[])
+		fetchWinners();
+	}, []);
 
 	return (
-		<div className="p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto">
-			<div className="w-full flex justify-center">
-				<h1 className="text-2xl font-bold text-gray-900 mb-6">
-					Redeemers List
-				</h1>
-			</div>
-			<div className="w-full flex justify-center">
-				<div className="bg-white w-30 py-5 rounded-xl flex items-center justify-center gap-5 shadow-md">
-					<h1>Winners</h1>
-					<h2 className="text-gray-600">{players.length}</h2>
+		<div className="w-full min-h-screen bg-gray-100">
+			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto">
+				<div className="w-full flex justify-center">
+					<h1 className="text-3xl font-bold text-gray-900 mb-6">
+						Redeemers List
+					</h1>
 				</div>
-			</div>
-			<div className="overflow-x-auto p-5">
-				<table className="min-w-full border-separate border-spacing-y-3">
-					<thead>
-						<tr>
-							<th className="px-6 py-3 text-left text-base font-bold text-gray-600 uppercase tracking-wider">
-								Name
-							</th>
-							<th className="px-6 py-3 text-center text-base text-gray-600 font-bold uppercase tracking-wider">
-								Phone Number
-							</th>
-							<th className="px-6 py-3 text-right text-base text-gray-600 font-bold uppercase tracking-wider">
-								Prize
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						{players && players.length > 0 ? (
-							players.map((player) => (
-								<tr
-									key={player.id}
-									className="bg-white shadow-sm rounded-lg hover:scale-105 transition-transform duration-300"
-								>
-									<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 rounded-l-lg">
-										{player.name}
-									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-										{player.phone}
-									</td>
-									<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 rounded-r-lg text-right">
-										{player.code.prize ? (
-											<p className="text-green-600">
-												Prize
-											</p>
-										) : (
-											<p className="text-red-500">
-												No Prize
-											</p>
-										)}
-									</td>
+				<div className="w-full flex justify-center mb-8">
+					<div className="bg-white py-3 px-8 rounded-full flex items-center justify-center gap-5 shadow-md">
+						<h1 className="font-semibold">Total Winners</h1>
+						<h2 className="text-gray-600 font-bold text-lg">
+							{players.length}
+						</h2>
+					</div>
+				</div>
+				<div className="bg-white p-8 rounded-2xl shadow-lg">
+					<div className="overflow-x-auto">
+						<table className="min-w-full border-separate border-spacing-y-3">
+							<thead>
+								<tr>
+									<th className="px-6 py-3 text-left text-base font-bold text-gray-600 uppercase tracking-wider">
+										Name
+									</th>
+									<th className="px-6 py-3 text-center text-base text-gray-600 font-bold uppercase tracking-wider">
+										Phone Number
+									</th>
+									<th className="px-6 py-3 text-right text-base text-gray-600 font-bold uppercase tracking-wider">
+										Prize
+									</th>
 								</tr>
-							))
-						) : (
-							<tr>
-								<td
-									colSpan="2"
-									className="px-6 py-4 text-center text-sm text-gray-500"
-								>
-									No players scanned yet.
-								</td>
-							</tr>
-						)}
-					</tbody>
-				</table>
+							</thead>
+							<tbody>
+								{players && players.length > 0 ? (
+									players.map((player) => (
+										<tr
+											key={player._id}
+											className="bg-white shadow-sm rounded-full hover:scale-105 transition-transform duration-300"
+										>
+											<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 rounded-l-full">
+												{player.name}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+												{player.phone}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 rounded-r-full text-right">
+												{player.code.prize ? (
+													<p className="text-green-600">
+														Prize
+													</p>
+												) : (
+													<p className="text-red-500">
+														No Prize
+													</p>
+												)}
+											</td>
+										</tr>
+									))
+								) : (
+									<tr>
+										<td
+											colSpan="3"
+											className="px-6 py-10 text-center text-gray-500"
+										>
+											No players have scanned yet.
+										</td>
+									</tr>
+								)}
+							</tbody>
+						</table>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
-}
+};
 
-export default Players
+export default Players;

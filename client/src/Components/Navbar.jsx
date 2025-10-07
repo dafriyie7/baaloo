@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
-	const navigate = useNavigate()
+	const navigate = useNavigate();
+	const location = useLocation();
 
 	const navLinks = [
 		{ name: "Players", path: "/admin/players" },
-		{name: "Codes", path: "/admin/codes"}
+		{ name: "Codes", path: "/admin/codes" },
 	];
 
 	const [isScrolled, setIsScrolled] = useState(false);
@@ -30,7 +31,13 @@ const Navbar = () => {
 		>
 			{/* Logo */}
 			<a href="/" className="flex items-center gap-2">
-				<h1 className={`text-3xl font-bold ${isScrolled ? "text-black" : "text-white"}`}>Baaloo</h1>
+				<h1
+					className={`text-3xl font-bold coiny ${
+						isScrolled ? "text-black" : "text-white"
+					}`}
+				>
+					Baaloo
+				</h1>
 			</a>
 
 			{/* Desktop Nav */}
@@ -47,7 +54,11 @@ const Navbar = () => {
 						<div
 							className={`${
 								isScrolled ? "bg-gray-700" : "bg-white"
-							} h-0.5 w-0 group-hover:w-full transition-all duration-300`}
+							} h-0.5 ${
+								location.pathname === link.path
+									? "w-full"
+									: "w-0"
+							} group-hover:w-full transition-all duration-300`}
 						/>
 					</a>
 				))}
@@ -67,7 +78,7 @@ const Navbar = () => {
 						isScrolled
 							? "text-white bg-black"
 							: "bg-white text-black"
-						}`}
+					}`}
 					onClick={() => navigate("/admin/players")}
 				>
 					Dashboard
@@ -119,6 +130,11 @@ const Navbar = () => {
 						key={i}
 						href={link.path}
 						onClick={() => setIsMenuOpen(false)}
+						className={`${
+							location.pathname === link.path
+								? "border-b-2 border-black"
+								: ""
+						}`}
 					>
 						{link.name}
 					</a>
@@ -128,7 +144,10 @@ const Navbar = () => {
 					New Launch
 				</button> */}
 
-				<button onClick={() => navigate("/admin/payers")} className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500">
+				<button
+					onClick={() => navigate("/admin/payers")}
+					className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
+				>
 					Dashboard
 				</button>
 			</div>

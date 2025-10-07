@@ -107,7 +107,7 @@ export const getAllScratchCodes = async (req, res) => {
 		const codes =
 			selectedBatch && selectedBatch !== ""
 				? await ScratchCode.find({ batch: selectedBatch }).lean()
-				: await ScratchCode.find(batches[0]).lean();
+				: await ScratchCode.find({ batch: batches[0] }).lean();
 
 		// Generate all QR codes in parallel
 		const withQRCodes = await Promise.all(

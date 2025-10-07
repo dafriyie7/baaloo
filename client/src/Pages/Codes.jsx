@@ -2,6 +2,7 @@ import axios from "../../lib/api";
 import { useState } from "react";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
+import CodeCard from "../Components/CodeCard";
 
 const Dashboard = () => {
 	const [codes, setCodes] = useState([]);
@@ -112,9 +113,9 @@ const Dashboard = () => {
 
 	return (
 		// Use max-width and margin-auto for better responsiveness
-		<>
-			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto flex flex-col items-center">
-				<div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md mb-8">
+		<div className="w-full min-h-screen bg-gray-100">
+			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-5xl mx-auto flex flex-col items-center">
+				<div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg mb-8">
 					<h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
 						Generate New Code
 					</h2>
@@ -135,7 +136,7 @@ const Dashboard = () => {
 									}
 									type="text"
 									placeholder="eg.A1"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 								/>
 							</div>
 							<div>
@@ -151,7 +152,7 @@ const Dashboard = () => {
 									onChange={(e) => setCount(e.target.value)}
 									type="text"
 									placeholder="eg.10"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 								/>
 							</div>
 							<div>
@@ -174,14 +175,14 @@ const Dashboard = () => {
 									}
 									type="number"
 									placeholder="eg. 20"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 								/>
 							</div>
 						</div>
 						<button
 							type="submit"
 							disabled={loading}
-							className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{loading ? "Generating..." : "Generate New QR Code"}
 						</button>
@@ -189,8 +190,8 @@ const Dashboard = () => {
 				</div>
 
 				{codes && codes.length > 0 && (
-					<div className="mt-6 mb-6">
-						<h1 className="text-2xl font-bold text-gray-900 mb-6">
+					<div className="w-full bg-white p-8 rounded-2xl shadow-lg">
+						<h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
 							Scratch Codes
 						</h1>
 
@@ -207,7 +208,7 @@ const Dashboard = () => {
 								onChange={(e) =>
 									setSelectedBatch(e.target.value)
 								}
-								className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 							>
 								{batches.map((batch) => (
 									<option key={batch} value={batch}>
@@ -219,41 +220,13 @@ const Dashboard = () => {
 
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
 							{codes.map((code) => (
-								<div
-									key={code._id}
-									className="p-4 bg-white rounded-lg shadow-md text-center flex flex-col justify-between"
-								>
-									<img
-										src={code.qrImage}
-										alt={`QR Code for ${code.code}`}
-										className="mx-auto mb-2 w-full h-auto"
-									/>
-									<div>
-										<p className="font-mono text-base md:text-lg">
-											{code.code}
-										</p>
-										<p className="text-xs text-gray-500">
-											Batch: {code.batch}
-										</p>
-										<p
-											className={`text-xs font-semibold ${
-												code.redeemed
-													? "text-red-500"
-													: "text-green-600"
-											}`}
-										>
-											{code.redeemed
-												? "Redeemed"
-												: "Available"}
-										</p>
-									</div>
-								</div>
+								<CodeCard key={code._id} code={code} />
 							))}
 						</div>
 					</div>
 				)}
 			</div>
-		</>
+		</div>
 	);
 };
 
