@@ -107,7 +107,7 @@ const Scanner = () => {
 
 			if (data.success) {
 				// The backend now tells us if it was a winning code.
-				const wasWinner = data.data.prize === 1;
+				const wasWinner = data.data.code.prize === 1;
 				setIsWinner(wasWinner);
 				toast.success("Your entry has been recorded!");
 

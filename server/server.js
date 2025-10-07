@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./lib/connectDB.js";
 import "dotenv/config";
-import winnerRouter from "./routes/winnersRoutes.js";
+import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
 
 const PORT = 4000;
@@ -14,7 +14,7 @@ app.use(cors());
 
 app.get("/", (req, res) => res.send("server running"));
 
-app.use("/api/winners", winnerRouter).use(
+app.use("/api/winners", playerRouter).use(
 	"/api/scratch-codes",
 	scratchCodeRouter
 );

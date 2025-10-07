@@ -1,8 +1,8 @@
-import Winner from "../models/Winner.js";
+import Player from "../models/Player.js";
 import ScratchCode from "../models/ScratchCode.js";
 
 // add a winner
-export const addWinner = async (req, res) => {
+export const addPlayer = async (req, res) => {
 	try {
 		const { name, phone, code } = req.body;
 
@@ -29,7 +29,7 @@ export const addWinner = async (req, res) => {
 		}
 
 		// Create the winner and link the scratch code's ObjectId
-		const winner = await Winner.create({
+		const player = await Player.create({
 			name,
 			phone,
 			code: scratchCodeDoc._id,
@@ -41,9 +41,9 @@ export const addWinner = async (req, res) => {
 		scratchCodeDoc.redeemedAt = new Date();
 		await scratchCodeDoc.save();
 
-		const populatedWinner = await winner.populate("code");
+		const populatedPlayer = await player.populate("code");
 
-		return res.status(200).json({ success: true, data: populatedWinner });
+		return res.status(200).json({ success: true, data: populatedPlayer });
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ success: false, message: error.message });
@@ -51,13 +51,19 @@ export const addWinner = async (req, res) => {
 };
 
 // get all winners
-export const getAllWinners = async (req, res) => {
+export const getAllPlayers = async (req, res) => {
 	try {
-		const winners = await Winner.find().populate("code");
+		const players = await Player.find().populate("code");
+		const winnersCount = players.filter((p) => p.code?.prize === 1).length;
+		const losersCount = players.filter((p) => p.code?.prize === 0).length;
 
-		return res.status(200).json({ success: true, data: winners });
+		return res.status(200).json({
+			success: true,
+			data: { players, winnersCount, losersCount },
+		});
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 		return res.status(500).json({ success: false, message: error.message });
 	}
 };
+

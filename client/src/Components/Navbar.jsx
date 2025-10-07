@@ -5,10 +5,10 @@ const Navbar = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 
-	const navLinks = [
+	const navLinks = location.pathname.includes("/admin") ? [
 		{ name: "Players", path: "/admin/players" },
 		{ name: "Codes", path: "/admin/codes" },
-	];
+	] : []
 
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);

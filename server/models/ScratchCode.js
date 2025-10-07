@@ -6,8 +6,8 @@ const scratchCodeSchema = new mongoose.Schema(
 		batch: { type: String }, // batch identifier
 		redeemed: { type: Boolean, default: false },
 		redeemedAt: { type: Date },
-		redeemedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Winner" },
-		prize: {type: Number, default: 0}, // Link to prize
+		redeemedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Player" },
+		prize: { type: Number, default: 0 }, // Link to prize
 	},
 	{ timestamps: true }
 );

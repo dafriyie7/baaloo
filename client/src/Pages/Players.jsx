@@ -4,6 +4,8 @@ import axiosInstance from "../../lib/api";
 
 const Players = () => {
 	const [players, setPlayers] = useState([]);
+	const [loserCount, setLoserCount] = useState(0);
+	const [winnerCount, setWinnerCount] = useState(0);
 
 	// fetch all winners
 	const fetchWinners = async () => {
@@ -11,7 +13,9 @@ const Players = () => {
 			const { data } = await axiosInstance.get("/winners/get");
 
 			if (data.success) {
-				setPlayers(data.data);
+				setPlayers(data.data.players);
+				setLoserCount(data.data.losersCount);
+				setWinnerCount(data.data.winnersCount);
 				toast.success("Winners fetched successfully");
 			} else {
 				console.log(data.message);
@@ -40,19 +44,42 @@ const Players = () => {
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto">
 				<div className="w-full flex justify-center">
 					<h1 className="text-3xl font-bold text-gray-900 mb-6">
-						Redeemers List
+						Players List
 					</h1>
 				</div>
-				<div className="w-full flex justify-center mb-8">
-					<div className="bg-white py-3 px-8 rounded-full flex items-center justify-center gap-5 shadow-md">
-						<h1 className="font-semibold">Total Winners</h1>
-						<h2 className="text-gray-600 font-bold text-lg">
-							{players.length}
-						</h2>
+				{/* stats */}
+				<div className="w-full max-w-xs mx-auto flex justify-center mb-8">
+					<div className="bg-white p-6 rounded-2xl shadow-lg w-full">
+						<div className="grid grid-cols-2 items-center gap-y-3">
+							<h1 className="font-medium text-gray-500">
+								Total Players:
+							</h1>
+							<h2 className="text-gray-800 text-2xl justify-self-end">
+								{players.length}
+							</h2>
+							<div className="flex items-center gap-2">
+								<div className="w-3 h-3 bg-green-500 rounded-full"></div>
+								<h1 className="font-medium text-gray-500">
+									Winners
+								</h1>
+							</div>
+							<h2 className="justify-self-end">
+								{winnerCount}
+							</h2>
+							<div className="flex items-center gap-2">
+								<div className="w-3 h-3 bg-red-500 rounded-full"></div>
+								<h1 className="font-medium text-gray-500">
+									Losers
+								</h1>
+							</div>
+							<h2 className="justify-self-end">
+								{loserCount}
+							</h2>
+						</div>
 					</div>
 				</div>
 				<div className="bg-white p-8 rounded-2xl shadow-lg">
-					<div className="overflow-x-auto">
+					<div className="overflow-x-auto px-5">
 						<table className="min-w-full border-separate border-spacing-y-3">
 							<thead>
 								<tr>
