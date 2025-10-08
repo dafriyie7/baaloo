@@ -100,14 +100,23 @@ export const redeemScratchCode = async (req, res) => {
 export const getAllScratchCodes = async (req, res) => {
 	try {
 		const { selectedBatch } = req.query;
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 20;
 
 		// Distinct batches
 		const batches = await ScratchCode.distinct("batch");
 
-		const codes =
-			selectedBatch && selectedBatch !== ""
-				? await ScratchCode.find({ batch: selectedBatch }).select("-prize").lean()
-				: await ScratchCode.find({ batch: batches[0] }).select("-prize").lean();
+		const queryBatch =
+			selectedBatch && selectedBatch !== "" ? selectedBatch : batches[0];
+		const query = queryBatch ? { batch: queryBatch } : {};
+
+		const codes = await ScratchCode.find(query)
+			.limit(limit * 1)
+			.skip((page - 1) * limit)
+			.select("-prize")
+			.lean();
+
+		const totalCodes = await ScratchCode.countDocuments(query);
 
 		// Generate all QR codes in parallel
 		const withQRCodes = await Promise.all(
@@ -117,22 +126,22 @@ export const getAllScratchCodes = async (req, res) => {
 			})
 		);
 
-		// Shuffle
-		for (let i = withQRCodes.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[withQRCodes[i], withQRCodes[j]] = [withQRCodes[j], withQRCodes[i]];
-		}
-
-		return res
-			.status(200)
-			.json({ success: true, data: { withQRCodes, batches } });
+		return res.status(200).json({
+			success: true,
+			data: {
+				withQRCodes,
+				batches,
+				totalPages: Math.ceil(totalCodes / limit),
+				currentPage: parseInt(page),
+			},
+		});
 	} catch (error) {
 		console.error(error);
 		return res.status(500).json({ success: false, message: error.message });
 	}
 };
 
-// update redeemer (I see this is named addRedeemer in the code)
+// update redeemer
 export const updateRedeemer = async (req, res) => {
 	try {
 		const { redeemer, code } = req.body;

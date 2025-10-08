@@ -3,11 +3,15 @@ import { useState } from "react";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import CodeCard from "../Components/CodeCard";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 
 const Dashboard = () => {
 	const [codes, setCodes] = useState([]);
 	const [batches, setBatches] = useState([]);
 	const [selectedBatch, setSelectedBatch] = useState("");
+	const [currentPage, setCurrentPage] = useState(1);
+	const [totalPages, setTotalPages] = useState(1);
+	const [limit, setLimit] = useState(20);
 
 	const [batchNumber, setBatchNumber] = useState("");
 	const [count, setCount] = useState("");
@@ -17,14 +21,18 @@ const Dashboard = () => {
 	// fetch all codes
 	const fetchCodes = async () => {
 		try {
-			const { data } = await axios.get(`/scratch-codes/get`, {
-				params: { selectedBatch },
+			const { data } = await axios.get("/scratch-codes/get", {
+				params: { selectedBatch, page: currentPage, limit },
 			});
 
 			if (data.success) {
 				setCodes(data.data.withQRCodes);
+				setTotalPages(data.data.totalPages);
+				setCurrentPage(data.data.currentPage);
 				setBatches(data.data.batches);
-				setSelectedBatch(selectedBatch || data.data.batches[0]);
+				if (!selectedBatch && data.data.batches.length > 0) {
+					setSelectedBatch(data.data.batches[0]);
+				}
 				toast.success("Codes fetched successfully");
 			} else {
 				console.log(data.message);
@@ -109,7 +117,54 @@ const Dashboard = () => {
 	// Fetch codes on mount and when selectedBatch changes
 	useEffect(() => {
 		fetchCodes();
-	}, [selectedBatch]);
+	}, [selectedBatch, currentPage, limit]);
+
+	const handlePageChange = (newPage) => {
+		if (newPage < 1 || newPage > totalPages) return;
+		setCurrentPage(newPage);
+	};
+
+	const renderPagination = () => {
+		const pageNumbers = [];
+		const siblingCount = 1;
+		const totalPageNumbersToShow = 7; // A reasonable number of page links to show
+
+		if (totalPages <= totalPageNumbersToShow) {
+			for (let i = 1; i <= totalPages; i++) {
+				pageNumbers.push(i);
+			}
+		} else {
+			const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
+			const rightSiblingIndex = Math.min(
+				currentPage + siblingCount,
+				totalPages
+			);
+
+			const shouldShowLeftDots = leftSiblingIndex > 2;
+			const shouldShowRightDots = rightSiblingIndex < totalPages - 2;
+
+			pageNumbers.push(1); // Always show first page
+
+			if (shouldShowLeftDots) {
+				pageNumbers.push("...");
+			}
+
+			for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) {
+				if (i > 1 && i < totalPages) {
+					pageNumbers.push(i);
+				}
+			}
+
+			if (shouldShowRightDots) {
+				pageNumbers.push("...");
+			}
+
+			pageNumbers.push(totalPages); // Always show last page
+		}
+
+		// Remove duplicates that might occur in edge cases
+		return [...new Set(pageNumbers)];
+	};
 
 	return (
 		// Use max-width and margin-auto for better responsiveness
@@ -195,27 +250,52 @@ const Dashboard = () => {
 							Scratch Codes
 						</h1>
 
-						<div className="w-full flex flex-col items-center gap-2 mb-5">
-							<label
-								htmlFor="batch-select"
-								className="text-sm font-medium text-gray-700"
-							>
-								Select a Batch
-							</label>
-							<select
-								id="batch-select"
-								value={selectedBatch}
-								onChange={(e) =>
-									setSelectedBatch(e.target.value)
-								}
-								className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
-							>
-								{batches.map((batch) => (
-									<option key={batch} value={batch}>
-										{batch}
-									</option>
-								))}
-							</select>
+						<div className="w-full flex justify-center items-end gap-4 mb-5">
+							<div>
+								<label
+									htmlFor="batch-select"
+									className="block text-sm font-medium text-gray-700 text-center"
+								>
+									Select a Batch
+								</label>
+								<select
+									id="batch-select"
+									value={selectedBatch}
+									onChange={(e) => {
+										setSelectedBatch(e.target.value);
+										setCurrentPage(1); // Reset to first page on batch change
+									}}
+									className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								>
+									{batches.map((batch) => (
+										<option key={batch} value={batch}>
+											{batch}
+										</option>
+									))}
+								</select>
+							</div>
+							<div>
+								<label
+									htmlFor="limit-select"
+									className="block text-sm font-medium text-gray-700 text-center"
+								>
+									Per Page
+								</label>
+								<select
+									id="limit-select"
+									value={limit}
+									onChange={(e) => {
+										setLimit(Number(e.target.value));
+										setCurrentPage(1); // Reset to first page on limit change
+									}}
+									className="px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								>
+									<option value="10">10</option>
+									<option value="20">20</option>
+									<option value="50">50</option>
+									<option value="100">100</option>
+								</select>
+							</div>
 						</div>
 
 						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -223,6 +303,51 @@ const Dashboard = () => {
 								<CodeCard key={code._id} code={code} />
 							))}
 						</div>
+
+						{/* Pagination Controls */}
+						{totalPages > 1 && (
+							<div className="mt-8 flex justify-center items-center gap-2">
+								<button
+									onClick={() =>
+										handlePageChange(currentPage - 1)
+									}
+									disabled={currentPage === 1}
+									className="px-4 py-2 bg-gray-200 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									<ChevronsLeft />
+								</button>
+								{renderPagination().map((page, index) =>
+									typeof page === "number" ? (
+										<button
+											key={index}
+											onClick={() =>
+												handlePageChange(page)
+											}
+											className={`w-10 h-10 rounded-full transition-colors ${
+												currentPage === page
+													? "bg-slate-900 text-white"
+													: "bg-gray-200 hover:bg-gray-300"
+											}`}
+										>
+											{page}
+										</button>
+									) : (
+										<span key={index} className="px-2">
+											...
+										</span>
+									)
+								)}
+								<button
+									onClick={() =>
+										handlePageChange(currentPage + 1)
+									}
+									disabled={currentPage === totalPages}
+									className="px-4 py-2 bg-gray-200 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									<ChevronsRight />
+								</button>
+							</div>
+						)}
 					</div>
 				)}
 			</div>
