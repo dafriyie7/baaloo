@@ -1,7 +1,7 @@
 import Player from "../models/Player.js";
 import ScratchCode from "../models/ScratchCode.js";
 
-// add a winner
+// add a player
 export const addPlayer = async (req, res) => {
 	try {
 		const { name, phone, code } = req.body;
@@ -36,7 +36,7 @@ export const addPlayer = async (req, res) => {
 		});
 
 		// Mark the code as redeemed and link it to the winner
-		scratchCodeDoc.redeemedBy = winner._id;
+		scratchCodeDoc.redeemedBy = player._id;
 		scratchCodeDoc.redeemed = true;
 		scratchCodeDoc.redeemedAt = new Date();
 		await scratchCodeDoc.save();

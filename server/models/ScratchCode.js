@@ -4,10 +4,11 @@ const scratchCodeSchema = new mongoose.Schema(
 	{
 		code: { type: String, unique: true, required: true },
 		batch: { type: String }, // batch identifier
+		prize: { type: Number, default: 0 },
+		printed: { type: Boolean, default: false },
 		redeemed: { type: Boolean, default: false },
 		redeemedAt: { type: Date },
 		redeemedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Player" },
-		prize: { type: Number, default: 0 }, // Link to prize
 	},
 	{ timestamps: true }
 );

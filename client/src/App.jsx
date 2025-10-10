@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom"
 import Codes from "./Pages/Codes"
 import Scan from "./Pages/Scan"
 import Layout from "./Components/Layout"
+import Login from "./Components/Login"
 import { Toaster } from "react-hot-toast"
 
 import Players from "./Pages/Players"
@@ -10,7 +11,9 @@ const App = () => {
   return (
 		<div>
 			<Toaster />
-			<Routes>
+		  <Routes>
+			  	<Route path="/login" element={<Login />} />
+
 				<Route path="/admin" element={<Layout />}>
 				  <Route index element={<Codes />} />
 				  <Route path="players" element={<Players />} />

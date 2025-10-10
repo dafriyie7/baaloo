@@ -5,15 +5,31 @@ import QRCode from "qrcode";
 // generate new scratch code
 export const generateBatch = async (req, res) => {
 	try {
-		const { count, batchNumber, winRate = 0.2 } = req.body;
+		const { count, costPerCode, percentage, prize, batchNumber } = req.body;
+
+		if (!count || !costPerCode || !percentage || !prize || !batchNumber) {
+			return res.status(400).json({
+				success: false,
+				message: "All fields are required.",
+			});
+		}
 
 		// Calculate the exact number of winners
-		const numWinners = Math.floor(count * winRate);
+		const totalPrizeBudget = count * costPerCode * (percentage / 100);
+		const numberOfWinningCodes = Math.floor(totalPrizeBudget / prize);
+		const numWinners = numberOfWinningCodes;
+
+		if (numWinners > count) {
+			return res.status(400).json({
+				success: false,
+				message: "Number of winners cannot exceed total count.",
+			});
+		}
 
 		// Create an array to represent prize status for each code
 		const prizeDistribution = Array(count).fill(0);
 		for (let i = 0; i < numWinners; i++) {
-			prizeDistribution[i] = 1;
+			prizeDistribution[i] = prize;
 		}
 
 		// Shuffle the array to randomize winner positions (Fisher-Yates shuffle)
@@ -35,6 +51,12 @@ export const generateBatch = async (req, res) => {
 			});
 		}
 
+		// Shuffle the codes array before insertion to randomize their order in the DB
+		for (let i = codes.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[codes[i], codes[j]] = [codes[j], codes[i]];
+		}
+
 		// insert all at once
 		const saved = await ScratchCode.insertMany(codes);
 
@@ -45,12 +67,6 @@ export const generateBatch = async (req, res) => {
 				return { ...c.toObject(), qrImage };
 			})
 		);
-
-		// Shuffle the final array before sending to ensure random order
-		for (let i = withQRCodes.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[withQRCodes[i], withQRCodes[j]] = [withQRCodes[j], withQRCodes[i]];
-		}
 
 		return res.json({ success: true, data: withQRCodes });
 	} catch (error) {

@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import CodeCard from "../Components/CodeCard";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 
-const Dashboard = () => {
+const Codes = () => {
 	const [codes, setCodes] = useState([]);
 	const [batches, setBatches] = useState([]);
 	const [selectedBatch, setSelectedBatch] = useState("");
@@ -15,8 +15,10 @@ const Dashboard = () => {
 
 	const [batchNumber, setBatchNumber] = useState("");
 	const [count, setCount] = useState("");
-	const [winRate, setWinRate] = useState("0.2");
 	const [loading, setLoading] = useState(false);
+	const [costPerCode, setCostPerCode] = useState("");
+	const [percentage, setPercentage] = useState("");
+	const [prize, setPrize] = useState("");
 
 	// fetch all codes
 	const fetchCodes = async () => {
@@ -56,7 +58,7 @@ const Dashboard = () => {
 		if (loading) return;
 		setLoading(true);
 
-		if (batchNumber === "" || count === "") {
+		if (!batchNumber || !count || !costPerCode || !percentage || !prize) {
 			toast.error("Please fill in all fields");
 			setLoading(false);
 			return;
@@ -64,12 +66,6 @@ const Dashboard = () => {
 
 		if (!/^[A-Z]/.test(batchNumber)) {
 			toast.error("Batch number must start with a capital letter.");
-			setLoading(false);
-			return;
-		}
-
-		if (isNaN(parseFloat(winRate)) || parseFloat(winRate) < 0) {
-			toast.error("Invalid win rate");
 			setLoading(false);
 			return;
 		}
@@ -85,7 +81,9 @@ const Dashboard = () => {
 			const { data } = await axios.post("/scratch-codes/generate", {
 				batchNumber,
 				count,
-				winRate: parseFloat(winRate),
+				costPerCode,
+				percentage,
+				prize,
 			});
 
 			if (data.success) {
@@ -94,7 +92,9 @@ const Dashboard = () => {
 				// Clear form fields
 				setBatchNumber("");
 				setCount("");
-				setWinRate("0.2");
+				setCostPerCode("");
+				setPercentage("");
+				setPrize("");
 
 				toast.success("Code generated successfully");
 			} else {
@@ -175,8 +175,8 @@ const Dashboard = () => {
 						Generate New Code
 					</h2>
 					<form onSubmit={generateCode} className="space-y-4">
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-							<div className="">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div>
 								<label
 									htmlFor="batchNumber"
 									className="block text-sm font-medium text-gray-700"
@@ -212,24 +212,53 @@ const Dashboard = () => {
 							</div>
 							<div>
 								<label
-									htmlFor="winRate"
+									htmlFor="costPerCode"
 									className="block text-sm font-medium text-gray-700"
 								>
-									Win Rate (%)
+									Cost Per Code
 								</label>
 								<input
-									id="winRate"
-									value={winRate * 100}
+									id="costPerCode"
+									value={costPerCode}
 									onChange={(e) =>
-										setWinRate(
-											isNaN(parseFloat(e.target.value))
-												? 0
-												: parseFloat(e.target.value) /
-														100
-										)
+										setCostPerCode(e.target.value)
 									}
 									type="number"
-									placeholder="eg. 20"
+									placeholder="e.g., 10"
+									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								/>
+							</div>
+							<div>
+								<label
+									htmlFor="percentage"
+									className="block text-sm font-medium text-gray-700"
+								>
+									Percentage (%)
+								</label>
+								<input
+									id="percentage"
+									value={percentage}
+									onChange={(e) =>
+										setPercentage(e.target.value)
+									}
+									type="number"
+									placeholder="e.g., 20"
+									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								/>
+							</div>
+							<div>
+								<label
+									htmlFor="prize"
+									className="block text-sm font-medium text-gray-700"
+								>
+									Prize
+								</label>
+								<input
+									id="prize"
+									value={prize}
+									onChange={(e) => setPrize(e.target.value)}
+									type="number"
+									placeholder="e.g., 50"
 									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 								/>
 							</div>
@@ -355,4 +384,4 @@ const Dashboard = () => {
 	);
 };
 
-export default Dashboard;
+export default Codes;

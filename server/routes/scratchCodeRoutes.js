@@ -12,6 +12,7 @@ scratchCodeRouter
 	.post("/generate", generateBatch)
 	.post("/redeem", redeemScratchCode)
 	.get("/get", getAllScratchCodes)
-	.patch("/update-redeemer", updateRedeemer);
+	// .patch("/update-redeemer", updateRedeemer);
 
 export default scratchCodeRouter;
+ 

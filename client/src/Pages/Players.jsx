@@ -10,7 +10,7 @@ const Players = () => {
 	// fetch all winners
 	const fetchWinners = async () => {
 		try {
-			const { data } = await axiosInstance.get("/winners/get");
+			const { data } = await axiosInstance.get("/players/get");
 
 			if (data.success) {
 				setPlayers(data.data.players);

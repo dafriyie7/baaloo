@@ -14,7 +14,7 @@ app.use(cors());
 
 app.get("/", (req, res) => res.send("server running"));
 
-app.use("/api/winners", playerRouter).use(
+app.use("/api/players", playerRouter).use(
 	"/api/scratch-codes",
 	scratchCodeRouter
 );

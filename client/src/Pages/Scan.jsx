@@ -97,9 +97,9 @@ const Scanner = () => {
 		setMessage("");
 
 		try {
-			// The backend's `/winners/add` endpoint now handles both validation
+			// The backend's `/players/add` endpoint now handles both validation
 			// and saving the user in a single, atomic operation.
-			const { data } = await axiosInstance.post("/winners/add", {
+			const { data } = await axiosInstance.post("/players/add", {
 				name,
 				phone,
 				code: scratchCode,
@@ -158,7 +158,7 @@ const Scanner = () => {
 		if (step === "details") {
 			return (
 				<>
-					<h1 className="text-6xl md:text-8xl font-bold text-slate-800 mb-8 text-center animate-pulse">
+					<h1 className="text-6xl md:text-8xl font-bold text-slate-800 mb-8 text-center animate-pulse text-shadow-lg">
 						Ready to Win?
 					</h1>
 					<div className="w-full max-w-lg bg-white p-8 rounded-2xl shadow-lg text-center">
