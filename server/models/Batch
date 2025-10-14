@@ -6,3 +6,7 @@ const batchSchema = new mongoose.Schema({
 	prize: { type: Number, required: true },
 	count: { type: Number, required: true }
 })
+
+const Batch = mongoose.models.Batch || mongoose.model("Batch", batchSchema)
+
+export default Batch
