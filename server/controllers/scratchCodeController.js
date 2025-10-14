@@ -5,9 +5,9 @@ import QRCode from "qrcode";
 // generate new scratch code
 export const generateBatch = async (req, res) => {
 	try {
-		const { count, costPerCode, percentage, prize, batchNumber } = req.body;
+		const { count, price, percentage, prize, batchNumber } = req.body;
 
-		if (!count || !costPerCode || !percentage || !prize || !batchNumber) {
+		if (!count || !price || !percentage || !prize || !batchNumber) {
 			return res.status(400).json({
 				success: false,
 				message: "All fields are required.",
@@ -15,7 +15,7 @@ export const generateBatch = async (req, res) => {
 		}
 
 		// Calculate the exact number of winners
-		const totalPrizeBudget = count * costPerCode * (percentage / 100);
+		const totalPrizeBudget = count * price * (percentage / 100);
 		const numberOfWinningCodes = Math.floor(totalPrizeBudget / prize);
 		const numWinners = numberOfWinningCodes;
 

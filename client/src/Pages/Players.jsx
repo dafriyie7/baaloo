@@ -54,7 +54,7 @@ const Players = () => {
 							<h1 className="font-medium text-gray-500">
 								Total Players:
 							</h1>
-							<h2 className="text-gray-800 text-2xl justify-self-end">
+							<h2 className="text-gray-800 justify-self-end">
 								{players.length}
 							</h2>
 							<div className="flex items-center gap-2">

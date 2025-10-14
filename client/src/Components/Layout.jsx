@@ -8,14 +8,13 @@ const Layout = () => {
 			<Navbar />
 
 			{/* Main content area */}
-			<main className="flex-1 pt-25">
+			<main className="flex-1 pt-22">
 				<Outlet />
 			</main>
 
-			{/* Optional footer */}
-			<footer className="p-4 text-center text-sm text-gray-500">
+			{/* <footer className="p-4 text-center text-sm text-gray-500">
 				© {new Date().getFullYear()} Baaloo
-			</footer>
+			</footer> */}
 		</div>
 	);
 };

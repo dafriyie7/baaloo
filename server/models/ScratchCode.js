@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const scratchCodeSchema = new mongoose.Schema(
 	{
 		code: { type: String, unique: true, required: true },
-		batch: { type: String }, // batch identifier
+		price: { type: Number, required: true },
+		batch: { type: String },
 		prize: { type: Number, default: 0 },
 		printed: { type: Boolean, default: false },
 		redeemed: { type: Boolean, default: false },
