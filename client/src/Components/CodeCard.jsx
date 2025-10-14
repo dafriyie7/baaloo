@@ -1,4 +1,4 @@
-import React from "react";
+
 
 const CodeCard = ({ code }) => {
 	return (
@@ -13,13 +13,12 @@ const CodeCard = ({ code }) => {
 			/>
 			<div>
 				<p className="font-mono text-base md:text-lg">{code.code}</p>
-				<p className="text-xs text-gray-500">Batch: {code.batch}</p>
 				<p
 					className={`text-xs font-semibold ${
 						code.redeemed ? "text-red-500" : "text-green-600"
 					}`}
 				>
-					{code.redeemed ? "Redeemed" : "Available"}
+					{code.redeemed ? "Used" : "Available"}
 				</p>
 			</div>
 		</div>

@@ -46,6 +46,7 @@ export const generateBatch = async (req, res) => {
 			const shortCode = uuid().split("-")[0].toUpperCase();
 			codes.push({
 				code: shortCode,
+				price: price,
 				batch: batchNumber,
 				prize: prizeDistribution[i],
 			});
@@ -131,6 +132,8 @@ export const getAllScratchCodes = async (req, res) => {
 			.skip((page - 1) * limit)
 			.select("-prize")
 			.lean();
+		
+		const price = codes.length > 0 ? codes[0].price : 0;
 
 		const totalCodes = await ScratchCode.countDocuments(query);
 

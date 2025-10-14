@@ -81,7 +81,7 @@ const Codes = () => {
 			const { data } = await axios.post("/scratch-codes/generate", {
 				batchNumber,
 				count,
-				costPerCode,
+				price: costPerCode,
 				percentage,
 				prize,
 			});
@@ -327,10 +327,17 @@ const Codes = () => {
 							</div>
 						</div>
 
-						<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-							{codes.map((code) => (
-								<CodeCard key={code._id} code={code} />
-							))}
+						<div className="flex flex-col">
+							<div className="flex gap-5">
+								<p>Cost Per Code: {codes[0].price}</p>
+								<p>Winning Prize: {codes[0].prize}</p>
+								<p>Percentage Givaway: {codes[0].percentage}%</p>
+							</div>
+							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+								{codes.map((code) => (
+									<CodeCard key={code._id} code={code} />
+								))}
+							</div>
 						</div>
 
 						{/* Pagination Controls */}
