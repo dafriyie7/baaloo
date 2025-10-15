@@ -46,18 +46,11 @@ const Codes = () => {
 				const fetchedBatches = data.data.batches;
 				setBatches(fetchedBatches);
 
-				if (fetchedBatches.length > 0) {
-					if (!selectedBatchId) {
-						setSelectedBatchId(fetchedBatches[0]._id);
-						setSelectedBatchDetails(fetchedBatches[0]);
-					} else {
-						setSelectedBatchDetails(
-							fetchedBatches.find(
-								(b) => b._id === selectedBatchId
-							)
-						);
-					}
-				}
+				// Ensure selectedBatchDetails is updated
+				const currentBatchDetails = fetchedBatches.find(
+					(b) => b._id === selectedBatchId
+				);
+				setSelectedBatchDetails(currentBatchDetails);
 			} else {
 				console.log(data.message);
 				toast.error(data.message);
@@ -82,9 +75,38 @@ const Codes = () => {
 		await fetchCodes();
 	};
 
-	// Fetch codes on mount and when selectedBatch changes
+	// 1. Fetch initial batch list on component mount
 	useEffect(() => {
-		fetchCodes();
+		const fetchInitialBatches = async () => {
+			setIsLoading(true);
+			try {
+				// Fetch only the batch list, not all codes
+				const { data } = await axios.get("/scratch-codes/get", {
+					params: { page: 1, limit: 1 },
+				});
+				if (data.success) {
+					const fetchedBatches = data.data.batches;
+					setBatches(fetchedBatches);
+					// If there are batches, set the first one as selected
+					if (fetchedBatches.length > 0 && !selectedBatchId) {
+						setSelectedBatchId(fetchedBatches[0]._id);
+					}
+				} else {
+					toast.error(data.message);
+				}
+			} catch (error) {
+				toast.error("Failed to fetch initial batch data.");
+			}
+			// Let the next useEffect handle its own loading state
+		};
+		fetchInitialBatches();
+	}, []); // Empty dependency array ensures this runs only once
+
+	// 2. Fetch codes when a batch is selected or page/limit changes
+	useEffect(() => {
+		if (selectedBatchId) {
+			fetchCodes();
+		}
 	}, [selectedBatchId, currentPage, limit]);
 
 	const handlePageChange = (newPage) => {
