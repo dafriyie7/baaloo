@@ -2,14 +2,25 @@ import mongoose from "mongoose";
 
 const scratchCodeSchema = new mongoose.Schema(
 	{
-		code: { type: String, unique: true, required: true },
-		price: { type: Number, required: true },
-		batch: { type: String },
-		prize: { type: Number, default: 0 },
-		printed: { type: Boolean, default: false },
-		redeemed: { type: Boolean, default: false },
-		redeemedAt: { type: Date },
-		redeemedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Player" },
+		code: { type: String, required: true, unique: true },
+		batchNumber: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Batch",
+			required: true,
+		},
+		isWinner: { type: Boolean, default: false },
+		isUsed: { type: Boolean, default: false },
+		redeemedBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "player",
+			default: null,
+		},
+		redeemedAt: { type: Date, default: null },
+		payoutStatus: {
+			type: String,
+			enum: ["pending", "paid", "failed"],
+			default: "pending",
+		},
 	},
 	{ timestamps: true }
 );

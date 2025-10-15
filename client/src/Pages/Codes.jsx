@@ -3,39 +3,60 @@ import { useState } from "react";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import CodeCard from "../Components/CodeCard";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import {
+	ChevronsLeft,
+	ChevronsRight,
+	Hash,
+	DollarSign,
+	TrendingUp,
+	Gift,
+	Percent,
+} from "lucide-react";
+import StatCard from "../Components/StatCard";
+import GenerateCodeForm from "../Components/GenerateCodeForm";
+import { useAppcontext } from "../context/AppContext";
 
 const Codes = () => {
 	const [codes, setCodes] = useState([]);
 	const [batches, setBatches] = useState([]);
-	const [selectedBatch, setSelectedBatch] = useState("");
+	const [selectedBatchId, setSelectedBatchId] = useState("");
+	const [selectedBatchDetails, setSelectedBatchDetails] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
 	const [limit, setLimit] = useState(20);
 
-	const [batchNumber, setBatchNumber] = useState("");
-	const [count, setCount] = useState("");
-	const [loading, setLoading] = useState(false);
-	const [costPerCode, setCostPerCode] = useState("");
-	const [percentage, setPercentage] = useState("");
-	const [prize, setPrize] = useState("");
+	const { currency } = useAppcontext();
 
 	// fetch all codes
 	const fetchCodes = async () => {
 		try {
 			const { data } = await axios.get("/scratch-codes/get", {
-				params: { selectedBatch, page: currentPage, limit },
+				params: {
+					selectedBatch: selectedBatchId,
+					page: currentPage,
+					limit,
+				},
 			});
 
 			if (data.success) {
 				setCodes(data.data.withQRCodes);
 				setTotalPages(data.data.totalPages);
 				setCurrentPage(data.data.currentPage);
-				setBatches(data.data.batches);
-				if (!selectedBatch && data.data.batches.length > 0) {
-					setSelectedBatch(data.data.batches[0]);
+				const fetchedBatches = data.data.batches;
+				setBatches(fetchedBatches);
+
+				if (fetchedBatches.length > 0) {
+					if (!selectedBatchId) {
+						setSelectedBatchId(fetchedBatches[0]._id);
+						setSelectedBatchDetails(fetchedBatches[0]);
+					} else {
+						setSelectedBatchDetails(
+							fetchedBatches.find(
+								(b) => b._id === selectedBatchId
+							)
+						);
+					}
 				}
-				toast.success("Codes fetched successfully");
 			} else {
 				console.log(data.message);
 				toast.error(data.message);
@@ -52,72 +73,16 @@ const Codes = () => {
 		}
 	};
 
-	// generate qr code
-	const generateCode = async (e) => {
-		e.preventDefault();
-		if (loading) return;
-		setLoading(true);
-
-		if (!batchNumber || !count || !costPerCode || !percentage || !prize) {
-			toast.error("Please fill in all fields");
-			setLoading(false);
-			return;
-		}
-
-		if (!/^[A-Z]/.test(batchNumber)) {
-			toast.error("Batch number must start with a capital letter.");
-			setLoading(false);
-			return;
-		}
-
-		// check if batch number already exists
-		if (batches.includes(batchNumber)) {
-			toast.error(`Batch number "${batchNumber}" is not available`);
-			setLoading(false);
-			return;
-		}
-
-		try {
-			const { data } = await axios.post("/scratch-codes/generate", {
-				batchNumber,
-				count,
-				price: costPerCode,
-				percentage,
-				prize,
-			});
-
-			if (data.success) {
-				setCodes(data.data); // pre-shuffled by backend
-
-				// Clear form fields
-				setBatchNumber("");
-				setCount("");
-				setCostPerCode("");
-				setPercentage("");
-				setPrize("");
-
-				toast.success("Code generated successfully");
-			} else {
-				toast.error(data.message);
-			}
-		} catch (error) {
-			console.error(
-				"Error generating codes:",
-				error.response?.data || error.message
-			);
-			toast.error(
-				error.response?.data?.message ||
-					"An error occurred while generating codes."
-			);
-		} finally {
-			setLoading(false);
-		}
+	const handleGenerationSuccess = async () => {
+		setSelectedBatchId(""); // Reset to fetch the latest batch
+		setCurrentPage(1);
+		await fetchCodes();
 	};
 
 	// Fetch codes on mount and when selectedBatch changes
 	useEffect(() => {
 		fetchCodes();
-	}, [selectedBatch, currentPage, limit]);
+	}, [selectedBatchId, currentPage, limit]);
 
 	const handlePageChange = (newPage) => {
 		if (newPage < 1 || newPage > totalPages) return;
@@ -167,114 +132,15 @@ const Codes = () => {
 	};
 
 	return (
-		// Use max-width and margin-auto for better responsiveness
 		<div className="w-full min-h-screen bg-gray-100">
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-5xl mx-auto flex flex-col items-center">
-				<div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg mb-8">
-					<h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-						Generate New Code
-					</h2>
-					<form onSubmit={generateCode} className="space-y-4">
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div>
-								<label
-									htmlFor="batchNumber"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Batch Number
-								</label>
-								<input
-									id="batchNumber"
-									value={batchNumber}
-									onChange={(e) =>
-										setBatchNumber(e.target.value)
-									}
-									type="text"
-									placeholder="eg.A1"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
-								/>
-							</div>
-							<div>
-								<label
-									htmlFor="count"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Count
-								</label>
-								<input
-									id="count"
-									value={count}
-									onChange={(e) => setCount(e.target.value)}
-									type="text"
-									placeholder="eg.10"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
-								/>
-							</div>
-							<div>
-								<label
-									htmlFor="costPerCode"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Cost Per Code
-								</label>
-								<input
-									id="costPerCode"
-									value={costPerCode}
-									onChange={(e) =>
-										setCostPerCode(e.target.value)
-									}
-									type="number"
-									placeholder="e.g., 10"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
-								/>
-							</div>
-							<div>
-								<label
-									htmlFor="percentage"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Percentage (%)
-								</label>
-								<input
-									id="percentage"
-									value={percentage}
-									onChange={(e) =>
-										setPercentage(e.target.value)
-									}
-									type="number"
-									placeholder="e.g., 20"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
-								/>
-							</div>
-							<div>
-								<label
-									htmlFor="prize"
-									className="block text-sm font-medium text-gray-700"
-								>
-									Prize
-								</label>
-								<input
-									id="prize"
-									value={prize}
-									onChange={(e) => setPrize(e.target.value)}
-									type="number"
-									placeholder="e.g., 50"
-									className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
-								/>
-							</div>
-						</div>
-						<button
-							type="submit"
-							disabled={loading}
-							className="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							{loading ? "Generating..." : "Generate New QR Code"}
-						</button>
-					</form>
-				</div>
+				<GenerateCodeForm
+					onGenerationSuccess={handleGenerationSuccess}
+					existingBatches={batches}
+				/>
 
 				{codes && codes.length > 0 && (
-					<div className="w-full bg-white p-8 rounded-2xl shadow-lg">
+					<div className="w-full">
 						<h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
 							Scratch Codes
 						</h1>
@@ -289,16 +155,19 @@ const Codes = () => {
 								</label>
 								<select
 									id="batch-select"
-									value={selectedBatch}
+									value={selectedBatchId}
 									onChange={(e) => {
-										setSelectedBatch(e.target.value);
+										setSelectedBatchId(e.target.value);
 										setCurrentPage(1); // Reset to first page on batch change
 									}}
 									className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 								>
 									{batches.map((batch) => (
-										<option key={batch} value={batch}>
-											{batch}
+										<option
+											key={batch._id}
+											value={batch._id}
+										>
+											{batch.batchNumber}
 										</option>
 									))}
 								</select>
@@ -328,11 +197,57 @@ const Codes = () => {
 						</div>
 
 						<div className="flex flex-col">
-							<div className="flex gap-5">
-								<p>Cost Per Code: {codes[0].price}</p>
-								<p>Winning Prize: {codes[0].prize}</p>
-								<p>Percentage Givaway: {codes[0].percentage}%</p>
-							</div>
+							{selectedBatchDetails && (
+								<div className="mb-6">
+									<h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+										Batch Analytics
+									</h3>
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 py-4 divide-x divide-gray-200">
+										<StatCard
+											icon={
+												<Hash className="text-indigo-600" />
+											}
+											label="Total Codes"
+											value={
+												selectedBatchDetails.totalCodes
+											}
+											color="bg-indigo-100"
+										/>
+										<StatCard
+											icon={
+												<DollarSign className="text-green-600" />
+											}
+											label="Cost Per Code"
+											value={`${currency} ${selectedBatchDetails.costPerCode}`}
+											color="bg-green-100"
+										/>
+										<StatCard
+											icon={
+												<Gift className="text-pink-600" />
+											}
+											label="Winning Prize"
+											value={`${currency} ${selectedBatchDetails.winningPrize}`}
+											color="bg-pink-100"
+										/>
+										<StatCard
+											icon={
+												<TrendingUp className="text-blue-600" />
+											}
+											label="Total Revenue"
+											value={`${currency} ${selectedBatchDetails.totalRevenue}`}
+											color="bg-blue-100"
+										/>
+										<StatCard
+											icon={
+												<Percent className="text-yellow-600" />
+											}
+											label="Giveaway"
+											value={`${selectedBatchDetails.giveawayPercentage}%`}
+											color="bg-yellow-100"
+										/>
+									</div>
+								</div>
+							)}
 							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
 								{codes.map((code) => (
 									<CodeCard key={code._id} code={code} />

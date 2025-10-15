@@ -5,16 +5,22 @@ import toast from "react-hot-toast";
 import axiosInstance from "../../lib/api";
 import { QrCode, Sparkles } from "lucide-react";
 import firstImg from "../assets/img1.png";
+import { useNavigate } from "react-router-dom";
+import { useAppcontext } from "../context/AppContext";
 
 const Scanner = () => {
 	const [name, setname] = useState("");
 	const [phone, setPhone] = useState("");
-	const [loading, setLoading] = useState(false);
+	// const [loading, setLoading] = useState(false);
 	const [step, setStep] = useState("details");
 	const [scanning, setScanning] = useState(false);
 	const [message, setMessage] = useState("");
 	const [scannerInstance, setScannerInstance] = useState(null);
 	const [isWinner, setIsWinner] = useState(false);
+
+	const { setWinner, isLoading, setIsloading } = useAppcontext();
+
+	const navigate = useNavigate();
 
 	// Effect for initializing and cleaning up the scanner instance
 	useEffect(() => {
@@ -95,7 +101,6 @@ const Scanner = () => {
 
 	// validate the code and submit user details
 	const validateAndSubmit = async (scratchCode) => {
-		setLoading(true);
 		setMessage("");
 
 		try {
@@ -108,14 +113,16 @@ const Scanner = () => {
 			});
 
 			if (data.success) {
-				// The backend now tells us if it was a winning code.
-				const wasWinner = data.data.code.prize === 1;
-				setIsWinner(wasWinner);
+				const isWinner = data.data.code.isWinner;
+				setIsWinner(isWinner);
 				toast.success("Your entry has been recorded!");
+
+				localStorage.setItem("winner", JSON.stringify(data.data));
+				setWinner(data.data);
 
 				// Set the appropriate message.
 				setMessage(
-					wasWinner
+					isWinner
 						? "Congratulations! You've won!"
 						: "Sorry, not a winner this time."
 				);
@@ -127,7 +134,7 @@ const Scanner = () => {
 			toast.error(errorMessage);
 			setMessage(errorMessage);
 		} finally {
-			setLoading(false);
+			setIsloading(false);
 		}
 	};
 
@@ -270,10 +277,12 @@ const Scanner = () => {
 						)}
 						<p className="mb-8 text-slate-300">{message}</p>
 						<button
-							onClick={resetFlow}
+							onClick={
+								isWinner ? () => navigate("/claim") : resetFlow
+							}
 							className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
 						>
-							Play Again
+							{isWinner ? "Claim Reward" : "Play Again"}
 						</button>
 					</div>
 				);
@@ -292,7 +301,7 @@ const Scanner = () => {
 					></div>
 
 					<div className="mt-6 w-full flex flex-col items-center gap-3">
-						{loading ? (
+						{isLoading ? (
 							<p className="animate-pulse text-slate-600 font-medium py-3">
 								Checking your code...
 							</p>

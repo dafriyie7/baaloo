@@ -15,10 +15,10 @@ const CodeCard = ({ code }) => {
 				<p className="font-mono text-base md:text-lg">{code.code}</p>
 				<p
 					className={`text-xs font-semibold ${
-						code.redeemed ? "text-red-500" : "text-green-600"
+						code.isUsed ? "text-red-500" : "text-green-600"
 					}`}
 				>
-					{code.redeemed ? "Used" : "Available"}
+					{code.isUsed ? "Redeemed" : "Available"}
 				</p>
 			</div>
 		</div>

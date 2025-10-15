@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../lib/api";
+import StatCard from "../Components/StatCard";
+import { Users, Trophy, Annoyed } from "lucide-react";
 
 const Players = () => {
 	const [players, setPlayers] = useState([]);
 	const [loserCount, setLoserCount] = useState(0);
 	const [winnerCount, setWinnerCount] = useState(0);
 
-	// fetch all winners
-	const fetchWinners = async () => {
+	// fetch all players
+	const fetchPlayers = async () => {
 		try {
 			const { data } = await axiosInstance.get("/players/get");
 
@@ -16,7 +18,6 @@ const Players = () => {
 				setPlayers(data.data.players);
 				setLoserCount(data.data.losersCount);
 				setWinnerCount(data.data.winnersCount);
-				toast.success("Winners fetched successfully");
 			} else {
 				console.log(data.message);
 				toast.error(data.message);
@@ -36,85 +37,101 @@ const Players = () => {
 	};
 
 	useEffect(() => {
-		fetchWinners();
+		fetchPlayers();
 	}, []);
+
+	const formatDate = (dateString) => {
+		if (!dateString) return "N/A";
+		return new Date(dateString).toLocaleString("en-US", {
+			dateStyle: "medium",
+			timeStyle: "short",
+		});
+	};
 
 	return (
 		<div className="w-full min-h-screen bg-gray-100">
-			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-4xl mx-auto">
-				<div className="w-full flex justify-center">
-					<h1 className="text-3xl font-bold text-gray-900 mb-6">
+			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-5xl mx-auto">
+				<div className="w-full flex justify-center mb-8">
+					<h1 className="text-3xl font-bold text-gray-800">
 						Players List
 					</h1>
 				</div>
 				{/* stats */}
-				<div className="w-full max-w-xs mx-auto flex justify-center mb-8">
-					<div className="bg-white p-6 rounded-2xl shadow-lg w-full">
-						<div className="grid grid-cols-2 items-center gap-y-3">
-							<h1 className="font-medium text-gray-500">
-								Total Players:
-							</h1>
-							<h2 className="text-gray-800 justify-self-end">
-								{players.length}
-							</h2>
-							<div className="flex items-center gap-2">
-								<div className="w-3 h-3 bg-green-500 rounded-full"></div>
-								<h1 className="font-medium text-gray-500">
-									Winners
-								</h1>
-							</div>
-							<h2 className="justify-self-end">
-								{winnerCount}
-							</h2>
-							<div className="flex items-center gap-2">
-								<div className="w-3 h-3 bg-red-500 rounded-full"></div>
-								<h1 className="font-medium text-gray-500">
-									Losers
-								</h1>
-							</div>
-							<h2 className="justify-self-end">
-								{loserCount}
-							</h2>
-						</div>
-					</div>
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 py-4 divide-x divide-gray-200">
+					<StatCard
+						icon={<Users className="text-blue-600" size={24} />}
+						label="Total Players"
+						value={players.length}
+						color="bg-blue-100"
+					/>
+					<StatCard
+						icon={<Trophy className="text-green-600" size={24} />}
+						label="Winners"
+						value={winnerCount}
+						color="bg-green-100"
+					/>
+					<StatCard
+						icon={<Annoyed className="text-red-600" size={24} />}
+						label="Losers"
+						value={loserCount}
+						color="bg-red-100"
+					/>
 				</div>
-				<div className="bg-white p-8 rounded-2xl shadow-lg">
-					<div className="overflow-x-auto px-5">
-						<table className="min-w-full border-separate border-spacing-y-3">
+				<div className="bg-white p-6 rounded-2xl shadow-lg">
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-gray-200">
 							<thead>
 								<tr>
-									<th className="px-6 py-3 text-left text-base font-bold text-gray-600 uppercase tracking-wider">
+									<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 										Name
 									</th>
-									<th className="px-6 py-3 text-center text-base text-gray-600 font-bold uppercase tracking-wider">
+									<th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
 										Phone Number
 									</th>
-									<th className="px-6 py-3 text-right text-base text-gray-600 font-bold uppercase tracking-wider">
-										Prize
+									<th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Batch
+									</th>
+									<th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Redeemed At
+									</th>
+									<th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Status / Prize
 									</th>
 								</tr>
 							</thead>
-							<tbody>
+							<tbody className="bg-white divide-y divide-gray-200">
 								{players && players.length > 0 ? (
 									players.map((player) => (
 										<tr
 											key={player._id}
-											className="bg-white shadow-sm rounded-full hover:scale-105 transition-transform duration-300"
+											className="hover:bg-gray-50 transition-colors"
 										>
-											<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 rounded-l-full">
+											<td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
 												{player.name}
 											</td>
 											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
 												{player.phone}
 											</td>
-											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 rounded-r-full text-right">
-												{player.code.prize ? (
-													<p className="text-green-600">
-														Prize
-													</p>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+												{player.code?.batchNumber
+													?.batchNumber || "N/A"}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+												{formatDate(
+													player.code?.redeemedAt
+												)}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+												{player.code?.isWinner ? (
+													<span className="font-semibold text-green-600">
+														GH₵{" "}
+														{player.code.batchNumber.winningPrize.toFixed(
+															2
+														)}
+													</span>
 												) : (
-													<p className="text-red-500">
-														No Prize
+													<p className="font-semibold text-red-500">
+														Lost
 													</p>
 												)}
 											</td>
@@ -123,7 +140,7 @@ const Players = () => {
 								) : (
 									<tr>
 										<td
-											colSpan="3"
+											colSpan="5"
 											className="px-6 py-10 text-center text-gray-500"
 										>
 											No players have scanned yet.

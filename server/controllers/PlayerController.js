@@ -13,15 +13,15 @@ export const addPlayer = async (req, res) => {
 		}
 
 		// Find the scratch code document by its code string
-		const scratchCodeDoc = await ScratchCode.findOne({ code: code });
+		const scratchCode = await ScratchCode.findOne({ code: code });
 
 		// Verify the code exists, is a winner, and hasn't been claimed
-		if (!scratchCodeDoc) {
+		if (!scratchCode) {
 			return res
 				.status(404)
 				.json({ success: false, message: "Invalid scratch code." });
 		}
-		if (scratchCodeDoc.redeemedBy) {
+		if (scratchCode.redeemedBy) {
 			return res.status(400).json({
 				success: false,
 				message: "This winning code has already been claimed.",
@@ -29,21 +29,25 @@ export const addPlayer = async (req, res) => {
 		}
 
 		// Create the winner and link the scratch code's ObjectId
-		const player = await Player.create({
+		let player = await Player.create({
 			name,
 			phone,
-			code: scratchCodeDoc._id,
+			code: scratchCode._id,
 		});
 
 		// Mark the code as redeemed and link it to the winner
-		scratchCodeDoc.redeemedBy = player._id;
-		scratchCodeDoc.redeemed = true;
-		scratchCodeDoc.redeemedAt = new Date();
-		await scratchCodeDoc.save();
+		scratchCode.redeemedBy = player._id;
+		scratchCode.isUsed = true;
+		scratchCode.redeemedAt = new Date();
+		await scratchCode.save();
 
-		const populatedPlayer = await player.populate("code");
+		// Repopulate the player with the full scratch code details, including the batch
+		player = await player.populate({
+			path: "code",
+			populate: { path: "batchNumber" },
+		});
 
-		return res.status(200).json({ success: true, data: populatedPlayer });
+		return res.status(200).json({ success: true, data: player });
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ success: false, message: error.message });
@@ -53,9 +57,12 @@ export const addPlayer = async (req, res) => {
 // get all winners
 export const getAllPlayers = async (req, res) => {
 	try {
-		const players = await Player.find().populate("code");
-		const winnersCount = players.filter((p) => p.code?.prize === 1).length;
-		const losersCount = players.filter((p) => p.code?.prize === 0).length;
+		const players = await Player.find().populate({
+			path: "code",
+			populate: { path: "batchNumber" },
+		});
+		const winnersCount = players.filter((p) => p.code?.isWinner).length;
+		const losersCount = players.filter((p) => !p.code?.isWinner).length;
 
 		return res.status(200).json({
 			success: true,
@@ -66,4 +73,3 @@ export const getAllPlayers = async (req, res) => {
 		return res.status(500).json({ success: false, message: error.message });
 	}
 };
-

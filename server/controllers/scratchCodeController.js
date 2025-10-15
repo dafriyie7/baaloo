@@ -1,38 +1,50 @@
 import ScratchCode from "../models/ScratchCode.js";
+import Batch from "../models/Batch.js";
 import { v4 as uuid } from "uuid";
 import QRCode from "qrcode";
 
 // generate new scratch code
+
 export const generateBatch = async (req, res) => {
 	try {
-		const { count, price, percentage, prize, batchNumber } = req.body;
+		const {
+			totalCodes,
+			costPerCode,
+			giveawayPercentage,
+			winningPrize,
+			batchNumber,
+		} = req.body;
 
-		if (!count || !price || !percentage || !prize || !batchNumber) {
+		if (
+			!totalCodes ||
+			!costPerCode ||
+			!giveawayPercentage ||
+			!winningPrize ||
+			!batchNumber
+		) {
 			return res.status(400).json({
 				success: false,
 				message: "All fields are required.",
 			});
 		}
 
-		// Calculate the exact number of winners
-		const totalPrizeBudget = count * price * (percentage / 100);
-		const numberOfWinningCodes = Math.floor(totalPrizeBudget / prize);
-		const numWinners = numberOfWinningCodes;
+		// Derived values
+		const totalRevenue = totalCodes * costPerCode;
+		const totalPrizePool = totalRevenue * (giveawayPercentage / 100);
+		const numWinners = Math.floor(totalPrizePool / winningPrize);
 
-		if (numWinners > count) {
+		if (numWinners > totalCodes) {
 			return res.status(400).json({
 				success: false,
-				message: "Number of winners cannot exceed total count.",
+				message: "Number of winners cannot exceed total codes.",
 			});
 		}
 
-		// Create an array to represent prize status for each code
-		const prizeDistribution = Array(count).fill(0);
-		for (let i = 0; i < numWinners; i++) {
-			prizeDistribution[i] = prize;
-		}
+		// Winner distribution
+		const prizeDistribution = Array(totalCodes).fill(false);
+		for (let i = 0; i < numWinners; i++) prizeDistribution[i] = true;
 
-		// Shuffle the array to randomize winner positions (Fisher-Yates shuffle)
+		// Shuffle winners (random positions)
 		for (let i = prizeDistribution.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[prizeDistribution[i], prizeDistribution[j]] = [
@@ -41,29 +53,41 @@ export const generateBatch = async (req, res) => {
 			];
 		}
 
+		// Create batch
+		const batch = await Batch.create({
+			batchNumber,
+			costPerCode,
+			totalCodes,
+			giveawayPercentage,
+			totalRevenue,
+			totalPrizePool,
+			winningPrize,
+		});
+
+		// Build all codes
 		const codes = [];
-		for (let i = 0; i < count; i++) {
+		for (let i = 0; i < totalCodes; i++) {
 			const shortCode = uuid().split("-")[0].toUpperCase();
 			codes.push({
 				code: shortCode,
-				price: price,
-				batch: batchNumber,
-				prize: prizeDistribution[i],
+				batchNumber: batch._id,
+				isWinner: prizeDistribution[i],
+				prize: prizeDistribution[i] ? winningPrize : 0,
 			});
 		}
 
-		// Shuffle the codes array before insertion to randomize their order in the DB
+		// Shuffle full array once before bulk insertion (fast)
 		for (let i = codes.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[codes[i], codes[j]] = [codes[j], codes[i]];
 		}
 
-		// insert all at once
-		const saved = await ScratchCode.insertMany(codes);
+		// Insert all codes in randomized order
+		const savedCodes = await ScratchCode.insertMany(codes);
 
-		// attach QR codes
+		// Attach QR images
 		const withQRCodes = await Promise.all(
-			saved.map(async (c) => {
+			savedCodes.map(async (c) => {
 				const qrImage = await QRCode.toDataURL(c.code);
 				return { ...c.toObject(), qrImage };
 			})
@@ -121,19 +145,30 @@ export const getAllScratchCodes = async (req, res) => {
 		const limit = parseInt(req.query.limit) || 20;
 
 		// Distinct batches
-		const batches = await ScratchCode.distinct("batch");
+		const batches = await Batch.find();
+
+		// Handle case where no batches exist
+		if (batches.length === 0 && !selectedBatch) {
+			return res.status(200).json({
+				success: true,
+				data: {
+					withQRCodes: [],
+					batches: [],
+					totalPages: 0,
+					currentPage: 1,
+				},
+			});
+		}
 
 		const queryBatch =
-			selectedBatch && selectedBatch !== "" ? selectedBatch : batches[0];
-		const query = queryBatch ? { batch: queryBatch } : {};
+			selectedBatch || (batches.length > 0 ? batches[0]._id : null);
+		const query = queryBatch ? { batchNumber: queryBatch } : {};
 
 		const codes = await ScratchCode.find(query)
 			.limit(limit * 1)
 			.skip((page - 1) * limit)
-			.select("-prize")
+			.select("-isWinner")
 			.lean();
-		
-		const price = codes.length > 0 ? codes[0].price : 0;
 
 		const totalCodes = await ScratchCode.countDocuments(query);
 
@@ -154,40 +189,6 @@ export const getAllScratchCodes = async (req, res) => {
 				currentPage: parseInt(page),
 			},
 		});
-	} catch (error) {
-		console.error(error);
-		return res.status(500).json({ success: false, message: error.message });
-	}
-};
-
-// update redeemer
-export const updateRedeemer = async (req, res) => {
-	try {
-		const { redeemer, code } = req.body;
-
-		if (!redeemer || !code) {
-			return res.status(400).json({
-				success: false,
-				message: "Redeemer ID and code are required.",
-			});
-		}
-
-		// Find the scratch code and update it only if it has not been redeemed yet.
-		const updatedCode = await ScratchCode.findOneAndUpdate(
-			{ code: code, redeemed: true, redeemedBy: { $exists: false } },
-			{ redeemedBy: redeemer },
-			{ new: true } // Return the updated document
-		);
-
-		if (!updatedCode) {
-			return res.status(404).json({
-				success: false,
-				message:
-					"Scratch code not found, or it has already been assigned to a winner.",
-			});
-		}
-
-		return res.status(200).json({ success: true, data: updatedCode });
 	} catch (error) {
 		console.error(error);
 		return res.status(500).json({ success: false, message: error.message });

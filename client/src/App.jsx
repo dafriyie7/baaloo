@@ -6,6 +6,8 @@ import Login from "./Components/Login"
 import { Toaster } from "react-hot-toast"
 
 import Players from "./Pages/Players"
+import ClaimWin from "./Pages/ClaimWin"
+import About from "./Pages/About"
 
 const App = () => {
   return (
@@ -21,7 +23,9 @@ const App = () => {
 				</Route>
 
 				<Route path="/" element={<Layout />}>
-					<Route index element={<Scan />} />
+				  <Route index element={<Scan />} />
+				  <Route path="claim" element={<ClaimWin />} />
+				  <Route path="about" element={<About />} />
 				</Route>
 			</Routes>
 		</div>
