@@ -3,14 +3,17 @@ import toast from "react-hot-toast";
 import axiosInstance from "../../lib/api";
 import StatCard from "../Components/StatCard";
 import { Users, Trophy, Annoyed } from "lucide-react";
+import { useAppcontext } from "../context/AppContext";
 
 const Players = () => {
 	const [players, setPlayers] = useState([]);
 	const [loserCount, setLoserCount] = useState(0);
 	const [winnerCount, setWinnerCount] = useState(0);
+	const { setIsLoading } = useAppcontext();
 
 	// fetch all players
 	const fetchPlayers = async () => {
+		setIsLoading(true);
 		try {
 			const { data } = await axiosInstance.get("/players/get");
 
@@ -33,6 +36,8 @@ const Players = () => {
 				error.response?.data?.message ||
 					"An error occurred while fetching filter options."
 			);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 

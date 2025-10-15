@@ -18,7 +18,7 @@ const Scanner = () => {
 	const [scannerInstance, setScannerInstance] = useState(null);
 	const [isWinner, setIsWinner] = useState(false);
 
-	const { setWinner, isLoading, setIsloading } = useAppcontext();
+	const { setWinner, isLoading, setIsLoading } = useAppcontext();
 	const { code } = useParams();
 	console.log(code);
 
@@ -104,7 +104,7 @@ const Scanner = () => {
 	// validate the code and submit user details
 	const validateAndSubmit = async (scratchCode) => {
 		setMessage("");
-		setIsloading(true);
+		setIsLoading(true);
 
 		try {
 			const { data } = await axiosInstance.post("/players/add", {
@@ -137,6 +137,8 @@ const Scanner = () => {
 			setMessage(errorMessage);
 			// Also set to end step on error to show message
 			setStep("end");
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -161,7 +163,7 @@ const Scanner = () => {
 		setStep("details");
 		setMessage("");
 		setIsWinner(false);
-		setIsloading(false);
+		setIsLoading(false);
 		setScannerInstance(null); // Dispose of the old scanner instance
 	};
 

@@ -4,7 +4,7 @@ const AppContext = createContext();
 
 export const AppContextProvider = ({ children }) => {
 	const [winner, setWinner] = useState({});
-	const [isLoading, setIsloading] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const currency = "GH₵";
 
@@ -18,7 +18,7 @@ export const AppContextProvider = ({ children }) => {
 			console.log(error);
 		}
 	}, []);
-	const value = { winner, setWinner, isLoading, setIsloading, currency };
+	const value = { winner, setWinner, isLoading, setIsLoading, currency };
 
 	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

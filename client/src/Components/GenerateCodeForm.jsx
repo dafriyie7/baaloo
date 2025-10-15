@@ -9,14 +9,13 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 	const [costPerCode, setCostPerCode] = useState("");
 	const [giveawayPercentage, setGiveawayPercentage] = useState("0");
 	const [winningPrize, setWinningPrize] = useState("");
-	const [loading, setLoading] = useState(false);
 
-	const {currency} = useAppcontext()
+	const { currency, isLoading, setIsLoading } = useAppcontext();
 
 	const generateCode = async (e) => {
 		e.preventDefault();
-		if (loading) return;
-		setLoading(true);
+		if (isLoading) return;
+		setIsLoading(true);
 
 		if (
 			!batchNumber ||
@@ -26,19 +25,19 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 			!winningPrize
 		) {
 			toast.error("Please fill in all fields");
-			setLoading(false);
+			setIsLoading(false);
 			return;
 		}
 
 		if (!/^[A-Z]/.test(batchNumber)) {
 			toast.error("Batch number must start with a capital letter.");
-			setLoading(false);
+			setIsLoading(false);
 			return;
 		}
 
 		if (existingBatches.some((b) => b.batchNumber === batchNumber)) {
 			toast.error(`Batch number "${batchNumber}" is not available`);
-			setLoading(false);
+			setIsLoading(false);
 			return;
 		}
 
@@ -63,6 +62,7 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 				onGenerationSuccess();
 			} else {
 				toast.error(data.message);
+				setIsLoading(false);
 			}
 		} catch (error) {
 			console.error(
@@ -74,7 +74,7 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 					"An error occurred while generating codes."
 			);
 		} finally {
-			setLoading(false);
+			// setIsLoading is handled in success/error paths
 		}
 	};
 
@@ -177,10 +177,10 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 				</div>
 				<button
 					type="submit"
-					disabled={loading}
+					disabled={isLoading}
 					className="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					{loading ? "Generating..." : "Generate New QR Code"}
+					{isLoading ? "Generating..." : "Generate New QR Code"}
 				</button>
 			</form>
 		</div>

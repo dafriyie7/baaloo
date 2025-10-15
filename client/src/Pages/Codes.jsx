@@ -25,10 +25,11 @@ const Codes = () => {
 	const [totalPages, setTotalPages] = useState(1);
 	const [limit, setLimit] = useState(20);
 
-	const { currency } = useAppcontext();
+	const { setIsLoading, currency } = useAppcontext();
 
 	// fetch all codes
 	const fetchCodes = async () => {
+		setIsLoading(true);
 		try {
 			const { data } = await axios.get("/scratch-codes/get", {
 				params: {
@@ -70,6 +71,8 @@ const Codes = () => {
 				error.response?.data?.message ||
 					"An error occurred while fetching filter options."
 			);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
