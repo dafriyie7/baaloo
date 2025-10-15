@@ -7,7 +7,7 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 	const [batchNumber, setBatchNumber] = useState("");
 	const [totalCodes, setTotalCodes] = useState("");
 	const [costPerCode, setCostPerCode] = useState("");
-	const [giveawayPercentage, setGiveawayPercentage] = useState(0);
+	const [giveawayPercentage, setGiveawayPercentage] = useState("0");
 	const [winningPrize, setWinningPrize] = useState("");
 	const [loading, setLoading] = useState(false);
 

@@ -20,7 +20,7 @@ const Scanner = () => {
 
 	const { setWinner, isLoading, setIsloading } = useAppcontext();
 	const { code } = useParams();
-	console.log(code)
+	console.log(code);
 
 	const navigate = useNavigate();
 
@@ -104,6 +104,7 @@ const Scanner = () => {
 	// validate the code and submit user details
 	const validateAndSubmit = async (scratchCode) => {
 		setMessage("");
+		setIsloading(true);
 
 		try {
 			const { data } = await axiosInstance.post("/players/add", {
@@ -121,11 +122,12 @@ const Scanner = () => {
 				setWinner(data.data);
 
 				// Set the appropriate message.
-				setMessage(
-					isWinner
-						? "Congratulations! You've won!"
-						: "Sorry, not a winner this time."
-				);
+				if (isWinner) {
+					navigate("/claim");
+				} else {
+					setMessage("Sorry, not a winner this time.");
+					setStep("end");
+				}
 			}
 		} catch (error) {
 			const errorMessage =
@@ -133,8 +135,8 @@ const Scanner = () => {
 				"An error occurred. Please try again.";
 			toast.error(errorMessage);
 			setMessage(errorMessage);
-		} finally {
-			setIsloading(false);
+			// Also set to end step on error to show message
+			setStep("end");
 		}
 	};
 
@@ -159,6 +161,7 @@ const Scanner = () => {
 		setStep("details");
 		setMessage("");
 		setIsWinner(false);
+		setIsloading(false);
 		setScannerInstance(null); // Dispose of the old scanner instance
 	};
 
@@ -240,55 +243,6 @@ const Scanner = () => {
 		}
 
 		if (step === "scan") {
-			// If a message exists, it means the scan is done and we should show the result.
-			if (message) {
-				return (
-					<div className="w-full max-w-md bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl shadow-2xl text-center flex flex-col items-center">
-						{isWinner ? (
-							<>
-								{/* Trophy Icon */}
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									className="h-20 w-20 text-yellow-400 mb-4"
-									viewBox="0 0 24 24"
-									fill="currentColor"
-								>
-									<path d="M12.89,3L14.85,3.4L11.11,21L9.15,20.6L12.89,3M19,2H5A3,3 0 0,0 2,5V6A1,1 0 0,0 3,7H4.53L8.27,24H15.73L19.47,7H21A1,1 0 0,0 22,6V5A3,3 0 0,0 19,2Z" />
-								</svg>
-								<h1 className="text-green-400 font-bold text-3xl mb-2">
-									Congratulations!
-								</h1>
-							</>
-						) : (
-							<>
-								{/* Refresh Icon */}
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									className="h-20 w-20 text-slate-400 mb-4"
-									viewBox="0 0 24 24"
-									fill="currentColor"
-								>
-									<path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
-								</svg>
-								<h1 className="text-slate-300 font-bold text-3xl mb-2">
-									So Close!
-								</h1>
-							</>
-						)}
-						<p className="mb-8 text-slate-300">{message}</p>
-						<button
-							onClick={
-								isWinner ? () => navigate("/claim") : resetFlow
-							}
-							className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
-						>
-							{isWinner ? "Claim Reward" : "Play Again"}
-						</button>
-					</div>
-				);
-			}
-
-			// Otherwise, show the scanner UI.
 			return (
 				<div className="w-full max-w-md bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl shadow-2xl text-center">
 					<h1 className="text-3xl font-bold text-slate-200">
@@ -337,6 +291,51 @@ const Scanner = () => {
 							Go Back
 						</button>
 					</div>
+				</div>
+			);
+		}
+
+		if (step === "end") {
+			return (
+				<div className="w-full max-w-md bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl shadow-2xl text-center flex flex-col items-center">
+					{isWinner ? (
+						<>
+							{/* Trophy Icon */}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								className="h-20 w-20 text-yellow-400 mb-4"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+							>
+								<path d="M12.89,3L14.85,3.4L11.11,21L9.15,20.6L12.89,3M19,2H5A3,3 0 0,0 2,5V6A1,1 0 0,0 3,7H4.53L8.27,24H15.73L19.47,7H21A1,1 0 0,0 22,6V5A3,3 0 0,0 19,2Z" />
+							</svg>
+							<h1 className="text-green-400 font-bold text-3xl mb-2">
+								Congratulations!
+							</h1>
+						</>
+					) : (
+						<>
+							{/* Refresh Icon */}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								className="h-20 w-20 text-slate-400 mb-4"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+							>
+								<path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
+							</svg>
+							<h1 className="text-slate-300 font-bold text-3xl mb-2">
+								So Close!
+							</h1>
+						</>
+					)}
+					<p className="mb-8 text-slate-300">{message}</p>
+					<button
+						onClick={resetFlow}
+						className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
+					>
+						Play Again
+					</button>
 				</div>
 			);
 		}
