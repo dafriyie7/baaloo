@@ -8,7 +8,7 @@ const Layout = () => {
 			<Navbar />
 
 			{/* Main content area */}
-			<main className="flex-1 pt-22">
+			<main className="flex-1">
 				<Outlet />
 			</main>
 		</div>
