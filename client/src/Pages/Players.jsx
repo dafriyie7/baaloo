@@ -25,8 +25,6 @@ const Players = () => {
 				console.log(data.message);
 				toast.error(data.message);
 			}
-
-			console.log(data);
 		} catch (error) {
 			console.error(
 				"Error fetching filter options:",

@@ -1,14 +1,29 @@
+import { useState, useRef, useLayoutEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 
 const Layout = () => {
+	const [navHeight, setNavHeight] = useState(0);
+	const navRef = useRef(null);
+
+	useLayoutEffect(() => {
+		if (!navRef.current) return;
+
+		const resizeObserver = new ResizeObserver(() => {
+			setNavHeight(navRef.current.offsetHeight);
+		});
+
+		resizeObserver.observe(navRef.current);
+		return () => resizeObserver.disconnect();
+	}, []);
+
 	return (
 		<div className="min-h-screen flex flex-col bg-gray-100">
 			{/* Fixed navbar at the top */}
-			<Navbar />
+			<Navbar navRef={navRef} />
 
 			{/* Main content area */}
-			<main className="flex-1">
+			<main className="flex-1" style={{ paddingTop: `${navHeight}px` }}>
 				<Outlet />
 			</main>
 		</div>
