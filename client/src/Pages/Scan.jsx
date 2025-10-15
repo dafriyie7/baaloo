@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import axiosInstance from "../../lib/api";
 import { QrCode, Sparkles } from "lucide-react";
 import firstImg from "../assets/img1.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAppcontext } from "../context/AppContext";
 
 const Scanner = () => {
@@ -19,6 +19,8 @@ const Scanner = () => {
 	const [isWinner, setIsWinner] = useState(false);
 
 	const { setWinner, isLoading, setIsloading } = useAppcontext();
+	const { code } = useParams();
+	console.log(code)
 
 	const navigate = useNavigate();
 
@@ -104,8 +106,6 @@ const Scanner = () => {
 		setMessage("");
 
 		try {
-			// The backend's `/players/add` endpoint now handles both validation
-			// and saving the user in a single, atomic operation.
 			const { data } = await axiosInstance.post("/players/add", {
 				name,
 				phone,
@@ -146,7 +146,7 @@ const Scanner = () => {
 				toast.error("Phone number must be exactly 10 digits.");
 				return;
 			}
-			setStep("scan");
+			code ? validateAndSubmit(code) : setStep("scan");
 		} else {
 			toast.error("Please fill in both your name and phone number.");
 		}

@@ -139,7 +139,7 @@ const Codes = () => {
 					existingBatches={batches}
 				/>
 
-				{codes && codes.length > 0 && (
+				{batches && batches.length > 0 ? (
 					<div className="w-full">
 						<h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
 							Scratch Codes
@@ -248,11 +248,19 @@ const Codes = () => {
 									</div>
 								</div>
 							)}
-							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-								{codes.map((code) => (
-									<CodeCard key={code._id} code={code} />
-								))}
-							</div>
+							{codes && codes.length > 0 ? (
+								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+									{codes.map((code) => (
+										<CodeCard key={code._id} code={code} />
+									))}
+								</div>
+							) : (
+								<div className="text-center py-10 px-4 bg-gray-50 rounded-lg">
+									<p className="text-gray-600">
+										No codes found for this batch.
+									</p>
+								</div>
+							)}
 						</div>
 
 						{/* Pagination Controls */}
@@ -299,6 +307,16 @@ const Codes = () => {
 								</button>
 							</div>
 						)}
+					</div>
+				) : (
+					<div className="text-center py-10 px-4 mt-8 bg-white shadow-md rounded-lg w-full max-w-md">
+						<h2 className="text-xl font-semibold text-gray-800 mb-2">
+							No Batches Found
+						</h2>
+						<p className="text-gray-600">
+							Use the form above to generate your first batch of
+							scratch codes.
+						</p>
 					</div>
 				)}
 			</div>

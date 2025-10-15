@@ -141,6 +141,8 @@ export const redeemScratchCode = async (req, res) => {
 export const getAllScratchCodes = async (req, res) => {
 	try {
 		const { selectedBatch } = req.query;
+		const { origin } = req.headers;
+
 		const page = parseInt(req.query.page) || 1;
 		const limit = parseInt(req.query.limit) || 20;
 
@@ -175,7 +177,8 @@ export const getAllScratchCodes = async (req, res) => {
 		// Generate all QR codes in parallel
 		const withQRCodes = await Promise.all(
 			codes.map(async (c) => {
-				const qrImage = await QRCode.toDataURL(c.code);
+				const scanUrl = `${origin}/scratch/${c.code}`;
+				const qrImage = await QRCode.toDataURL(scanUrl);
 				return { ...c, qrImage };
 			})
 		);

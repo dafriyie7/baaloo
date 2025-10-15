@@ -26,6 +26,7 @@ const App = () => {
 				  <Route index element={<Scan />} />
 				  <Route path="claim" element={<ClaimWin />} />
 				  <Route path="about" element={<About />} />
+				  <Route path="scratch/:code" element={<Scan />} />
 				</Route>
 			</Routes>
 		</div>
