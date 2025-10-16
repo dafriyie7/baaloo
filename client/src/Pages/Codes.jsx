@@ -227,7 +227,7 @@ const Codes = () => {
 									<h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
 										Batch Analytics
 									</h3>
-									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 py-4 divide-x divide-gray-200">
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 py-4 divide-x divide-gray-200">
 										<StatCard
 											icon={
 												<Hash className="text-indigo-600" />

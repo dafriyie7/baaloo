@@ -60,7 +60,7 @@ const Players = () => {
 					</h1>
 				</div>
 				{/* stats */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 py-4 divide-x divide-gray-200">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10 py-2 divide-x divide-gray-200">
 					<StatCard
 						icon={<Users className="text-blue-600" size={24} />}
 						label="Total Players"
