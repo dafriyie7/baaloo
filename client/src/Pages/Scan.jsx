@@ -11,7 +11,6 @@ import { useAppcontext } from "../context/AppContext";
 const Scanner = () => {
 	const [name, setname] = useState("");
 	const [phone, setPhone] = useState("");
-	// const [loading, setLoading] = useState(false);
 	const [step, setStep] = useState("details");
 	const [scanning, setScanning] = useState(false);
 	const [message, setMessage] = useState("");
@@ -20,7 +19,6 @@ const Scanner = () => {
 
 	const { setWinner, isLoading, setIsLoading } = useAppcontext();
 	const { code } = useParams();
-	console.log(code);
 
 	const navigate = useNavigate();
 
@@ -54,7 +52,7 @@ const Scanner = () => {
 			await scannerInstance.start(
 				{ facingMode: "environment" }, // Use the rear camera
 				{
-					fps: 10, // Scan at 10 frames per second
+					fps: 10,
 					// Configure the size of the scanning box to be responsive
 					qrbox: (viewfinderWidth, viewfinderHeight) => {
 						const minEdge = Math.min(
@@ -67,12 +65,10 @@ const Scanner = () => {
 				},
 				// Success callback when a QR code is decoded.
 				async (decodedText) => {
-					// Immediately stop scanning to prevent multiple triggers
-					await stopScan();
-					// Validate the code and submit the user's details
+					stopScan();
 					await validateAndSubmit(decodedText);
 				},
-				() => {} // Optional error callback, left empty here
+				() => {}
 			);
 		} catch (err) {
 			console.error("Failed to start scanner", err);
@@ -101,6 +97,12 @@ const Scanner = () => {
 		}
 	};
 
+	// Extracts the code from a full URL
+	const getCodeFromUrl = (url) => {
+		const parts = url.split("/");
+		return parts[parts.length - 1];
+	};
+
 	// validate the code and submit user details
 	const validateAndSubmit = async (scratchCode) => {
 		setMessage("");
@@ -110,7 +112,7 @@ const Scanner = () => {
 			const { data } = await axiosInstance.post("/players/add", {
 				name,
 				phone,
-				code: scratchCode,
+				code: getCodeFromUrl(scratchCode),
 			});
 
 			if (data.success) {

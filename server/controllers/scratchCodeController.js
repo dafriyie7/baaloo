@@ -197,3 +197,21 @@ export const getAllScratchCodes = async (req, res) => {
 		return res.status(500).json({ success: false, message: error.message });
 	}
 };
+
+export const printCodes = async (req, res) => {
+	try {
+		const { selectedBatch, count } = req.body
+
+		if (!selectedBatch || !count) { 
+			return res.status(400).json({ success: false, message: "All fields are required." })
+		}
+
+		const toPrint = await ScratchCode.find({ batchNumber: selectedBatch, isPrinted: false }).limit(count)
+
+		return res.status(200).json({ success: true, data: toPrint })
+
+	} catch (error) {
+		console.error(error)
+		return res.status(500).json({ success: false, message: error.message })
+	}
+}
