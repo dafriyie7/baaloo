@@ -80,8 +80,8 @@ const Players = () => {
 						color="bg-red-100"
 					/>
 				</div>
-				<div className="bg-white p-6 rounded-2xl shadow-lg">
-					<div className="overflow-x-auto">
+				<div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+					<div className="hidden sm:block overflow-x-auto">
 						<table className="min-w-full divide-y divide-gray-200">
 							<thead>
 								<tr>
@@ -152,6 +152,62 @@ const Players = () => {
 								)}
 							</tbody>
 						</table>
+					</div>
+					{/* Mobile Card View */}
+					<div className="sm:hidden space-y-4">
+						{players && players.length > 0 ? (
+							players.map((player) => (
+								<div
+									key={player._id}
+									className="p-4 border border-gray-200 rounded-lg"
+								>
+									<div className="flex justify-between items-start">
+										<p className="font-bold text-gray-900">
+											{player.name}
+										</p>
+										{player.code?.isWinner ? (
+											<span className="font-semibold text-green-600">
+												GH₵{" "}
+												{player.code.batchNumber.winningPrize.toFixed(
+													2
+												)}
+											</span>
+										) : (
+											<p className="font-semibold text-red-500">
+												Lost
+											</p>
+										)}
+									</div>
+									<div className="mt-2 text-sm text-gray-500 space-y-1">
+										<p>
+											<span className="font-medium">
+												Phone:
+											</span>{" "}
+											{player.phone}
+										</p>
+										<p>
+											<span className="font-medium">
+												Batch:
+											</span>{" "}
+											{player.code?.batchNumber
+												?.batchNumber || "N/A"}
+										</p>
+										<p>
+											<span className="font-medium">
+												Redeemed:
+											</span>{" "}
+											{formatDate(
+												player.code?.redeemedAt
+											)}
+										</p>
+									</div>
+								</div>
+							))
+						) : (
+							<p className="text-center text-gray-500 py-6">
+								No players have scanned yet.
+							</p>
+						)}
 					</div>
 				</div>
 			</div>

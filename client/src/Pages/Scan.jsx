@@ -195,7 +195,7 @@ const Scanner = () => {
 							onSubmit={handleDetailsSubmit}
 							className="w-full space-y-2 text-left"
 						>
-							<div className="flex items-center justify-center gap-5">
+							<div>
 								<label
 									htmlFor="name"
 									className="block text-sm font-medium text-slate-300 mb-1"
@@ -209,10 +209,10 @@ const Scanner = () => {
 									onChange={(e) => setname(e.target.value)}
 									required
 									placeholder="e.g. John Doe"
-									className="mt-1 block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+									className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
 								/>
 							</div>
-							<div className="flex items-center justify-center gap-5">
+							<div>
 								<label
 									htmlFor="phone"
 									className="block text-sm font-medium text-slate-300 mb-1"
@@ -227,7 +227,7 @@ const Scanner = () => {
 									required
 									pattern="\d{10}"
 									placeholder="e.g. 0240000000"
-									className="mt-1 block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+									className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
 								/>
 							</div>
 							<div className="pt-4 flex justify-end">
