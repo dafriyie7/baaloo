@@ -35,7 +35,7 @@ const Navbar = ({ navRef }) => {
 			{/* Logo */}
 			<a href="/" className="flex items-center gap-2">
 				<h1
-					className={`text-3xl font-bold coiny ${
+					className={`text-lg md:text-xl lg:text-3xl font-bold coiny ${
 						isScrolled ? "text-black" : "text-white"
 					}`}
 				>
