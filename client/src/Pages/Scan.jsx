@@ -174,13 +174,15 @@ const Scanner = () => {
 				<>
 					<div className="flex gap-3 p-3 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-full animate-bounce">
 						<Sparkles stroke="white" />
-						<h3 className="text-white">INSTANT WIN GAME</h3>
+						<h3 className="text-sm text-white md:text-base">
+							INSTANT WIN GAME
+						</h3>
 						<Sparkles stroke="white" />
 					</div>
 
 					<div className={`bg-[url(${firstImg})]`}></div>
 
-					<h1 className="text-7xl md:text-9xl font-bold text-slate-200 mb-5 text-center [text-shadow:2px_2px_0_#475569]">
+					<h1 className="text-5xl md:text-9xl font-bold text-slate-200 mb-5 text-center [text-shadow:2px_2px_0_#475569]">
 						<div>SCRATCH &</div>
 						<div>WIN</div>
 					</h1>
@@ -334,7 +336,17 @@ const Scanner = () => {
 					<p className="mb-8 text-slate-300">{message}</p>
 					<button
 						onClick={resetFlow}
-						className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
+						className="
+						w-full sm:w-auto 
+						flex justify-center 
+						py-2 sm:py-3 px-4 sm:px-6 
+						border border-transparent 
+						rounded-full shadow-sm 
+						text-sm sm:text-md md:text-lg 
+						font-medium text-white 
+						bg-slate-800 hover:bg-slate-700 
+						focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 
+						transition-transform duration-300 hover:scale-105"
 					>
 						Play Again
 					</button>
