@@ -232,10 +232,10 @@ const Scanner = () => {
 									className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
 								/>
 							</div>
-							<div className="pt-4">
+							<div className="pt-4 w-full flex justify-center">
 								<button
 									type="submit"
-									className="w-full sm:w-auto sm:float-right py-3 px-12 sm:px-20 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 animate-pulse"
+									className="sm:w-auto sm:content-center py-3 px-12 sm:px-20 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 animate-pulse"
 								>
 									Let's Play!
 								</button>
