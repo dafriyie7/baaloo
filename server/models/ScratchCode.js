@@ -10,6 +10,7 @@ const scratchCodeSchema = new mongoose.Schema(
 		},
 		isWinner: { type: Boolean, default: false },
 		isUsed: { type: Boolean, default: false },
+		isPrinted: { type: Boolean, default: false },
 		redeemedBy: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "player",
