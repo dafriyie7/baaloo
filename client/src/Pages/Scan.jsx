@@ -182,7 +182,7 @@ const Scanner = () => {
 
 					<div className={`bg-[url(${firstImg})]`}></div>
 
-					<h1 className="text-5xl md:text-9xl font-bold text-slate-200 mb-5 text-center [text-shadow:2px_2px_0_#475569]">
+					<h1 className="text-7xl md:text-9xl font-bold text-slate-200 mb-5 text-center [text-shadow:2px_2px_0_#475569]">
 						<div>SCRATCH &</div>
 						<div>WIN</div>
 					</h1>

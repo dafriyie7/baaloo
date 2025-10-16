@@ -46,12 +46,12 @@ const About = () => {
 				</h1>
 				<div className="space-y-6">
 					{steps.map((step, index) => (
-						<div key={index} className="flex items-start gap-6">
+						<div key={index} className="flex flex-col md:flex-row items-center md:items-start md:gap-6">
 							<div className="flex-shrink-0 bg-slate-800/50 p-4 rounded-full">
 								{step.icon}
 							</div>
 							<div>
-								<h3 className="text-xl font-semibold text-white">
+								<h3 className="text-xl font-semibold w-full flex max-sm:justify-center text-white">
 									{step.title}
 								</h3>
 								<p className="text-slate-400 mt-1">
