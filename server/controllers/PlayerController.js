@@ -1,5 +1,6 @@
 import Player from "../models/Player.js";
 import ScratchCode from "../models/ScratchCode.js";
+import { encrypt, hashForLookup } from "../lib/encryption.js";
 
 // add a player
 export const addPlayer = async (req, res) => {
@@ -12,8 +13,11 @@ export const addPlayer = async (req, res) => {
 				.json({ success: false, message: "all fields are required" });
 		}
 
+		// Encrypt the incoming code to match the database format
+		const encryptedCode = hashForLookup(code)
+
 		// Find the scratch code document by its code string
-		const scratchCode = await ScratchCode.findOne({ code: code });
+		const scratchCode = await ScratchCode.findOne({ lookupHash: encryptedCode });
 
 		// Verify the code exists, is a winner, and hasn't been claimed
 		if (!scratchCode) {

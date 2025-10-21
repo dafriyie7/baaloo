@@ -108,6 +108,8 @@ const Scanner = () => {
 		setMessage("");
 		setIsLoading(true);
 
+		console.log(scratchCode)
+
 		try {
 			const { data } = await axiosInstance.post("/players/add", {
 				name,

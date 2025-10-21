@@ -8,6 +8,12 @@ const scratchCodeSchema = new mongoose.Schema(
 			ref: "Batch",
 			required: true,
 		},
+		lookupHash: {
+			type: String,
+			required: true,
+			unique: true,
+			index: true, // fast lookup by code hash
+		},
 		isWinner: { type: Boolean, default: false },
 		isUsed: { type: Boolean, default: false },
 		isPrinted: { type: Boolean, default: false },

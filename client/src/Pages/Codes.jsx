@@ -28,13 +28,13 @@ const Codes = () => {
 	const { setIsLoading, currency } = useAppcontext();
 
 	// fetch all codes
-	const fetchCodes = async () => {
+	const fetchCodesAndBatches = async (isInitialLoad = false) => {
 		setIsLoading(true);
 		try {
 			const { data } = await axios.get("/scratch-codes/get", {
 				params: {
-					selectedBatch: selectedBatchId,
-					page: currentPage,
+					selectedBatch: isInitialLoad ? "" : selectedBatchId, // Fetch default on initial
+					page: isInitialLoad ? 1 : currentPage,
 					limit,
 				},
 			});
@@ -46,11 +46,18 @@ const Codes = () => {
 				const fetchedBatches = data.data.batches;
 				setBatches(fetchedBatches);
 
-				// Ensure selectedBatchDetails is updated
-				const currentBatchDetails = fetchedBatches.find(
-					(b) => b._id === selectedBatchId
-				);
-				setSelectedBatchDetails(currentBatchDetails);
+				// On initial load, set the selected batch to the first one if it exists
+				if (isInitialLoad && fetchedBatches.length > 0) {
+					const firstBatchId = fetchedBatches[0]._id;
+					setSelectedBatchId(firstBatchId);
+					setSelectedBatchDetails(fetchedBatches[0]);
+				} else {
+					// For subsequent fetches, find the details for the currently selected batch
+					const currentBatchDetails = fetchedBatches.find(
+						(b) => b._id === selectedBatchId
+					);
+					setSelectedBatchDetails(currentBatchDetails);
+				}
 			} else {
 				console.log(data.message);
 				toast.error(data.message);
@@ -70,44 +77,19 @@ const Codes = () => {
 	};
 
 	const handleGenerationSuccess = async () => {
-		setSelectedBatchId(""); // Reset to fetch the latest batch
-		setCurrentPage(1);
-		await fetchCodes();
+		// Let the useEffect triggered by a change in `batches.length` handle the refetch.
+		// We'll fetch the latest batch which will be the new one.
+		await fetchCodesAndBatches(true);
 	};
 
-	// 1. Fetch initial batch list on component mount
+	// Fetch codes and batches on initial mount, or when page/limit changes.
 	useEffect(() => {
-		const fetchInitialBatches = async () => {
-			setIsLoading(true);
-			try {
-				// Fetch only the batch list, not all codes
-				const { data } = await axios.get("/scratch-codes/get", {
-					params: { page: 1, limit: 1 },
-				});
-				if (data.success) {
-					const fetchedBatches = data.data.batches;
-					setBatches(fetchedBatches);
-					// If there are batches, set the first one as selected
-					if (fetchedBatches.length > 0 && !selectedBatchId) {
-						setSelectedBatchId(fetchedBatches[0]._id);
-					}
-				} else {
-					toast.error(data.message);
-				}
-			} catch (error) {
-				toast.error("Failed to fetch initial batch data.");
-			}
-			// Let the next useEffect handle its own loading state
-		};
-		fetchInitialBatches();
-	}, []); // Empty dependency array ensures this runs only once
-
-	// 2. Fetch codes when a batch is selected or page/limit changes
-	useEffect(() => {
-		if (selectedBatchId) {
-			fetchCodes();
+		// Only run if there's a selected batch or if it's the very first load.
+		if (selectedBatchId || batches.length === 0) {
+			const isInitial = batches.length === 0;
+			fetchCodesAndBatches(isInitial);
 		}
-	}, [selectedBatchId, currentPage, limit]);
+	}, [selectedBatchId, currentPage, limit, batches.length]);
 
 	const handlePageChange = (newPage) => {
 		if (newPage < 1 || newPage > totalPages) return;
@@ -185,7 +167,7 @@ const Codes = () => {
 										setSelectedBatchId(e.target.value);
 										setCurrentPage(1); // Reset to first page on batch change
 									}}
-									className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+									className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 bg-white"
 								>
 									{batches.map((batch) => (
 										<option
@@ -211,7 +193,7 @@ const Codes = () => {
 										setLimit(Number(e.target.value));
 										setCurrentPage(1); // Reset to first page on limit change
 									}}
-									className="px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+									className="px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500 bg-white"
 								>
 									<option value="10">10</option>
 									<option value="20">20</option>

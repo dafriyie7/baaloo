@@ -2,9 +2,9 @@ import ScratchCode from "../models/ScratchCode.js";
 import Batch from "../models/Batch.js";
 import { v4 as uuid } from "uuid";
 import QRCode from "qrcode";
+import { encrypt, decrypt, hashForLookup } from "../lib/encryption.js";
 
 // generate new scratch code
-
 export const generateBatch = async (req, res) => {
 	try {
 		const {
@@ -44,7 +44,7 @@ export const generateBatch = async (req, res) => {
 		const prizeDistribution = Array(totalCodes).fill(false);
 		for (let i = 0; i < numWinners; i++) prizeDistribution[i] = true;
 
-		// Shuffle winners (random positions)
+		// Shuffle winners
 		for (let i = prizeDistribution.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[prizeDistribution[i], prizeDistribution[j]] = [
@@ -64,31 +64,36 @@ export const generateBatch = async (req, res) => {
 			winningPrize,
 		});
 
-		// Build all codes
+		// Build codes
 		const codes = [];
 		for (let i = 0; i < totalCodes; i++) {
 			const shortCode = uuid().split("-")[0].toUpperCase();
+			const encryptedCode = encrypt(shortCode); // encrypt before save
+			const lookupHash = hashForLookup(shortCode)
 			codes.push({
-				code: shortCode,
+				code: encryptedCode,
+				lookupHash,
 				batchNumber: batch._id,
 				isWinner: prizeDistribution[i],
 				prize: prizeDistribution[i] ? winningPrize : 0,
+				// plainCode: shortCode,
 			});
 		}
 
-		// Shuffle full array once before bulk insertion (fast)
+		// Shuffle once
 		for (let i = codes.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[codes[i], codes[j]] = [codes[j], codes[i]];
 		}
 
-		// Insert all codes in randomized order
-		const savedCodes = await ScratchCode.insertMany(codes);
+		// Save all (omit plainCode if not stored in schema)
+		const toSave = codes.map(({ plainCode, ...rest }) => rest);
+		const savedCodes = await ScratchCode.insertMany(toSave);
 
-		// Attach QR images
+		// Generate QR images from plaintext codes
 		const withQRCodes = await Promise.all(
-			savedCodes.map(async (c) => {
-				const qrImage = await QRCode.toDataURL(c.code);
+			savedCodes.map(async (c, index) => {
+				const qrImage = await QRCode.toDataURL(codes[index].plainCode);
 				return { ...c.toObject(), qrImage };
 			})
 		);
@@ -105,8 +110,11 @@ export const redeemScratchCode = async (req, res) => {
 	try {
 		const { scratchCode } = req.body;
 
+		// Encrypt the incoming plain code to match the stored format
+		const encryptedCode = encrypt(scratchCode);
+
 		// 1. Find the code in the database
-		const code = await ScratchCode.findOne({ code: scratchCode });
+		const code = await ScratchCode.findOne({ code: encryptedCode });
 
 		// 2. Check if the code is invalid (not found)
 		if (!code) {
@@ -146,10 +154,8 @@ export const getAllScratchCodes = async (req, res) => {
 		const page = parseInt(req.query.page) || 1;
 		const limit = parseInt(req.query.limit) || 20;
 
-		// Distinct batches
 		const batches = await Batch.find();
 
-		// Handle case where no batches exist
 		if (batches.length === 0 && !selectedBatch) {
 			return res.status(200).json({
 				success: true,
@@ -167,19 +173,27 @@ export const getAllScratchCodes = async (req, res) => {
 		const query = queryBatch ? { batchNumber: queryBatch } : {};
 
 		const codes = await ScratchCode.find(query)
-			.limit(limit * 1)
+			.limit(limit)
 			.skip((page - 1) * limit)
 			.select("-isWinner")
 			.lean();
 
 		const totalCodes = await ScratchCode.countDocuments(query);
 
-		// Generate all QR codes in parallel
+		// Decrypt and build QR data
 		const withQRCodes = await Promise.all(
 			codes.map(async (c) => {
-				const scanUrl = `${origin}/scratch/${c.code}`;
+				let plainCode;
+				try {
+					plainCode = decrypt(c.code);
+				} catch {
+					plainCode = "[DECRYPTION_FAILED]";
+				}
+
+				const scanUrl = `${origin}/scratch/${plainCode}`;
 				const qrImage = await QRCode.toDataURL(scanUrl);
-				return { ...c, qrImage };
+
+				return { ...c, code: plainCode, qrImage };
 			})
 		);
 
@@ -189,7 +203,7 @@ export const getAllScratchCodes = async (req, res) => {
 				withQRCodes,
 				batches,
 				totalPages: Math.ceil(totalCodes / limit),
-				currentPage: parseInt(page),
+				currentPage: page,
 			},
 		});
 	} catch (error) {
@@ -197,21 +211,3 @@ export const getAllScratchCodes = async (req, res) => {
 		return res.status(500).json({ success: false, message: error.message });
 	}
 };
-
-export const printCodes = async (req, res) => {
-	try {
-		const { selectedBatch, count } = req.body
-
-		if (!selectedBatch || !count) { 
-			return res.status(400).json({ success: false, message: "All fields are required." })
-		}
-
-		const toPrint = await ScratchCode.find({ batchNumber: selectedBatch, isPrinted: false }).limit(count)
-
-		return res.status(200).json({ success: true, data: toPrint })
-
-	} catch (error) {
-		console.error(error)
-		return res.status(500).json({ success: false, message: error.message })
-	}
-}
