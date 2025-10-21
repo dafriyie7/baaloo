@@ -193,11 +193,15 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 					{isLoading ? "Generating..." : "Generate New QR Code"}
 				</button>
 			</form>
-			<div className="w-full flex justify-center animate-bounce">
+			<div className="w-full flex justify-center">
 				<button
 					onClick={() => setIsMenuOpen(isMenuOpen ? false : true)}
 				>
-					{isMenuOpen ? <ChevronUp /> : <ChevronDown />}
+					{isMenuOpen ? (
+						<ChevronUp className="cursor-pointer" />
+					) : (
+						<ChevronDown className="cursor-pointer" />
+					)}
 				</button>
 			</div>
 		</div>
