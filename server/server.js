@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./lib/connectDB.js";
 import "dotenv/config";
+import morgan from "morgan"
 import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
 
@@ -10,6 +11,7 @@ const PORT = 4000;
 const app = express();
 
 app.use(express.json());
+app.use(morgan("combined"))
 app.use(cors());
 
 app.get("/", (req, res) => res.send("server running"));
