@@ -41,27 +41,30 @@ export const registerUser = async (req, res) => {
 
 // login user
 export const loginUser = async (req, res) => {
-	const { email, password } = req.body;
+	const { identifier, password } = req.body;
 
-	if (!email || !password) {
+	if (!identifier || !password) {
 		return res.status(400).json({
 			success: false,
 			message: "All fields are required",
 		});
 	}
 
-	const user = await user.findOne({ email });
+	// Find user by either email or phone number
+	const user = await User.findOne({
+		$or: [{ email: identifier }, { phone: identifier }],
+	});
 
 	if (!user) {
 		return res.status(400).json({
 			success: false,
-			message: "User does not exist",
+			message: "Invalid credentials",
 		});
 	}
 
 	const isMatch = await bcrypt.compare(password, user.password);
 
-	if (!ismatch) {
+	if (!isMatch) {
 		return res.status(400).json({
 			success: false,
 			message: "Invalid credentials",
@@ -80,6 +83,12 @@ export const loginUser = async (req, res) => {
 	res.status(200).json({
 		success: true,
 		message: "User logged in successfully",
+		user: {
+			id: user._id,
+			name: user.name,
+			email: user.email,
+			role: user.role,
+		},
 	});
 };
 
@@ -116,53 +125,53 @@ export const resetPassword = async (req, res) => {
 
 	const user = await User.findOne({ email });
 
-	if (!user) { 
+	if (!user) {
 		return res.staus(404).json({
 			success: false,
 			message: "User does not exist",
-		})
+		});
 	}
-}
+};
 
 // update password
 export const updatePassword = async (req, res) => {
-	const {id} = req.userId
-	const { oldPassword, newPassword } = req.body
-	
+	const { id } = req.userId;
+	const { oldPassword, newPassword } = req.body;
+
 	if (!oldPassword || !newPassword) {
 		return res.status(400).json({
 			success: false,
 			message: "All fields are required",
-		})
+		});
 	}
 
-	const user = await User.findById(id)
+	const user = await User.findById(id);
 
-	const isMatch = await bcrypt.compare(oldPassword, user.password)
+	const isMatch = await bcrypt.compare(oldPassword, user.password);
 
 	if (!isMatch) {
 		return res.status(400).json({
 			success: false,
 			message: "Invalid credentials",
-		})
+		});
 	}
 
-	const hashedPassword = await bcrypt.hash(newPassword, 10)
+	const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-	user.password = hashedPassword
+	user.password = hashedPassword;
 
-	await user.save()
+	await user.save();
 
 	return res.status(200).json({
 		success: true,
 		message: "Password updated successfully",
-	})
-}
+	});
+};
 
 // Update user
 export const updateUser = async (req, res) => {
 	try {
-		const { id } = req.userId
+		const { id } = req.userId;
 		const updates = req.body;
 
 		// Prevent password change through this route (optional)
@@ -174,7 +183,9 @@ export const updateUser = async (req, res) => {
 		});
 
 		if (!updatedUser)
-			return res.status(404).json({ success: false, message: "User not found" });
+			return res
+				.status(404)
+				.json({ success: false, message: "User not found" });
 
 		res.json({ success: true, data: updatedUser });
 	} catch (err) {
