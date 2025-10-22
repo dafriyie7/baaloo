@@ -10,6 +10,7 @@ import ClaimWin from "./Pages/ClaimWin";
 import About from "./Pages/About";
 import Loading from "./Components/Loading";
 import { useAppcontext } from "./context/AppContext";
+import Register from "./Components/Register";
 
 const App = () => {
 	const { isLoading } = useAppcontext();
@@ -19,6 +20,7 @@ const App = () => {
 			{isLoading && <Loading />}
 			<Routes>
 				<Route path="/login" element={<Login />} />
+				<Route path="register" element={<Register />} />
 
 				<Route path="/admin" element={<Layout />}>
 					<Route index element={<Codes />} />

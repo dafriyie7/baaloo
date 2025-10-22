@@ -13,12 +13,12 @@ export const registerUser = async (req, res) => {
 		});
 	}
 
-	const userExists = await User.findOne({ email });
+	const userExists = await User.findOne({ $or: [{ email }, { phone }] });
 
 	if (userExists) {
 		return res.status(400).json({
 			success: false,
-			message: "User already exists",
+			message: "User with this email or phone already exists",
 		});
 	}
 
