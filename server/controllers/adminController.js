@@ -1,6 +1,9 @@
 import User from "../models/Admin.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import Batch from "../models/Batch.js";
+import ScratchCode from "../models/ScratchCode.js";
+import Player from "../models/Player.js";
 
 // register a new user
 export const registerUser = async (req, res) => {
@@ -98,6 +101,34 @@ export const loginUser = async (req, res) => {
 	} catch (error) {
 		console.error("login user error:", error);
 		res.status(500).json({ success: false, message: error.message });
+	}
+};
+
+// get management data for dashboard
+export const getManagementData = async (req, res) => {
+	try {
+		const totalBatches = await Batch.countDocuments();
+		const totalCodes = await ScratchCode.countDocuments();
+		const totalPlayers = await Player.countDocuments();
+		const admins = await User.find({ role: "admin" }).select("name email");
+
+		const stats = {
+			totalBatches,
+			totalCodes,
+			totalPlayers,
+			totalAdmins: admins.length,
+		};
+
+		res.status(200).json({
+			success: true,
+			data: {
+				stats,
+				admins,
+			},
+		});
+	} catch (error) {
+		console.error("Get management data error:", error);
+		res.status(500).json({ success: false, message: "Server error" });
 	}
 };
 

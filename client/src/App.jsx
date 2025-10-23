@@ -13,6 +13,7 @@ import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import Profile from "./Pages/admin/Profile";
 import Manage from "./Pages/admin/Manage";
+import NotFound from "./Pages/NotFound";
 
 const ProtectedRoute = ({ isLoggedIn, redirectPath = "/login" }) => {
 	if (!isLoggedIn) {
@@ -50,6 +51,9 @@ const App = () => {
 						<Route path="profile" element={<Profile />} />
 					</Route>
 				</Route>
+
+				{/* Catch-all route for 404 Not Found */}
+				<Route path="*" element={<NotFound />} />
 			</Routes>
 		</div>
 	);

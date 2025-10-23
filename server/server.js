@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./lib/connectDB.js";
 import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
-import authRouter from "./routes/authRouter.js";
+import authRouter from "./routes/adminRoutes.js";
 
 const PORT = process.env.PORT;
 

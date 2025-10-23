@@ -96,6 +96,7 @@ const AdminNavbar = ({ navRef }) => {
 					</a>
 				))}
 				<button
+					onClick={() => navigate("/admin")}
 					className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
 						isScrolled ? "text-black" : "text-white"
 					} transition-all`}
