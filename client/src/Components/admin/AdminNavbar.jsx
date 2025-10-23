@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-const Navbar = ({ navRef }) => {
+const AdminNavbar = ({ navRef }) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 
-	const navLinks = [
-				{ name: "About", path: "/about" },
+	const navLinks = location.pathname.includes("/admin")
+		? [
+				{ name: "Players", path: "/admin/players" },
+				{ name: "Codes", path: "/admin/codes" },
 		  ]
+		: [];
 
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -62,13 +65,26 @@ const Navbar = ({ navRef }) => {
 						/>
 					</a>
 				))}
-				<button
-					onClick={() => navigate("/how-to-play")}
+				{/* <button
 					className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
 						isScrolled ? "text-black" : "text-white"
 					} transition-all`}
 				>
-					How to play
+					New Launch
+				</button> */}
+			</div>
+
+			{/* Desktop Right */}
+			<div className="hidden md:flex items-center gap-4">
+				<button
+					className={`px-8 py-2.5 rounded-full ml-4 transition-all duration-500 cursor-pointer ${
+						isScrolled
+							? "text-white bg-black"
+							: "bg-white text-black"
+					}`}
+					onClick={() => navigate("/admin/players")}
+				>
+					Dashboard
 				</button>
 			</div>
 
@@ -127,18 +143,19 @@ const Navbar = ({ navRef }) => {
 					</a>
 				))}
 
+				{/* <button className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all">
+					New Launch
+				</button> */}
+
 				<button
-					onClick={() => {
-						navigate("/how-to-play");
-						setIsMenuOpen(false);
-					}}
-					className="text-black border px-8 py-2.5 rounded-full transition-all duration-500"
+					onClick={() => navigate("/admin/players")}
+					className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
 				>
-					How to play
+					Dashboard
 				</button>
 			</div>
 		</nav>
 	);
 };
 
-export default Navbar;
+export default AdminNavbar;

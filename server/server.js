@@ -1,27 +1,36 @@
 import express from "express";
 import cors from "cors";
-import connectDB from "./lib/connectDB.js";
 import "dotenv/config";
-import morgan from "morgan"
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+import connectDB from "./lib/connectDB.js";
 import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
+import authRouter from "./routes/authRouter.js";
 
-const PORT = 4000;
+const PORT = process.env.PORT
 
 const app = express();
 
-app.use(express.json());
-app.use(morgan("combined"))
-app.use(cors({
-	origin: "*"
-}));
+app.use(cookieParser());
+
+const allowedOrigins = ["http://localhost:5173"]
+app.use(express.json())
+	.use(morgan("combined"))
+	.use(
+		cors({
+			origin: allowedOrigins,
+			credentials: true,
+			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			allowedHeaders: ["Content-Type", "Authorization"],
+		})
+	);
 
 app.get("/", (req, res) => res.send("server running"));
 
-app.use("/api/players", playerRouter).use(
-	"/api/scratch-codes",
-	scratchCodeRouter
-);
+app.use("/api/players", playerRouter)
+	.use("/api/scratch-codes", scratchCodeRouter)
+	.use("/api/auth", authRouter);
 
 const startServer = async () => {
 	try {

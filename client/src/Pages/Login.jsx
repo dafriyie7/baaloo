@@ -7,14 +7,14 @@ import { useAppcontext } from "../context/AppContext";
 const Login = () => {
 	const [identifier, setIdentifier] = useState("admin@example.com");
 	const [password, setPassword] = useState("password");
-	const { setIsLoading, setUser } = useAppcontext();
+	const { setIsLoading, login } = useAppcontext();
 	const navigate = useNavigate();
 
 	const handleLogin = async (e) => {
 		e.preventDefault();
 		setIsLoading(true);
+
 		try {
-			// NOTE: You will need to create this API endpoint on your server
 			const { data } = await axios.post("/auth/login", {
 				identifier,
 				password,
@@ -22,8 +22,8 @@ const Login = () => {
 
 			if (data.success) {
 				toast.success("Login successful!");
-				setUser(data.user); // Assuming the API returns a user object
-				navigate("/admin/codes"); // Redirect to admin dashboard
+				login(data.user); // Use the new login function from context
+				navigate("/admin/codes");
 			} else {
 				toast.error(data.message || "Login failed.");
 			}
@@ -89,7 +89,10 @@ const Login = () => {
 							Login
 						</button>
 					</div>
-					<p onClick={() => navigate("/register")} className="flex justify-end text-slate-200 cursor-pointer hover:scale-101 duration-100">
+					<p
+						onClick={() => navigate("/register")}
+						className="flex justify-end text-slate-200 cursor-pointer hover:scale-101 duration-100"
+					>
 						Don't have an account?
 					</p>
 				</form>

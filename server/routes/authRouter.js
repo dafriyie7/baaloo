@@ -6,12 +6,12 @@ import {
 	updateUser,
 } from "../controllers/usercontroller.js";
 
-const adminRouter = express.Router();
+const authRouter = express.Router();
 
-adminRouter
+authRouter
 	.post("/register", registerUser)
 	.post("/login", loginUser)
 	.put("/update/:id", updateUser)
 	.put("/update-password", updatePassword);
 
-export default adminRouter;
+export default authRouter;
