@@ -1,8 +1,8 @@
-import axios from "../../lib/api";
+import axios from "../../../lib/api";
 import { useState } from "react";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
-import CodeCard from "../Components/CodeCard";
+import CodeCard from "../../Components/admin/CodeCard";
 import {
 	ChevronsLeft,
 	ChevronsRight,
@@ -12,9 +12,9 @@ import {
 	Gift,
 	Percent,
 } from "lucide-react";
-import StatCard from "../Components/StatCard";
-import GenerateCodeForm from "../Components/GenerateCodeForm";
-import { useAppcontext } from "../context/AppContext";
+import StatCard from "../../Components/admin/StatCard";
+import GenerateCodeForm from "../../Components/admin/GenerateCodeForm";
+import { useAppcontext } from "../../context/AppContext";
 
 const Codes = () => {
 	const [codes, setCodes] = useState([]);

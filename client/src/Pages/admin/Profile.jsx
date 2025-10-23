@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import axios from "../../lib/api";
-import { useAppcontext } from "../context/AppContext";
+import axios from "../../../lib/api";
+import { useAppcontext } from "../../context/AppContext";
 
 const Profile = () => {
 	const { user, setIsLoading, login } = useAppcontext();
@@ -10,7 +10,7 @@ const Profile = () => {
 	const [oldPassword, setOldPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 
-	console.log(user)
+	console.log(user);
 
 	useEffect(() => {
 		if (user) {

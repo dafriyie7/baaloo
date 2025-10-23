@@ -66,7 +66,7 @@ export const loginUser = async (req, res) => {
 		if (!user) {
 			return res.status(400).json({
 				success: false,
-				message: "User not found",
+				message: "Invalid credentials",
 			});
 		}
 
@@ -74,7 +74,7 @@ export const loginUser = async (req, res) => {
 		if (!isMatch) {
 			return res.status(400).json({
 				success: false,
-				message: "Invalid password",
+				message: "Invalid credentials",
 			});
 		}
 
@@ -100,7 +100,6 @@ export const loginUser = async (req, res) => {
 		res.status(500).json({ success: false, message: error.message });
 	}
 };
-
 
 // logout user
 export const logoutUser = async (req, res) => {

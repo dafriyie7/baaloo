@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import axiosInstance from "../../lib/api";
-import StatCard from "../Components/StatCard";
+import axiosInstance from "../../../lib/api";
+import StatCard from "../../Components/admin/StatCard";
 import { Users, Trophy, Annoyed } from "lucide-react";
-import { useAppcontext } from "../context/AppContext";
+import { useAppcontext } from "../../context/AppContext";
 
 const Players = () => {
 	const [players, setPlayers] = useState([]);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import axios from "../../lib/api";
-import { useAppcontext } from "../context/AppContext";
+import axios from "../../../lib/api";
+import { useAppcontext } from "../../context/AppContext";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {

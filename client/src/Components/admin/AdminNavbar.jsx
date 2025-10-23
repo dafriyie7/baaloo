@@ -95,13 +95,13 @@ const AdminNavbar = ({ navRef }) => {
 						/>
 					</a>
 				))}
-				{/* <button
+				<button
 					className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
 						isScrolled ? "text-black" : "text-white"
 					} transition-all`}
 				>
-					New Launch
-				</button> */}
+					Manage
+				</button>
 			</div>
 
 			{/* Desktop Right */}
@@ -204,9 +204,9 @@ const AdminNavbar = ({ navRef }) => {
 					</a>
 				))}
 
-				{/* <button className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all">
-					New Launch
-				</button> */}
+				<button className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all">
+					Manage
+				</button>
 
 				<button
 					onClick={() => navigate("/admin/players")}

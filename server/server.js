@@ -12,8 +12,6 @@ const PORT = process.env.PORT;
 
 const app = express();
 
-app.use(cookieParser());
-
 const allowedOrigins = ["http://localhost:5173", "https://baaloo.vercel.app"];
 app.use(express.json())
 	.use(morgan("combined"))
@@ -24,7 +22,9 @@ app.use(express.json())
 			methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 			allowedHeaders: ["Content-Type", "Authorization"],
 		})
-	);
+);
+	
+app.use(cookieParser());
 
 app.get("/", (req, res) => res.send("server running"));
 
