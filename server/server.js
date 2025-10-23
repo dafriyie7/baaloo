@@ -8,20 +8,20 @@ import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
 import authRouter from "./routes/authRouter.js";
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT;
 
 const app = express();
 
 app.use(cookieParser());
 
-const allowedOrigins = ["http://localhost:5173"]
+const allowedOrigins = ["http://localhost:5173", "https://baaloo.vercel.app"];
 app.use(express.json())
 	.use(morgan("combined"))
 	.use(
 		cors({
 			origin: allowedOrigins,
 			credentials: true,
-			methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+			methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 			allowedHeaders: ["Content-Type", "Authorization"],
 		})
 	);

@@ -59,7 +59,6 @@ export const loginUser = async (req, res) => {
 			});
 		}
 
-		// Find user by either email or phone number
 		const user = await User.findOne({
 			$or: [{ email: identifier }, { phone: identifier }],
 		});
@@ -72,7 +71,6 @@ export const loginUser = async (req, res) => {
 		}
 
 		const isMatch = await bcrypt.compare(password, user.password);
-
 		if (!isMatch) {
 			return res.status(400).json({
 				success: false,
@@ -86,25 +84,23 @@ export const loginUser = async (req, res) => {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === "production",
 			sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-			maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
 
+		const sanitizedUser = user.toObject();
+		delete sanitizedUser.password;
 
 		res.status(200).json({
 			success: true,
 			message: "User logged in successfully",
-			user: {
-				id: user._id,
-				name: user.name,
-				email: user.email,
-				role: user.role,
-			},
+			user: sanitizedUser,
 		});
 	} catch (error) {
-		console.log("login user error: ", error);
+		console.error("login user error:", error);
 		res.status(500).json({ success: false, message: error.message });
 	}
 };
+
 
 // logout user
 export const logoutUser = async (req, res) => {
@@ -155,7 +151,7 @@ export const resetPassword = async (req, res) => {
 // update password
 export const updatePassword = async (req, res) => {
 	try {
-		const { id } = req.userId;
+		const id = req.userId;
 		const { oldPassword, newPassword } = req.body;
 
 		if (!oldPassword || !newPassword) {
@@ -195,7 +191,7 @@ export const updatePassword = async (req, res) => {
 // Update user
 export const updateUser = async (req, res) => {
 	try {
-		const { id } = req.userId;
+		const id = req.userId;
 		const updates = req.body;
 
 		// Prevent password change through this route (optional)

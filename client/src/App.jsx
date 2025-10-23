@@ -11,6 +11,7 @@ import Loading from "./Components/Loading";
 import { useAppcontext } from "./context/AppContext";
 import Login from "./Pages/Login";
 import Register from "./Pages/Register";
+import Profile from "./Pages/Profile";
 
 const ProtectedRoute = ({ isLoggedIn, redirectPath = "/login" }) => {
 	if (!isLoggedIn) {
@@ -45,6 +46,7 @@ const App = () => {
 						<Route index element={<Codes />} />
 						<Route path="players" element={<Players />} />
 						<Route path="codes" element={<Codes />} />
+						<Route path="profile" element={<Profile />} />
 					</Route>
 				</Route>
 			</Routes>

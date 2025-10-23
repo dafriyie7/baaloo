@@ -1,9 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAppcontext } from "../../context/AppContext";
+import { LogOut, UserCog } from "lucide-react";
 
 const AdminNavbar = ({ navRef }) => {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const menuRef = useRef(null);
+	const { isLoggedIn, user, logout } = useAppcontext();
+
+	const [showAccountMenu, setShowAccountMenu] = useState(false);
+
+	const handleLogout = () => {
+		logout();
+		navigate("/login");
+	};
 
 	const navLinks = location.pathname.includes("/admin")
 		? [
@@ -23,10 +34,29 @@ const AdminNavbar = ({ navRef }) => {
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (menuRef.current && !menuRef.current.contains(event.target)) {
+				setShowAccountMenu(false);
+			}
+		};
+		const handleKeyDown = (event) => {
+			if (event.key === "Escape") {
+				setShowAccountMenu(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, []);
+
 	return (
 		<nav
 			ref={navRef}
-			className={`fixed top-0 left-0 bg-slate-900 w-full flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 transition-all duration-500 z-50 ${
+			className={`fixed top-0 left-0 bg-slate-900 w-full flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 transition-all duration-75 z-50 ${
 				isScrolled
 					? "bg-white/80 shadow-md text-gray-700 backdrop-blur-lg py-3 md:py-4"
 					: "py-4 md:py-6"
@@ -75,17 +105,48 @@ const AdminNavbar = ({ navRef }) => {
 			</div>
 
 			{/* Desktop Right */}
-			<div className="hidden md:flex items-center gap-4">
-				<button
-					className={`px-8 py-2.5 rounded-full ml-4 transition-all duration-500 cursor-pointer ${
-						isScrolled
-							? "text-white bg-black"
-							: "bg-white text-black"
-					}`}
-					onClick={() => navigate("/admin/players")}
-				>
-					Dashboard
-				</button>
+			<div
+				ref={menuRef}
+				className="hidden md:flex items-center gap-4 relative"
+			>
+				{isLoggedIn && user ? (
+					<>
+						<button
+							onClick={() => setShowAccountMenu(!showAccountMenu)}
+							className={`py-2.5 px-4 rounded-full ml-4 transition-all duration-500 cursor-pointer font-bold flex items-center justify-center ${
+								isScrolled
+									? "text-white bg-black"
+									: "bg-white text-black"
+							}`}
+						>
+							{user.name[0].toUpperCase()}
+						</button>
+						<div
+							className={`absolute top-full right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg py-1 z-20 transition-all duration-200 ease-out ${
+								showAccountMenu
+									? "opacity-100 scale-100"
+									: "opacity-0 scale-95 pointer-events-none"
+							}`}
+						>
+							<button
+								onClick={() => navigate("/admin/profile")}
+								className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+							>
+								<UserCog size={16} />
+								<span>My Account</span>
+							</button>
+							<button
+								onClick={handleLogout}
+								className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+							>
+								<LogOut size={16} />
+								<span>Logout</span>
+							</button>
+						</div>
+					</>
+				) : (
+					<button onClick={() => navigate("/login")}>Login</button>
+				)}
 			</div>
 
 			{/* Mobile Menu Button */}
@@ -151,7 +212,7 @@ const AdminNavbar = ({ navRef }) => {
 					onClick={() => navigate("/admin/players")}
 					className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
 				>
-					Dashboard
+					{isLoggedIn ? user.name : "Login"}
 				</button>
 			</div>
 		</nav>

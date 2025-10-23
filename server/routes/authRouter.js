@@ -5,13 +5,14 @@ import {
 	updatePassword,
 	updateUser,
 } from "../controllers/usercontroller.js";
+import userAuth from "../middleware/userAuth.js";
 
 const authRouter = express.Router();
 
 authRouter
-	.post("/register", registerUser)
-	.post("/login", loginUser)
-	.put("/update/:id", updateUser)
-	.put("/update-password", updatePassword);
+	.post("/register", userAuth, registerUser)
+	.post("/login", userAuth, loginUser)
+	.patch("/update-user", userAuth, updateUser)
+	.patch("/update-password", userAuth, updatePassword);
 
 export default authRouter;
