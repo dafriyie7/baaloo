@@ -18,31 +18,32 @@ const Manage = () => {
 	const [admins, setAdmins] = useState([]);
 	const [newName, setNewName] = useState("");
 	const [newEmail, setNewEmail] = useState("");
+	const [newPhone, setNewPhone] = useState("");
+	const [newPassword, setNewPassword] = useState("");
 	const [selectedAdmin, setSelectedAdmin] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 
-	useEffect(() => {
-		const fetchManagementData = async () => {
-			setIsLoading(true);
-			try {
-				const { data } = await axios.get("/auth/manage");
-				if (data.success) {
-					setStats(data.data.stats);
-					setAdmins(data.data.admins);
-				} else {
-					toast.error(data.message || "Failed to fetch data.");
-				}
-			} catch (error) {
-				toast.error(
-					error.response?.data?.message || "An error occurred."
-				);
-			} finally {
-				setIsLoading(false);
-			}
-		};
+	const fetchManagementData = async () => {
+		setIsLoading(true);
+		try {
+			const { data } = await axios.get("/auth/stats");
 
+			if (data.success) {
+				setStats(data.data.stats);
+				setAdmins(data.data.admins);
+			} else {
+				toast.error(data.message || "Failed to fetch data.");
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "An error occurred.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	useEffect(() => {
 		fetchManagementData();
-	}, [setIsLoading]);
+	}, []);
 
 	const handleOpenModal = (admin) => {
 		setSelectedAdmin(admin);
@@ -73,16 +74,14 @@ const Manage = () => {
 			const { data } = await axios.post("/auth/register", {
 				name: newName,
 				email: newEmail,
-				phone: "0000000000", // A dummy phone number is needed for now
-				password: "password", // Default password, user should change it
+				phone: newPhone || "0000000000",
+				password: newPassword || "password",
 			});
 			if (data.success) {
 				toast.success(
 					`Invite sent to ${newName}! They can now log in.`
 				);
-				// Refetch data to get the new admin list
-				const response = await axios.get("/auth/manage");
-				setAdmins(response.data.data.admins);
+				fetchManagementData(); // Refetch data to show the new admin
 			} else {
 				toast.error(data.message || "Failed to add admin.");
 			}
@@ -91,13 +90,15 @@ const Manage = () => {
 		} finally {
 			setNewName("");
 			setNewEmail("");
+			setNewPhone("");
+			setNewPassword("");
 			setIsLoading(false);
 		}
 	};
 
 	return (
 		<div className="w-full min-h-screen bg-gray-100">
-			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-5xl mx-auto">
+			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto">
 				{/* Header */}
 				<div className="mb-8">
 					<h1 className="text-3xl font-bold text-gray-800">
@@ -189,6 +190,20 @@ const Manage = () => {
 								onChange={(e) => setNewEmail(e.target.value)}
 								placeholder="Email Address"
 								required
+								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							/>
+							<input
+								type="text"
+								placeholder="Phone Number (optional)"
+								value={newPhone}
+								onChange={(e) => setNewPhone(e.target.value)}
+								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							/>
+							<input
+								type="password"
+								placeholder="Password (optional)"
+								value={newPassword}
+								onChange={(e) => setNewPassword(e.target.value)}
 								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 							/>
 							<div className="pt-2">

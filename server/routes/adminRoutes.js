@@ -5,6 +5,11 @@ import {
 	registerUser,
 	updatePassword,
 	updateUser,
+	updateAdminById,
+	updateAdminPasswordById,
+	deleteAdminById,
+	getAllAdmins,
+	logoutUser,
 } from "../controllers/adminController.js";
 import userAuth from "../middleware/userAuth.js";
 
@@ -15,6 +20,11 @@ authRouter
 	.post("/login", loginUser)
 	.patch("/update-user", userAuth, updateUser)
 	.patch("/update-password", userAuth, updatePassword)
-	.get("/manage", userAuth, getManagementData);
+	.get("/stats", userAuth, getManagementData)
+	.get("/admins", userAuth, getAllAdmins)
+	.post("/logout", userAuth, logoutUser)
+	.patch("/admins/:id", userAuth, updateAdminById)
+	.patch("/admins/:id/password", userAuth, updateAdminPasswordById)
+	.delete("/admins/:id", userAuth, deleteAdminById);
 
 export default authRouter;

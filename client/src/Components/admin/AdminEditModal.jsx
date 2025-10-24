@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
+import axios from "../../../lib/api";
+import { useAppcontext } from "../../context/AppContext";
 
 const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 	const [name, setName] = useState("");
+	const { user: currentUser, setIsLoading } = useAppcontext();
 	const [email, setEmail] = useState("");
 	const [phone, setPhone] = useState("");
 	const [newPassword, setNewPassword] = useState("");
@@ -18,37 +21,80 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 
 	if (!isOpen || !admin) return null;
 
-	const handleProfileUpdate = (e) => {
+	const handleProfileUpdate = async (e) => {
 		e.preventDefault();
-		// TODO: API call to update user details
-		onUpdate({ ...admin, name, email, phone });
-		toast.success("Admin details updated!");
-		onClose();
+		setIsLoading(true);
+		try {
+			const { data } = await axios.patch(`/auth/admins/${admin._id}`, {
+				name,
+				email,
+				phone,
+			});
+			if (data.success) {
+				onUpdate(data.data);
+				toast.success("Admin details updated!");
+				onClose();
+			} else {
+				toast.error(data.message || "Failed to update details.");
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "An error occurred.");
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
-	const handlePasswordChange = (e) => {
+	const handlePasswordChange = async (e) => {
 		e.preventDefault();
 		if (!newPassword) {
 			toast.error("New password cannot be empty.");
 			return;
 		}
-		// TODO: API call to update user password
-		toast.success(`Password for ${admin.name} has been updated!`);
-		setNewPassword("");
-		onClose();
+		setIsLoading(true);
+		try {
+			const { data } = await axios.patch(
+				`/auth/admins/${admin._id}/password`,
+				{ newPassword }
+			);
+			if (data.success) {
+				toast.success(`Password for ${admin.name} has been updated!`);
+				setNewPassword("");
+				onClose();
+			} else {
+				toast.error(data.message || "Failed to update password.");
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "An error occurred.");
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
-	const handleRemove = () => {
+	const handleRemove = async () => {
+		if (currentUser._id === admin._id) {
+			toast.error("You cannot remove your own account.");
+			return;
+		}
+
 		if (window.confirm(`Are you sure you want to remove ${admin.name}?`)) {
-			// TODO: API call to delete user
-			onRemove(admin._id);
-			toast.success(`${admin.name} has been removed.`);
-			onClose();
+			setIsLoading(true);
+			try {
+				await axios.delete(`/auth/admins/${admin._id}`);
+				onRemove(admin._id);
+				toast.success(`${admin.name} has been removed.`);
+				onClose();
+			} catch (error) {
+				toast.error(
+					error.response?.data?.message || "An error occurred."
+				);
+			} finally {
+				setIsLoading(false);
+			}
 		}
 	};
 
 	return (
-		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+		<div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 			<div className="bg-white w-full max-w-lg p-8 rounded-2xl shadow-lg relative space-y-8">
 				<button
 					onClick={onClose}
@@ -118,7 +164,7 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 						<div className="pt-2 w-full flex justify-center">
 							<button
 								type="submit"
-								className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+								className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
 							>
 								Update Password
 							</button>

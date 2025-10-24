@@ -104,34 +104,6 @@ export const loginUser = async (req, res) => {
 	}
 };
 
-// get management data for dashboard
-export const getManagementData = async (req, res) => {
-	try {
-		const totalBatches = await Batch.countDocuments();
-		const totalCodes = await ScratchCode.countDocuments();
-		const totalPlayers = await Player.countDocuments();
-		const admins = await User.find({ role: "admin" }).select("name email");
-
-		const stats = {
-			totalBatches,
-			totalCodes,
-			totalPlayers,
-			totalAdmins: admins.length,
-		};
-
-		res.status(200).json({
-			success: true,
-			data: {
-				stats,
-				admins,
-			},
-		});
-	} catch (error) {
-		console.error("Get management data error:", error);
-		res.status(500).json({ success: false, message: "Server error" });
-	}
-};
-
 // logout user
 export const logoutUser = async (req, res) => {
 	try {
@@ -265,5 +237,109 @@ export const getUserProfile = async (req, res) => {
 	} catch (error) {
 		console.log("get user error: ", error);
 		res.status(500).json({ success: false, message: error.message });
+	}
+};
+
+// update admin by id
+export const updateAdminById = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const updates = req.body;
+
+		// Prevent password change through this route
+		if (updates.password) delete updates.password;
+
+		const updatedAdmin = await User.findByIdAndUpdate(id, updates, {
+			new: true,
+			runValidators: true,
+		}).select("-password");
+
+		if (!updatedAdmin) {
+			return res
+				.status(404)
+				.json({ success: false, message: "Admin not found" });
+		}
+
+		res.json({ success: true, data: updatedAdmin });
+	} catch (err) {
+		console.error("Update admin error: ", err);
+		res.status(500).json({ success: false, message: "Server error" });
+	}
+};
+
+// update admin password by id
+export const updateAdminPasswordById = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { newPassword } = req.body;
+
+		if (!newPassword) {
+			return res
+				.status(400)
+				.json({ success: false, message: "New password is required" });
+		}
+
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+		await User.findByIdAndUpdate(id, { password: hashedPassword });
+
+		res.json({ success: true, message: "Password updated successfully" });
+	} catch (err) {
+		console.error("Update admin password error: ", err);
+		res.status(500).json({ success: false, message: "Server error" });
+	}
+};
+
+// delete admin by id
+export const deleteAdminById = async (req, res) => {
+	try {
+		const { id } = req.params;
+		await User.findByIdAndDelete(id);
+		res.json({ success: true, message: "Admin removed successfully" });
+	} catch (err) {
+		console.error("Delete admin error: ", err);
+		res.status(500).json({ success: false, message: "Server error" });
+	}
+};
+
+// get management data for dashboard
+export const getManagementData = async (req, res) => {
+	try {
+		const totalBatches = await Batch.countDocuments();
+		const totalCodes = await ScratchCode.countDocuments();
+		const totalPlayers = await Player.countDocuments();
+		const admins = await User.find().select("-password");
+
+		const stats = {
+			totalBatches,
+			totalCodes,
+			totalPlayers,
+			totalAdmins: admins.length,
+		};
+
+		res.status(200).json({
+			success: true,
+			data: {
+				stats,
+				admins,
+			},
+		});
+	} catch (error) {
+		console.error("Get management data error:", error);
+		res.status(500).json({ success: false, message: "Server error" });
+	}
+};
+
+// get all admins
+export const getAllAdmins = async (req, res) => {
+	try {
+		const admins = await User.find().select("-password");
+		res.status(200).json({
+			success: true,
+			data: admins,
+		});
+	} catch (error) {
+		console.error("Get all admins error:", error);
+		res.status(500).json({ success: false, message: "Server error" });
 	}
 };
