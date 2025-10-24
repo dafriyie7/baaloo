@@ -6,7 +6,7 @@ import AdminNavbar from "./admin/AdminNavbar";
 const Layout = () => {
 	const [navHeight, setNavHeight] = useState(0);
 	const navRef = useRef(null);
-	const location = useLocation()
+	const location = useLocation();
 
 	useLayoutEffect(() => {
 		if (!navRef.current) return;
@@ -17,12 +17,12 @@ const Layout = () => {
 
 		resizeObserver.observe(navRef.current);
 		return () => resizeObserver.disconnect();
-	}, []);
+	}, [location.pathname]);
 
 	return (
 		<div className="min-h-screen flex flex-col bg-gray-100">
 			{location.pathname.includes("/admin") ? (
-				<AdminNavbar navRef={navRef}/>
+				<AdminNavbar navRef={navRef} />
 			) : (
 				<Navbar navRef={navRef} />
 			)}

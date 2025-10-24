@@ -104,9 +104,6 @@ const Manage = () => {
 					<h1 className="text-3xl font-bold text-gray-800">
 						Welcome, {user?.name}!
 					</h1>
-					<p className="text-gray-600">
-						Here's an overview of your application.
-					</p>
 				</div>
 
 				{/* Stats Overview */}

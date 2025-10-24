@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { X } from "lucide-react";
 import axios from "../../../lib/api";
@@ -10,6 +10,7 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 	const [email, setEmail] = useState("");
 	const [phone, setPhone] = useState("");
 	const [newPassword, setNewPassword] = useState("");
+	const modalRef = useRef(null);
 
 	useEffect(() => {
 		if (admin) {
@@ -18,6 +19,29 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 			setPhone(admin.phone || "");
 		}
 	}, [admin]);
+
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (modalRef.current && !modalRef.current.contains(event.target)) {
+				onClose();
+			}
+		};
+		const handleKeyDown = (event) => {
+			if (event.key === "Escape") {
+				onClose();
+			}
+		};
+
+		if (isOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+			document.addEventListener("keydown", handleKeyDown);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen, onClose]);
 
 	if (!isOpen || !admin) return null;
 
@@ -95,7 +119,10 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 
 	return (
 		<div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-			<div className="bg-white w-full max-w-lg p-8 rounded-2xl shadow-lg relative space-y-8">
+			<div
+				ref={modalRef}
+				className="bg-white w-full max-w-lg p-8 rounded-2xl shadow-lg relative space-y-8"
+			>
 				<button
 					onClick={onClose}
 					className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
@@ -176,7 +203,7 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 				<div className="border-t pt-6">
 					<button
 						onClick={handleRemove}
-						className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+						className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
 					>
 						Remove Admin
 					</button>

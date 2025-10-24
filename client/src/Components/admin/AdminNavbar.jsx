@@ -1,9 +1,15 @@
-import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import {
+	useEffect,
+	useState,
+	useRef,
+	forwardRef,
+	useImperativeHandle,
+} from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppcontext } from "../../context/AppContext";
 import { LogOut, UserCog } from "lucide-react";
 
-const AdminNavbar = ({ navRef }) => {
+const AdminNavbar = forwardRef(({ navRef: propNavRef }, ref) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const menuRef = useRef(null);
@@ -16,12 +22,10 @@ const AdminNavbar = ({ navRef }) => {
 		navigate("/login");
 	};
 
-	const navLinks = location.pathname.includes("/admin")
-		? [
-				{ name: "Players", path: "/admin/players" },
-				{ name: "Codes", path: "/admin/codes" },
-		  ]
-		: [];
+	const navLinks = [
+		{ name: "Players", path: "/admin/players" },
+		{ name: "Codes", path: "/admin/codes" },
+	];
 
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -53,9 +57,11 @@ const AdminNavbar = ({ navRef }) => {
 		};
 	}, []);
 
+	useImperativeHandle(ref, () => propNavRef.current);
+
 	return (
 		<nav
-			ref={navRef}
+			ref={propNavRef}
 			className={`fixed top-0 left-0 bg-slate-900 w-full flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 transition-all duration-75 z-50 ${
 				isScrolled
 					? "bg-white/80 shadow-md text-gray-700 backdrop-blur-lg py-3 md:py-4"
@@ -75,26 +81,32 @@ const AdminNavbar = ({ navRef }) => {
 
 			{/* Desktop Nav */}
 			<div className="hidden md:flex items-center gap-4 lg:gap-8">
-				{navLinks.map((link, i) => (
-					<a
-						key={i}
-						href={link.path}
-						className={`group flex flex-col gap-0.5 ${
-							isScrolled ? "text-gray-700" : "text-white"
-						}`}
-					>
-						{link.name}
-						<div
-							className={`${
-								isScrolled ? "bg-gray-700" : "bg-white"
-							} h-0.5 ${
-								location.pathname === link.path
-									? "w-full"
-									: "w-0"
-							} group-hover:w-full transition-all duration-300`}
-						/>
-					</a>
-				))}
+				{navLinks.map(
+					(
+						link,
+						i // Changed <a> to <Link>
+					) => (
+						<Link
+							key={i}
+							to={link.path}
+							className={`group flex flex-col gap-0.5 ${
+								isScrolled ? "text-gray-700" : "text-white"
+							}`}
+						>
+							{link.name}
+							<div
+								className={`${
+									isScrolled ? "bg-gray-700" : "bg-white"
+								} h-0.5 ${
+									location.pathname === link.path
+										? "w-full"
+										: "w-0"
+								} group-hover:w-full transition-all duration-300`}
+							/>
+						</Link>
+					)
+				)}{" "}
+				{/* Changed <a> to <Link> */}
 				<button
 					onClick={() => navigate("/admin")}
 					className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${
@@ -138,7 +150,7 @@ const AdminNavbar = ({ navRef }) => {
 							</button>
 							<button
 								onClick={handleLogout}
-								className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+								className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100"
 							>
 								<LogOut size={16} />
 								<span>Logout</span>
@@ -191,9 +203,9 @@ const AdminNavbar = ({ navRef }) => {
 				</button>
 
 				{navLinks.map((link, i) => (
-					<a
+					<Link // Changed <a> to <Link>
 						key={i}
-						href={link.path}
+						to={link.path}
 						onClick={() => setIsMenuOpen(false)}
 						className={`${
 							location.pathname === link.path
@@ -201,23 +213,48 @@ const AdminNavbar = ({ navRef }) => {
 								: ""
 						}`}
 					>
+						{" "}
+						{/* Changed <a> to <Link> */}
 						{link.name}
-					</a>
+					</Link>
 				))}
 
-				<button className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all">
+				<button
+					onClick={() => {
+						navigate("/admin");
+						setIsMenuOpen(false);
+					}}
+					className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all"
+				>
 					Manage
 				</button>
 
 				<button
-					onClick={() => navigate("/admin/players")}
+					onClick={() => {
+						isLoggedIn
+							? navigate("/admin/profile")
+							: navigate("/login");
+						setIsMenuOpen(false);
+					}}
 					className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
 				>
 					{isLoggedIn ? user.name : "Login"}
 				</button>
+				{isLoggedIn && (
+					<button
+						onClick={() => {
+							handleLogout();
+							setIsMenuOpen(false);
+						}}
+						className="flex items-center gap-2 text-sm font-medium text-red-600"
+					>
+						<LogOut size={16} />
+						<span>Logout</span>
+					</button>
+				)}
 			</div>
 		</nav>
 	);
-};
+});
 
 export default AdminNavbar;

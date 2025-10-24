@@ -10,8 +10,6 @@ const Profile = () => {
 	const [oldPassword, setOldPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 
-	console.log(user);
-
 	useEffect(() => {
 		if (user) {
 			setName(user.name || "");

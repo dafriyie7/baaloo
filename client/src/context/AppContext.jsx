@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import axiosInstance from "../../lib/api";
 
 const AppContext = createContext();
 
@@ -50,10 +51,19 @@ export const AppContextProvider = ({ children }) => {
 		setIsLoggedIn(true);
 	};
 
-	const logout = () => {
-		localStorage.removeItem("user");
-		setUser(null);
-		setIsLoggedIn(false);
+	const logout = async () => {
+		try {
+			const {data} = await axiosInstance.post("/auth/logout");
+			if (data.success) {
+				localStorage.removeItem("user");
+				setUser(null);
+				setIsLoggedIn(false);
+			} else {
+				toast.error(data.message || "something went wrong");
+			}
+		} catch (error) {
+			console.log(error)
+		}
 	};
 
 	const value = {
