@@ -1,4 +1,4 @@
-import User from "../models/Admin.js";
+import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Batch from "../models/Batch.js";
@@ -341,5 +341,31 @@ export const getAllAdmins = async (req, res) => {
 	} catch (error) {
 		console.error("Get all admins error:", error);
 		res.status(500).json({ success: false, message: "Server error" });
+	}
+};
+
+// check auth
+export const checkAuth = async (req, res) => {
+	try {
+		const id = req.userId;
+		const user = await User.findById(id);
+
+		if (!user) {
+			return res.status(401).json({
+				success: false,
+				message: "Unauthorized",
+			});
+		}
+
+		res.status(200).json({
+			success: true,
+			data: user,
+		});
+	} catch (error) {
+		console.error("checkAuth error:", error);
+		res.status(500).json({
+			success: false,
+			message: "Server error during authentication check.",
+		});
 	}
 };

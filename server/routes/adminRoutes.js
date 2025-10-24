@@ -10,6 +10,7 @@ import {
 	deleteAdminById,
 	getAllAdmins,
 	logoutUser,
+	checkAuth,
 } from "../controllers/adminController.js";
 import userAuth from "../middleware/userAuth.js";
 
@@ -25,6 +26,7 @@ authRouter
 	.post("/logout", userAuth, logoutUser)
 	.patch("/admins/:id", userAuth, updateAdminById)
 	.patch("/admins/:id/password", userAuth, updateAdminPasswordById)
-	.delete("/admins/:id", userAuth, deleteAdminById);
+	.delete("/admins/:id", userAuth, deleteAdminById)
+	.get("/check-auth", userAuth, checkAuth);
 
 export default authRouter;

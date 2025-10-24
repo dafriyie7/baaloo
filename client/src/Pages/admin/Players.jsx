@@ -53,7 +53,7 @@ const Players = () => {
 
 	return (
 		<div className="w-full min-h-screen bg-gray-100">
-			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-5xl mx-auto">
+			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto">
 				<div className="w-full flex justify-center mb-8">
 					<h1 className="text-3xl font-bold text-gray-800">
 						Players List

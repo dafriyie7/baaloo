@@ -13,12 +13,21 @@ export const AppContextProvider = ({ children }) => {
 
 	const currency = "GH₵";
 
-	const getUser = () => {
+	const getUser = async () => {
 		try {
-			const user = localStorage.getItem("user");
+			const user = sessionStorage.getItem("user");
 			if (user) {
 				setUser(JSON.parse(user));
 				setIsLoggedIn(true);
+			} else {
+				const { data } = await axiosInstance.get("/auth/check-auth")
+				if (data.success) {
+					setUser(data.data);
+					setIsLoggedIn(true);
+				} else {
+					setUser(null);
+					setIsLoggedIn(false);
+				}
 			}
 		} catch (error) {
 			console.log(error);
@@ -30,7 +39,7 @@ export const AppContextProvider = ({ children }) => {
 
 	const getStoredWinner = () => {
 		try {
-			const storedWinner = localStorage.getItem("winner");
+			const storedWinner = sessionStorage.getItem("winner");
 			if (storedWinner) {
 				setWinner(JSON.parse(storedWinner));
 			}
@@ -46,23 +55,23 @@ export const AppContextProvider = ({ children }) => {
 	}, []);
 
 	const login = (userData) => {
-		localStorage.setItem("user", JSON.stringify(userData));
+		sessionStorage.setItem("user", JSON.stringify(userData));
 		setUser(userData);
 		setIsLoggedIn(true);
 	};
 
 	const logout = async () => {
 		try {
-			const {data} = await axiosInstance.post("/auth/logout");
+			const { data } = await axiosInstance.post("/auth/logout");
 			if (data.success) {
-				localStorage.removeItem("user");
+				sessionStorage.removeItem("user");
 				setUser(null);
 				setIsLoggedIn(false);
 			} else {
 				toast.error(data.message || "something went wrong");
 			}
 		} catch (error) {
-			console.log(error)
+			console.log(error);
 		}
 	};
 

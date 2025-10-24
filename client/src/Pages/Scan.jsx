@@ -108,7 +108,7 @@ const Scanner = () => {
 		setMessage("");
 		setIsLoading(true);
 
-		console.log(scratchCode)
+		console.log(scratchCode);
 
 		try {
 			const { data } = await axiosInstance.post("/players/add", {
@@ -122,7 +122,7 @@ const Scanner = () => {
 				setIsWinner(isWinner);
 				toast.success("Your entry has been recorded!");
 
-				localStorage.setItem("winner", JSON.stringify(data.data));
+				sessionStorage.setItem("winner", JSON.stringify(data.data));
 				setWinner(data.data);
 
 				// Set the appropriate message.
