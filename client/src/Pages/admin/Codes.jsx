@@ -77,12 +77,9 @@ const Codes = () => {
 	};
 
 	const handleGenerationSuccess = async () => {
-		// Let the useEffect triggered by a change in `batches.length` handle the refetch.
-		// We'll fetch the latest batch which will be the new one.
 		await fetchCodesAndBatches(true);
 	};
 
-	// Fetch codes and batches on initial mount, or when page/limit changes.
 	useEffect(() => {
 		// Only run if there's a selected batch or if it's the very first load.
 		if (selectedBatchId || batches.length === 0) {
@@ -99,7 +96,7 @@ const Codes = () => {
 	const renderPagination = () => {
 		const pageNumbers = [];
 		const siblingCount = 1;
-		const totalPageNumbersToShow = 7; // A reasonable number of page links to show
+		const totalPageNumbersToShow = 7;
 
 		if (totalPages <= totalPageNumbersToShow) {
 			for (let i = 1; i <= totalPages; i++) {
@@ -115,7 +112,7 @@ const Codes = () => {
 			const shouldShowLeftDots = leftSiblingIndex > 2;
 			const shouldShowRightDots = rightSiblingIndex < totalPages - 2;
 
-			pageNumbers.push(1); // Always show first page
+			pageNumbers.push(1); // Always show first 
 
 			if (shouldShowLeftDots) {
 				pageNumbers.push("...");
@@ -316,7 +313,7 @@ const Codes = () => {
 						)}
 					</div>
 				) : (
-					<div className="text-center py-10 px-4 mt-8 bg-white shadow-md rounded-lg w-full max-w-md">
+					<div className="text-center py-10 px-4 mt-8 bg-white shadow-md rounded-lg w-full max-w-5xl">
 						<h2 className="text-xl font-semibold text-gray-800 mb-2">
 							No Batches Found
 						</h2>

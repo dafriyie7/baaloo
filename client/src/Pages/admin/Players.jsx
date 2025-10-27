@@ -80,7 +80,7 @@ const Players = () => {
 						color="bg-red-100"
 					/>
 				</div>
-				<div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+				<div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm">
 					<div className="hidden sm:block overflow-x-auto">
 						<table className="min-w-full divide-y divide-gray-200">
 							<thead>

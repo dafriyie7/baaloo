@@ -82,7 +82,7 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 	};
 
 	return (
-		<div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg mb-8">
+		<div className="w-full sm:max-w-md lg:max-w-3xl bg-white px-8 py-8 md:px-20 rounded-2xl shadow-sm mb-8">
 			<h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
 				Generate New Code
 			</h2>
@@ -185,17 +185,19 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 						/>
 					</div>
 				</div>
-				<button
-					type="submit"
-					disabled={isLoading}
-					className="w-full flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mb-5"
-				>
-					{isLoading ? "Generating..." : "Generate New QR Code"}
-				</button>
+				<div className="w-full flex justify-center">
+					<button
+						type="submit"
+						disabled={isLoading}
+						className="flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mb-5"
+					>
+						{isLoading ? "Generating..." : "Generate New QR Code"}
+					</button>
+				</div>
 			</form>
 			<div className="w-full flex justify-center">
 				<button
-					onClick={() => setIsMenuOpen(isMenuOpen ? false : true)}
+					onClick={() => setIsMenuOpen(!isMenuOpen)}
 				>
 					{isMenuOpen ? (
 						<ChevronUp className="cursor-pointer" />

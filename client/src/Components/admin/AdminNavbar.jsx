@@ -238,7 +238,7 @@ const AdminNavbar = forwardRef(({ navRef: propNavRef }, ref) => {
 					}}
 					className="bg-black text-white px-8 py-2.5 rounded-full transition-all duration-500"
 				>
-					{isLoggedIn ? user.name : "Login"}
+					{isLoggedIn ? user?.name : "Login"}
 				</button>
 				{isLoggedIn && (
 					<button

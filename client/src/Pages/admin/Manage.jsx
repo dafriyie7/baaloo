@@ -7,7 +7,7 @@ import axios from "../../../lib/api";
 import AdminEditModal from "../../Components/admin/AdminEditModal";
 
 const Manage = () => {
-	const { user, setIsLoading } = useAppcontext();
+	const { user, setIsLoading, navigate } = useAppcontext();
 
 	const [stats, setStats] = useState({
 		totalBatches: 0,
@@ -55,7 +55,7 @@ const Manage = () => {
 		setIsModalOpen(false);
 	};
 
-	const handleUpdateAdmin = (updatedAdmin) => {
+	const handleUpdateAdmin = async (updatedAdmin) => {
 		setAdmins(
 			admins.map((admin) =>
 				admin._id === updatedAdmin._id ? updatedAdmin : admin
@@ -79,7 +79,7 @@ const Manage = () => {
 			});
 			if (data.success) {
 				toast.success(
-					`Invite sent to ${newName}! They can now log in.`
+					`Added ${newName}! They can now log in.`
 				);
 				fetchManagementData(); // Refetch data to show the new admin
 			} else {
@@ -102,7 +102,7 @@ const Manage = () => {
 				{/* Header */}
 				<div className="mb-8">
 					<h1 className="text-3xl font-bold text-gray-800">
-						Welcome, {user?.name}!
+						Welcome, {user?.name || "Admin"}!
 					</h1>
 				</div>
 
@@ -113,18 +113,21 @@ const Manage = () => {
 						value={stats.totalBatches}
 						icon={<Hash className="text-indigo-600" />}
 						color="bg-indigo-100"
+						handleClick={() => navigate("/admin/codes")}
 					/>
 					<StatCard
 						label="Total Codes"
 						value={stats.totalCodes.toLocaleString()}
 						icon={<Hash className="text-blue-600" />}
 						color="bg-blue-100"
+						handleClick={() => navigate("/admin/codes")}
 					/>
 					<StatCard
 						label="Total Players"
 						value={stats.totalPlayers.toLocaleString()}
 						icon={<Users className="text-green-600" />}
 						color="bg-green-100"
+						handleClick={() => navigate("/admin/players")}
 					/>
 					<StatCard
 						label="Admins"
@@ -137,37 +140,43 @@ const Manage = () => {
 				{/* Admin Management Section */}
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 					{/* Admin List */}
-					<div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg">
+					<div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm">
 						<h2 className="text-xl font-bold text-gray-800 mb-4">
 							Administrators
 						</h2>
-						<ul className="space-y-3">
-							{admins.map((admin) => (
-								<li
-									key={admin.email}
-									className="flex items-center justify-between p-4 bg-gray-50 rounded-xl shadow-sm"
-								>
-									<div>
-										<p className="font-semibold text-gray-800">
-											{admin.name}
-										</p>
-										<p className="text-sm text-gray-600">
-											{admin.email}
-										</p>
-									</div>
-									<button
-										onClick={() => handleOpenModal(admin)}
-										className="text-sm font-medium text-white bg-slate-700 hover:bg-slate-800 px-4 py-2 rounded-full"
+						{admins.length === 0 ? (
+							<div className="w-full flex justify-center"><p className="text-gray-600">No admin to display</p></div>
+						) : (
+							<ul className="space-y-3">
+								{admins.map((admin) => (
+									<li
+										key={admin.email}
+										className="flex items-center justify-between p-4 bg-gray-50 rounded-xl shadow-sm"
 									>
-										Manage
-									</button>
-								</li>
-							))}
-						</ul>
+										<div>
+											<p className="font-semibold text-gray-800">
+												{admin.name}
+											</p>
+											<p className="text-sm text-gray-600">
+												{admin.email}
+											</p>
+										</div>
+										<button
+											onClick={() =>
+												handleOpenModal(admin)
+											}
+											className="text-sm font-medium text-white bg-slate-700 hover:bg-slate-800 px-4 py-2 rounded-full"
+										>
+											Manage
+										</button>
+									</li>
+								))}
+							</ul>
+						)}
 					</div>
 
 					{/* Add New Admin Form */}
-					<div className="bg-white p-6 rounded-2xl shadow-lg">
+					<div className="bg-white p-6 rounded-2xl shadow-sm">
 						<h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
 							<UserPlus size={24} />
 							Add New Admin
@@ -179,7 +188,7 @@ const Manage = () => {
 								onChange={(e) => setNewName(e.target.value)}
 								placeholder="Full Name"
 								required
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 							/>
 							<input
 								type="email"
@@ -187,28 +196,28 @@ const Manage = () => {
 								onChange={(e) => setNewEmail(e.target.value)}
 								placeholder="Email Address"
 								required
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 							/>
 							<input
 								type="text"
 								placeholder="Phone Number (optional)"
 								value={newPhone}
 								onChange={(e) => setNewPhone(e.target.value)}
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 							/>
 							<input
 								type="password"
 								placeholder="Password (optional)"
 								value={newPassword}
 								onChange={(e) => setNewPassword(e.target.value)}
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
 							/>
 							<div className="pt-2">
 								<button
 									type="submit"
-									className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+									className="w-full py-3 px-12 border border-transparent rounded-full text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
 								>
-									Send Invite
+									Add Admin
 								</button>
 							</div>
 						</form>

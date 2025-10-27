@@ -14,16 +14,11 @@ import Register from "./Pages/Register";
 import Profile from "./Pages/admin/Profile";
 import Manage from "./Pages/admin/Manage";
 import NotFound from "./Pages/NotFound";
-
-const ProtectedRoute = ({ isLoggedIn, redirectPath = "/login" }) => {
-	if (!isLoggedIn) {
-		return <Navigate to={redirectPath} replace />;
-	}
-	return <Outlet />;
-};
+import HowToPlay from "./Pages/HowToPlay";
 
 const App = () => {
 	const { isLoading, isLoggedIn, authChecked } = useAppcontext();
+
 	if (!authChecked) {
 		return <Loading />;
 	}
@@ -34,25 +29,23 @@ const App = () => {
 			{isLoading && <Loading />}
 			<Routes>
 				<Route path="/login" element={<Login />} />
-				<Route path="/register" element={<Register />} />
+				{/* <Route path="/register" element={<Register />} /> */}
 
 				<Route path="/" element={<Layout />}>
 					<Route index element={<Scan />} />
 					<Route path="claim" element={<ClaimWin />} />
-					<Route path="how-to-play" element={<About />} />
+					<Route path="how-to-play" element={<HowToPlay />} />
 					<Route path="scratch/:code" element={<Scan />} />
+					<Route path="about" element={<About />} />
+				</Route>
+				
+				<Route path="/admin" element={isLoggedIn ? <Layout /> : <Login />} >
+					<Route index element={<Manage />} />
+					<Route path="players" element={<Players />} />
+					<Route path="codes" element={<Codes />} />
+					<Route path="profile" element={<Profile />} />
 				</Route>
 
-				<Route element={<ProtectedRoute isLoggedIn={isLoggedIn} />}>
-					<Route path="/admin" element={<Layout />}>
-						<Route index element={<Manage />} />
-						<Route path="players" element={<Players />} />
-						<Route path="codes" element={<Codes />} />
-						<Route path="profile" element={<Profile />} />
-					</Route>
-				</Route>
-
-				{/* Catch-all route for 404 Not Found */}
 				<Route path="*" element={<NotFound />} />
 			</Routes>
 		</div>

@@ -1,5 +1,8 @@
-const StatCard = ({ icon, label, value, color }) => (
-	<div className="bg-white py-4 px-2 rounded-2xl shadow-lg flex items-center gap-4">
+const StatCard = ({ icon, label, value, color, handleClick }) => (
+	<div
+		onClick={handleClick}
+		className="bg-white py-4 px-2 rounded-2xl shadow-sm flex items-center gap-4 cursor-pointer"
+	>
 		<div className={`p-3 rounded-full ${color}`}>{icon}</div>
 		<div>
 			<p className="text-2xl font-bold text-gray-800">{value}</p>

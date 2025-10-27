@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../lib/api";
+import { useNavigate } from "react-router-dom";
 
 const AppContext = createContext();
 
@@ -8,8 +9,9 @@ export const AppContextProvider = ({ children }) => {
 	const [winner, setWinner] = useState({});
 	const [isLoading, setIsLoading] = useState(false);
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
-	const [authChecked, setAuthChecked] = useState(false); // New state to track initial auth check
+	const [authChecked, setAuthChecked] = useState(false);
 	const [user, setUser] = useState(null);
+	const navigate = useNavigate()
 
 	const currency = "GH₵";
 
@@ -33,7 +35,7 @@ export const AppContextProvider = ({ children }) => {
 			console.log(error);
 			toast.error(error.response.data.message || "something went wrong");
 		} finally {
-			setAuthChecked(true); // Mark auth check as complete
+			setAuthChecked(true);
 		}
 	};
 
@@ -45,7 +47,6 @@ export const AppContextProvider = ({ children }) => {
 			}
 		} catch (error) {
 			console.log(error);
-			// Don't show a toast on initial load errors
 		}
 	};
 
@@ -53,12 +54,6 @@ export const AppContextProvider = ({ children }) => {
 		getUser();
 		getStoredWinner();
 	}, []);
-
-	const login = (userData) => {
-		sessionStorage.setItem("user", JSON.stringify(userData));
-		setUser(userData);
-		setIsLoggedIn(true);
-	};
 
 	const logout = async () => {
 		try {
@@ -83,11 +78,11 @@ export const AppContextProvider = ({ children }) => {
 		currency,
 		isLoggedIn,
 		setIsLoggedIn,
-		authChecked, // Expose the new state
+		authChecked,
 		user,
 		setUser,
-		login,
 		logout,
+		navigate
 	};
 
 	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
