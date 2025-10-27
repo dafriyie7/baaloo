@@ -15,7 +15,7 @@ export const encrypt = (text) => {
 	return `${iv.toString("base64")}:${encrypted.toString(
 		"base64"
 	)}:${tag.toString("base64")}`;
-}
+};
 
 export const decrypt = (enc) => {
 	const [ivB64, ctB64, tagB64] = enc.split(":");
@@ -28,8 +28,8 @@ export const decrypt = (enc) => {
 		decipher.update(ciphertext),
 		decipher.final(),
 	]).toString("utf8");
-}
+};
 
 export const hashForLookup = (code) => {
 	return crypto.createHash("sha256").update(code).digest("hex");
-}
+};

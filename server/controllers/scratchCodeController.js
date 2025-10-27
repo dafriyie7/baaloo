@@ -69,7 +69,7 @@ export const generateBatch = async (req, res) => {
 		for (let i = 0; i < totalCodes; i++) {
 			const shortCode = uuid().split("-")[0].toUpperCase();
 			const encryptedCode = encrypt(shortCode); // encrypt before save
-			const lookupHash = hashForLookup(shortCode)
+			const lookupHash = hashForLookup(shortCode);
 			codes.push({
 				code: encryptedCode,
 				lookupHash,
@@ -90,15 +90,10 @@ export const generateBatch = async (req, res) => {
 		const toSave = codes.map(({ plainCode, ...rest }) => rest);
 		const savedCodes = await ScratchCode.insertMany(toSave);
 
-		// Generate QR images from plaintext codes
-		const withQRCodes = await Promise.all(
-			savedCodes.map(async (c, index) => {
-				const qrImage = await QRCode.toDataURL(codes[index].plainCode);
-				return { ...c.toObject(), qrImage };
-			})
-		);
-
-		return res.json({ success: true, data: withQRCodes });
+		return res.json({
+			success: true,
+			message: "Batch created successfully",
+		});
 	} catch (error) {
 		console.error(error);
 		return res.status(500).json({ success: false, message: error.message });

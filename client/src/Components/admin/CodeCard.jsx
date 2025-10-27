@@ -4,7 +4,7 @@ const CodeCard = ({ code }) => {
 	return (
 		<div
 			key={code._id}
-			className="p-4 bg-white rounded-2xl shadow-md text-center flex flex-col justify-between"
+			className="p-4 text-center flex flex-col justify-between"
 		>
 			<img
 				src={code.qrImage}
