@@ -25,7 +25,7 @@ const Register = () => {
 
 			if (data.success) {
 				toast.success("Registration successful! Please log in.");
-				navigate("/login"); // Redirect to login page
+				navigate("/login");
 			} else {
 				toast.error(data.message || "Registration failed.");
 			}
