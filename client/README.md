@@ -8,7 +8,7 @@ The React-based client for the Baaloo Admin Management System.
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [About The Project](#-about-the-project)
 2. [Built With](#-built-with)
@@ -21,11 +21,11 @@ The React-based client for the Baaloo Admin Management System.
 
 ---
 
-## 📖 About The Project
+## About The Project
 
 This is the frontend for the Baaloo Admin Dashboard. It provides a secure and responsive interface for administrators to log in, view application statistics, and manage other administrator accounts. It communicates with the backend server to fetch data and perform actions.
 
-## 🛠️ Built With
+## Built With
 
 - **Framework**: [React](https://react.dev/)
 - **Build Tool**: [Vite](https://vitejs.dev/)
@@ -44,7 +44,7 @@ Badges (rendered automatically on GitHub):
 - Tailwind CSS  
 - Axios  
 
-## ✨ Features
+## Features
 
 - **Secure Admin Authentication**: JWT-based login system with session persistence.  
 - **Responsive Dashboard**: A central hub to monitor application activity with statistic cards.  
@@ -61,7 +61,7 @@ Badges (rendered automatically on GitHub):
 - **Dynamic Layout**: Main content area automatically adjusts to the navbar height.  
 - **Global State**: Centralized `AppContext` provides authentication and user data across the app.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -98,7 +98,7 @@ Badges (rendered automatically on GitHub):
 
    Access it at `http://localhost:5173`.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -110,7 +110,7 @@ src/
 └── main.jsx      # Entry point
 ```
 
-## 🧩 Available Scripts
+## Available Scripts
 
 - `npm run dev`: Start the Vite development server.  
 - `npm run build`: Bundle for production.  
@@ -119,7 +119,7 @@ src/
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the project  
 2. Create a feature branch (`git checkout -b feature/AmazingFeature`)  
@@ -129,7 +129,7 @@ src/
 
 ---
 
-## ⚖️ License
+## License
 
 Distributed under the MIT License. See `LICENSE` for details.
 
