@@ -1,7 +1,14 @@
 <div align="center">
   <h1 align="center">Baaloo - Admin Dashboard Frontend</h1>
   <p align="center">
-    The client-side application for the Baaloo Admin Management System, built with React and Vite.
+    The React-based client for the Baaloo Admin Management System.
+    <br />
+    <a href="#-features"><strong>Explore the features »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/dafriyie7/baaloo/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/dafriyie7/baaloo/issues">Request Feature</a>
   </p>
 </div>
 
@@ -15,6 +22,8 @@
 4.  [Getting Started](#-getting-started)
 5.  [Project Structure](#-project-structure)
 6.  [Available Scripts](#-available-scripts)
+7.  [Contributing](#-contributing)
+8.  [License](#-license)
 
 ---
 
@@ -24,8 +33,6 @@ This is the frontend for the Baaloo Admin Dashboard. It provides a secure and re
 
 ## 🛠️ Built With
 
-This project is built with a modern frontend stack:
-
 <p>
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
   <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
@@ -34,28 +41,31 @@ This project is built with a modern frontend stack:
   <img src="https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white" alt="Axios" />
 </p>
 
-*   **React**: For building the user interface.
-*   **Vite**: As the fast, next-generation build tool.
-*   **React Router**: For all client-side routing and navigation.
-*   **Tailwind CSS**: For utility-first styling.
-*   **Axios**: For making HTTP requests to the backend API.
-*   **React Context API**: For global state management (auth status, user data).
-*   **Lucide React**: For icons.
-*   **React Hot Toast**: For user-friendly notifications.
+*   **Framework**: [React](https://react.dev/)
+*   **Build Tool**: [Vite](https://vitejs.dev/)
+*   **Routing**: [React Router](https://reactrouter.com/)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **HTTP Client**: [Axios](https://axios-http.com/)
+*   **State Management**: React Context API
+*   **Icons**: [Lucide React](https://lucide.dev/)
+*   **Notifications**: [React Hot Toast](https://react-hot-toast.com/)
 
 ## ✨ Features
 
-*   **Secure Admin Login**: Authenticates administrators and maintains session state.
-*   **Responsive Dashboard (`/admin`)**:
-    *   Displays key statistics (Total Players, Codes, Admins, etc.).
-    *   Provides a form to invite/add new administrators.
-    *   Lists all current administrators with an option to manage them.
-*   **Administrator Management Modal**:
-    *   Update an admin's profile details (name, email, phone).
-    *   Reset an admin's password.
-    *   Remove an admin from the system (with a confirmation prompt).
-*   **Dynamic Layout**: The main content area automatically adjusts its padding to respect the height of the dynamic navigation bar.
-*   **Global State**: `AppContext` provides user, authentication status, and loading state to the entire application.
+*   **Secure Admin Authentication**: JWT-based login system with session persistence.
+*   **Responsive Dashboard**: A central hub to monitor application activity with at-a-glance statistic cards.
+*   **Administrator Management**:
+    -   View a list of all administrators.
+    -   Invite new administrators with default credentials.
+    -   Edit administrator details (name, email, phone).
+    -   Reset passwords for other administrators.
+    -   Securely remove administrators, with a safeguard against self-deletion.
+*   **Modern UI/UX**:
+    -   Clean, responsive layout that adapts to screen size.
+    -   Interactive modals for editing and management with "click outside" and "Escape key" to close.
+    -   User feedback through toast notifications for all actions.
+*   **Dynamic Layout**: The main content area automatically adjusts to the navbar's height.
+*   **Global State**: A centralized `AppContext` provides user data and authentication status to the entire application.
 
 ## 🚀 Getting Started
 
@@ -63,8 +73,8 @@ To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
-*   **Node.js**: Version 18.x or later.
-*   **npm** or **yarn**.
+*   Node.js (v18.x or later recommended)
+*   npm or yarn
 *   A running instance of the backend server.
 
 ### Installation & Setup
@@ -114,4 +124,20 @@ src/
 
 ---
 
-This README was generated with the assistance of Gemini Code Assist.
+## 🤝 Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` in the project root for more information.
+
+---
+
+<p align="center">This README was generated with the assistance of Gemini Code Assist.</p>
