@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 const ALGO = "aes-256-gcm";
 const IV_LEN = 12;
-const KEY = crypto.scryptSync(process.env.CRYPTO_SECRET, "scratch_salt", 32); // derive 256-bit key
+const KEY = crypto.scryptSync(process.env.CRYPTO_SECRET, process.env.CRYPTO_SALT, 32); // derive 256-bit key
 
 export const encrypt = (text) => {
 	const iv = crypto.randomBytes(IV_LEN);
