@@ -4,100 +4,241 @@ import { v4 as uuid } from "uuid";
 import QRCode from "qrcode";
 import { encrypt, decrypt, hashForLookup } from "../lib/encryption.js";
 
-// generate new scratch code
+// // generate new scratch code
+// export const generateBatch = async (req, res) => {
+// 	try {
+// 		const {
+// 			totalCodes,
+// 			costPerCode,
+// 			giveawayPercentage,
+// 			winningPrize,
+// 			batchNumber,
+// 		} = req.body;
+
+// 		if (
+// 			!totalCodes ||
+// 			!costPerCode ||
+// 			!giveawayPercentage ||
+// 			!winningPrize ||
+// 			!batchNumber
+// 		) {
+// 			return res.status(400).json({
+// 				success: false,
+// 				message: "All fields are required.",
+// 			});
+// 		}
+
+// 		// Derived values
+// 		const totalRevenue = totalCodes * costPerCode;
+// 		const totalPrizePool = totalRevenue * (giveawayPercentage / 100);
+// 		const numWinners = Math.floor(totalPrizePool / winningPrize);
+
+// 		if (numWinners > totalCodes) {
+// 			return res.status(400).json({
+// 				success: false,
+// 				message: "Number of winners cannot exceed total codes.",
+// 			});
+// 		}
+
+// 		// Winner distribution
+// 		const prizeDistribution = Array(totalCodes).fill(false);
+// 		for (let i = 0; i < numWinners; i++) prizeDistribution[i] = true;
+
+// 		// Shuffle winners
+// 		for (let i = prizeDistribution.length - 1; i > 0; i--) {
+// 			const j = Math.floor(Math.random() * (i + 1));
+// 			[prizeDistribution[i], prizeDistribution[j]] = [
+// 				prizeDistribution[j],
+// 				prizeDistribution[i],
+// 			];
+// 		}
+
+// 		// Create batch
+// 		const batch = await Batch.create({
+// 			batchNumber,
+// 			costPerCode,
+// 			totalCodes,
+// 			giveawayPercentage,
+// 			totalRevenue,
+// 			totalPrizePool,
+// 			winningPrize,
+// 		});
+
+// 		// Build codes
+// 		const codes = [];
+// 		for (let i = 0; i < totalCodes; i++) {
+// 			const shortCode = uuid().split("-")[0].toUpperCase();
+// 			const encryptedCode = encrypt(shortCode); // encrypt before save
+// 			const lookupHash = hashForLookup(shortCode);
+// 			codes.push({
+// 				code: encryptedCode,
+// 				lookupHash,
+// 				batchNumber: batch._id,
+// 				isWinner: prizeDistribution[i],
+// 				prize: prizeDistribution[i] ? winningPrize : 0,
+// 				// plainCode: shortCode,
+// 			});
+// 		}
+
+// 		// Shuffle once
+// 		for (let i = codes.length - 1; i > 0; i--) {
+// 			const j = Math.floor(Math.random() * (i + 1));
+// 			[codes[i], codes[j]] = [codes[j], codes[i]];
+// 		}
+
+// 		// Save all (omit plainCode if not stored in schema)
+// 		const toSave = codes.map(({ plainCode, ...rest }) => rest);
+// 		const savedCodes = await ScratchCode.insertMany(toSave);
+
+// 		return res.json({
+// 			success: true,
+// 			message: "Batch created successfully",
+// 		});
+// 	} catch (error) {
+// 		console.error(error);
+// 		return res.status(500).json({ success: false, message: error.message });
+// 	}
+// };
+
+// winning pattern
+function generateRandomPattern(length = 5) {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  return Array.from({ length }, () =>
+    letters.charAt(Math.floor(Math.random() * letters.length))
+  );
+}
+
+// non winning pattern
+function generateNonWinningPattern(winningPattern) {
+  let pattern;
+  do {
+    pattern = generateRandomPattern(winningPattern.length);
+  } while (JSON.stringify(pattern) === JSON.stringify(winningPattern));
+  return pattern;
+}
+
+// generate new code batch
+
 export const generateBatch = async (req, res) => {
-	try {
-		const {
-			totalCodes,
-			costPerCode,
-			giveawayPercentage,
-			winningPrize,
-			batchNumber,
-		} = req.body;
+  try {
+    const {
+      totalCodes,
+      costPerCode,
+      giveawayPercentage,
+      winningPrize,
+      batchNumber,
+    } = req.body;
 
-		if (
-			!totalCodes ||
-			!costPerCode ||
-			!giveawayPercentage ||
-			!winningPrize ||
-			!batchNumber
-		) {
-			return res.status(400).json({
-				success: false,
-				message: "All fields are required.",
-			});
-		}
+    if (
+      !totalCodes ||
+      !costPerCode ||
+      !giveawayPercentage ||
+      !winningPrize ||
+      !batchNumber
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required.",
+      });
+    }
 
-		// Derived values
-		const totalRevenue = totalCodes * costPerCode;
-		const totalPrizePool = totalRevenue * (giveawayPercentage / 100);
-		const numWinners = Math.floor(totalPrizePool / winningPrize);
+    // Derived values
+    const totalRevenue = totalCodes * costPerCode;
+    const totalPrizeBudget = totalRevenue * (giveawayPercentage / 100);
+    const numWinners = Math.floor(totalPrizeBudget / winningPrize);
 
-		if (numWinners > totalCodes) {
-			return res.status(400).json({
-				success: false,
-				message: "Number of winners cannot exceed total codes.",
-			});
-		}
+    if (numWinners > totalCodes) {
+      return res.status(400).json({
+        success: false,
+        message: "Number of winners cannot exceed total codes.",
+      });
+    }
 
-		// Winner distribution
-		const prizeDistribution = Array(totalCodes).fill(false);
-		for (let i = 0; i < numWinners; i++) prizeDistribution[i] = true;
+    // Generate batch winning pattern (auto)
+    const winningPattern = generateRandomPattern(5);
 
-		// Shuffle winners
-		for (let i = prizeDistribution.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[prizeDistribution[i], prizeDistribution[j]] = [
-				prizeDistribution[j],
-				prizeDistribution[i],
-			];
-		}
+    // Create batch
+    const batch = await Batch.create({
+      batchNumber,
+      pattern: winningPattern,
+      costPerCode,
+      totalCodes,
+      giveawayPercentage,
+      totalRevenue,
+      totalPrizeBudget,
+      winningPrize,
+    });
 
-		// Create batch
-		const batch = await Batch.create({
-			batchNumber,
-			costPerCode,
-			totalCodes,
-			giveawayPercentage,
-			totalRevenue,
-			totalPrizePool,
-			winningPrize,
-		});
+    // Build base codes (initially all non-winners)
+    const codes = [];
+    for (let i = 0; i < totalCodes; i++) {
+      const shortCode = uuid().split("-")[0].toUpperCase();
+      const encryptedCode = encrypt(shortCode);
+      const lookupHash = hashForLookup(shortCode);
 
-		// Build codes
-		const codes = [];
-		for (let i = 0; i < totalCodes; i++) {
-			const shortCode = uuid().split("-")[0].toUpperCase();
-			const encryptedCode = encrypt(shortCode); // encrypt before save
-			const lookupHash = hashForLookup(shortCode);
-			codes.push({
-				code: encryptedCode,
-				lookupHash,
-				batchNumber: batch._id,
-				isWinner: prizeDistribution[i],
-				prize: prizeDistribution[i] ? winningPrize : 0,
-				// plainCode: shortCode,
-			});
-		}
+      codes.push({
+        code: encryptedCode,
+        lookupHash,
+        batchNumber: batch._id,
+        isWinner: false,
+        patternMatch: [],
+      });
+    }
 
-		// Shuffle once
-		for (let i = codes.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[codes[i], codes[j]] = [codes[j], codes[i]];
-		}
+    // If no winners required, assign patterns and save
+    if (numWinners === 0) {
+      for (const c of codes) {
+        c.patternMatch = generateNonWinningPattern(winningPattern);
+      }
+      await ScratchCode.insertMany(codes);
+      return res.json({
+        success: true,
+        message: "Batch created successfully (no winners)",
+        batchNumber,
+        winningPattern,
+        totalCodes,
+        numWinners: 0,
+      });
+    }
 
-		// Save all (omit plainCode if not stored in schema)
-		const toSave = codes.map(({ plainCode, ...rest }) => rest);
-		const savedCodes = await ScratchCode.insertMany(toSave);
+    // Evenly distribute winners across totalCodes:
+    // split the index range [0..totalCodes-1] into numWinners segments,
+    // place one winner at a random index inside each segment.
+    const segmentSize = totalCodes / numWinners;
 
-		return res.json({
-			success: true,
-			message: "Batch created successfully",
-		});
-	} catch (error) {
-		console.error(error);
-		return res.status(500).json({ success: false, message: error.message });
-	}
+    for (let w = 0; w < numWinners; w++) {
+      const segStart = Math.floor(w * segmentSize);
+      // Ensure last segment covers any remainder to the end
+      const segEnd =
+        w === numWinners - 1 ? totalCodes - 1 : Math.floor((w + 1) * segmentSize) - 1;
+
+      // pick random index inside [segStart, segEnd]
+      const idx = Math.floor(Math.random() * (segEnd - segStart + 1)) + segStart;
+      codes[idx].isWinner = true;
+    }
+
+    // Assign patterns now that winners are marked
+    for (const codeObj of codes) {
+      codeObj.patternMatch = codeObj.isWinner
+        ? winningPattern
+        : generateNonWinningPattern(winningPattern);
+    }
+
+    // IMPORTANT: Do not globally shuffle here. That would remove the even spread.
+    await ScratchCode.insertMany(codes);
+
+    return res.json({
+      success: true,
+      message: "Batch created successfully",
+      batchNumber,
+      winningPattern,
+      totalCodes,
+      numWinners,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 // redeem code

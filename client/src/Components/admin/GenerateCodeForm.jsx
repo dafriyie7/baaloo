@@ -31,11 +31,11 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 			return;
 		}
 
-		if (!/^[A-Z]/.test(batchNumber)) {
-			toast.error("Batch number must start with a capital letter.");
-			setIsLoading(false);
-			return;
-		}
+		// if (!/^[A-Z]/.test(batchNumber)) {
+		// 	toast.error("Batch number must start with a capital letter.");
+		// 	setIsLoading(false);
+		// 	return;
+		// }
 
 		if (existingBatches.some((b) => b.batchNumber === batchNumber)) {
 			toast.error(`Batch number "${batchNumber}" is not available`);
@@ -76,8 +76,6 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 				error.response?.data?.message ||
 					"An error occurred while generating codes."
 			);
-		} finally {
-			// setIsLoading is handled in success/error paths
 		}
 	};
 
@@ -105,7 +103,7 @@ const GenerateCodeForm = ({ onGenerationSuccess, existingBatches }) => {
 						<input
 							id="batchNumber"
 							value={batchNumber}
-							onChange={(e) => setBatchNumber(e.target.value)}
+							onChange={(e) => setBatchNumber(e.target.value.toUpperCase())}
 							type="text"
 							placeholder="eg.A1"
 							className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../lib/api";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const AppContext = createContext();
 
@@ -9,13 +9,15 @@ export const AppContextProvider = ({ children }) => {
 	const [winner, setWinner] = useState({});
 	const [isLoading, setIsLoading] = useState(false);
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
-	const [authChecked, setAuthChecked] = useState(false);
+	const [authChecked, setAuthChecked] = useState(true);
 	const [user, setUser] = useState(null);
 	const navigate = useNavigate()
+	const location = window.location.pathname;
 
 	const currency = "GH₵";
 
 	const getUser = async () => {
+		setAuthChecked(false)
 		try {
 			const user = sessionStorage.getItem("user");
 			if (user) {
@@ -51,7 +53,9 @@ export const AppContextProvider = ({ children }) => {
 	};
 
 	useEffect(() => {
-		getUser();
+		if (location.includes("admin")) {
+			getUser()
+		}
 		getStoredWinner();
 	}, []);
 

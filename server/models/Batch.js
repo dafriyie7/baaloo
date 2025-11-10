@@ -1,8 +1,9 @@
-import mongoose from "mongoose"
+import mongoose from "mongoose";
 
 const batchSchema = new mongoose.Schema(
 	{
 		batchNumber: { type: String, required: true, unique: true },
+		pattern: { type: [String], required: true },
 		costPerCode: { type: Number, required: true },
 		totalCodes: { type: Number, required: true },
 		giveawayPercentage: { type: Number, required: true },
@@ -13,6 +14,6 @@ const batchSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-const Batch = mongoose.models.Batch || mongoose.model("Batch", batchSchema)
+const Batch = mongoose.models.Batch || mongoose.model("Batch", batchSchema);
 
-export default Batch
+export default Batch;
