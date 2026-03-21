@@ -1,0 +1,373 @@
+[33mFactory Details:[0m
+  [94mRank                     [0mnone (0)[0m
+  [94mLong-name                [0mviperfx[0m
+  [94mKlass                    [0mFilter/Effect/Audio[0m
+  [94mDescription              [0mViPER-FX Core wrapper for GStreamer1[0m
+  [94mAuthor                   [0mJason <jason@vipersaudio.com>[0m
+
+[33mPlugin Details[0m:
+  [94mName                     [0m[0mviperfx[0m
+  [94mDescription              [0m[0mviperfx element[0m
+  [94mFilename                 [0m[0m/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstviperfx.so[0m
+  [94mVersion                  [0m[0m2.1.0[0m
+  [94mLicense                  [0m[0mProprietary[0m
+  [94mSource module            [0m[0mviperfx-plugin[0m
+  [94mBinary package           [0m[0mGStreamer[0m
+  [94mOrigin URL               [0m[0mhttp://gstreamer.net/[0m
+
+[32mGObject[0m
+ [95m+----[0m[32mGInitiallyUnowned[0m
+       [95m+----[0m[32mGstObject[0m
+             [95m+----[0m[32mGstElement[0m
+                   [95m+----[0m[32mGstBaseTransform[0m
+                         [95m+----[0m[32mGstAudioFilter[0m
+                               [95m+----[0m[32mGstviperfx[0m
+
+[33mElement Flags[0m:
+
+[33mPad Templates[0m:
+  [94mSINK template[0m: [0m'sink'[0m
+    [94mAvailability[0m: [0mAlways[0m
+    [94mCapabilities[0m:
+      [33maudio/x-raw[0m
+        [36m         format[0m: [94m{ (string)S16LE }[0m
+        [36m           rate[0m: [94m[ 44100, 2147483647 ][0m
+        [36m       channels[0m: [94m2[0m
+        [36m         layout[0m: [94minterleaved[0m
+  
+  [94mSRC template[0m: [0m'src'[0m
+    [94mAvailability[0m: [0mAlways[0m
+    [94mCapabilities[0m:
+      [33maudio/x-raw[0m
+        [36m         format[0m: [94m{ (string)S16LE }[0m
+        [36m           rate[0m: [94m[ 44100, 2147483647 ][0m
+        [36m       channels[0m: [94m2[0m
+        [36m         layout[0m: [94minterleaved[0m
+
+[0mElement has no clocking capabilities.[0m
+[0mElement has no URI handling capabilities.[0m
+
+[33mPads:[0m
+  [94mSINK[0m: [0m'sink'[0m
+    [94mPad Template[0m: [0m'sink'[0m
+  [94mSRC[0m: [0m'src'[0m
+    [94mPad Template[0m: [0m'src'[0m
+
+[33mElement Properties[0m:
+
+  [94magc-enable          [0m: [0mEnable auto gain control[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94magc-maxgain         [0m: [0mMax gain of agc[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m100 - 800[0m [33mDefault[0m: [36m100[0m 
+  
+  [94magc-ratio           [0m: [0mWorking ratio of agc[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m50 - 500[0m [33mDefault[0m: [36m100[0m 
+  
+  [94magc-volume          [0m: [0mMax volume of agc[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 200[0m [33mDefault[0m: [36m100[0m 
+  
+  [94max-enable           [0m: [0mEnable viper analog-x[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94max-mode             [0m: [0mViPER analog-x mode[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 2[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mcolm-depth          [0m: [0mDepth of colorful music[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 32767[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mcolm-enable         [0m: [0mEnable colorful music[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mcolm-midimage       [0m: [0mMid-image of colorful music[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 800[0m [33mDefault[0m: [36m100[0m 
+  
+  [94mcolm-widening       [0m: [0mWidening of colorful music[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 800[0m [33mDefault[0m: [36m100[0m 
+  
+  [94mconv-cc-level       [0m: [0mCross-channel level (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mconv-enable         [0m: [0mEnable convolver[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mconv-ir-path        [0m: [0mImpulse response file path[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mString[0m. [33mDefault[0m: [36m""[0m
+  
+  [94mcure-enable         [0m: [0mEnable viper cure+[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mcure-level          [0m: [0mViPER cure+ level[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 2[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mds-enable           [0m: [0mEnable diff-surround[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mds-level            [0m: [0mDiff-surround level (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mdynsys-bassgain     [0m: [0mDynamic System Bass Gain[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 2100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mdynsys-enable       [0m: [0mEnable dynamic system[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mdynsys-sidegain1    [0m: [0mDynamic System Side Gain 1[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mdynsys-sidegain2    [0m: [0mDynamic System Side Gain 2[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mdynsys-xcoeff1      [0m: [0mDynamic System XCoeff1[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 2000[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mdynsys-xcoeff2      [0m: [0mDynamic System XCoeff2[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 7000[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mdynsys-ycoeff1      [0m: [0mDynamic System YCoeff1[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mdynsys-ycoeff2      [0m: [0mDynamic System YCoeff2[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band1            [0m: [0mGain of eq band 1[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band10           [0m: [0mGain of eq band 10[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band2            [0m: [0mGain of eq band 2[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band3            [0m: [0mGain of eq band 3[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band4            [0m: [0mGain of eq band 4[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band5            [0m: [0mGain of eq band 5[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band6            [0m: [0mGain of eq band 6[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band7            [0m: [0mGain of eq band 7[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band8            [0m: [0mGain of eq band 8[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-band9            [0m: [0mGain of eq band 9[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-1200 - 1200[0m [33mDefault[0m: [36m0[0m 
+  
+  [94meq-enable           [0m: [0mEnable FIR linear equalizer[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mfetcomp-attack      [0m: [0mCompressor attack time (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m51[0m 
+  
+  [94mfetcomp-autoattack  [0m: [0mCompressor auto attack control[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mtrue[0m
+  
+  [94mfetcomp-autogain    [0m: [0mCompressor auto gain control[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mtrue[0m
+  
+  [94mfetcomp-autoknee    [0m: [0mCompressor auto knee control[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mtrue[0m
+  
+  [94mfetcomp-autorelease [0m: [0mCompressor auto release control[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mtrue[0m
+  
+  [94mfetcomp-enable      [0m: [0mEnable fet compressor[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mfetcomp-gain        [0m: [0mCompressor makeup gain (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mfetcomp-kneewidth   [0m: [0mCompressor knee width (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mfetcomp-meta-adapt  [0m: [0mCompressor adapt in auto mode (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m66[0m 
+  
+  [94mfetcomp-meta-crest  [0m: [0mCompressor crest in auto mode (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m61[0m 
+  
+  [94mfetcomp-meta-kneemulti[0m: [0mCompressor knee width multi in auto mode (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m50[0m 
+  
+  [94mfetcomp-meta-maxattack[0m: [0mCompressor max attack in auto mode (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m88[0m 
+  
+  [94mfetcomp-meta-maxrelease[0m: [0mCompressor max release in auto mode (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m88[0m 
+  
+  [94mfetcomp-noclip      [0m: [0mCompressor prevent clipping[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mtrue[0m
+  
+  [94mfetcomp-ratio       [0m: [0mCompressor ratio (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mfetcomp-release     [0m: [0mCompressor release time (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m38[0m 
+  
+  [94mfetcomp-threshold   [0m: [0mCompressor threshold (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mfx-enable           [0m: [0mEnable viperfx processing[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mlim-threshold       [0m: [0mMaster limiter threshold (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m1 - 100[0m [33mDefault[0m: [36m100[0m 
+  
+  [94mname                [0m: [0mThe name of the object[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m
+                        [32mString[0m. [33mDefault[0m: [36m"viperfx0"[0m
+  
+  [94mout-pan             [0m: [0mMaster output pan[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m-100 - 100[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mout-volume          [0m: [0mMaster output volume (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 100[0m [33mDefault[0m: [36m100[0m 
+  
+  [94mparent              [0m: [0mThe parent of the object[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m
+                        [0mObject of type[0m [32m"GstObject"[0m
+  
+  [94mqos                 [0m: [0mHandle Quality-of-Service events[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mreverb-damp         [0m: [0mReverb room damp (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m1 - 100[0m [33mDefault[0m: [36m10[0m 
+  
+  [94mreverb-dry          [0m: [0mReverb dry signal (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m1 - 100[0m [33mDefault[0m: [36m80[0m 
+  
+  [94mreverb-enable       [0m: [0mEnable reverb[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mreverb-roomsize     [0m: [0mReverb room size (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m1 - 100[0m [33mDefault[0m: [36m30[0m 
+  
+  [94mreverb-wet          [0m: [0mReverb wet signal (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m1 - 100[0m [33mDefault[0m: [36m20[0m 
+  
+  [94mreverb-width        [0m: [0mReveb room width (percent)[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m1 - 100[0m [33mDefault[0m: [36m40[0m 
+  
+  [94mtube-enable         [0m: [0mEnable tube simiulator[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mvb-enable           [0m: [0mEnable viper bass[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mvb-freq             [0m: [0mViPER bass frequency[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m20 - 200[0m [33mDefault[0m: [36m76[0m 
+  
+  [94mvb-gain             [0m: [0mViPER bass gain[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 800[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mvb-mode             [0m: [0mViPER bass mode[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 2[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mvc-enable           [0m: [0mEnable viper clarity[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mvc-level            [0m: [0mViPER clarity level[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 800[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mvc-mode             [0m: [0mViPER clarity mode[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 2[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mvhe-enable          [0m: [0mEnable viper headphone engine[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mvhe-level           [0m: [0mVHE level[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m0 - 4[0m [33mDefault[0m: [36m0[0m 
+  
+  [94mvse-bark-cons       [0m: [0mVSE bark reconstruct level[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m10 - 100[0m [33mDefault[0m: [36m10[0m 
+  
+  [94mvse-enable          [0m: [0mEnable viper spectrum extend[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mBoolean[0m. [33mDefault[0m: [36mfalse[0m
+  
+  [94mvse-ref-bark        [0m: [0mVSE reference bark frequency[0m
+                        [33mflags[0m: [36mreadable[0m, [36mwritable[0m, [36mcontrollable[0m
+                        [32mInteger[0m. [33mRange[0m: [36m800 - 20000[0m [33mDefault[0m: [36m7600[0m 
+  

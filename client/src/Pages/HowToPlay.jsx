@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	ArrowLeft,
@@ -6,68 +5,123 @@ import {
 	Smartphone,
 	Gift,
 	PartyPopper,
+	Lightbulb,
 } from "lucide-react";
 
-const About = () => {
+const HowToPlay = () => {
 	const navigate = useNavigate();
 
 	const steps = [
 		{
-			icon: <Smartphone size={32} className="text-slate-300" />,
-			title: "Enter Your Details",
+			icon: Smartphone,
+			title: "Enter your details",
 			description:
-				"Start by entering your name and a valid 10-digit phone number. This is how we'll contact you if you win!",
+				"Start with your full name and a valid 10-digit phone number. We use this to record your entry and reach you if you win.",
 		},
 		{
-			icon: <ScanLine size={32} className="text-slate-300" />,
-			title: "Scan Your QR Code",
+			icon: ScanLine,
+			title: "Scan your QR code",
 			description:
-				"Use your device's camera to scan the unique QR code on your scratch card. You can also upload an image of the code.",
+				"Allow camera access, then point at the QR on your Baaloo scratch card. You can also tap “Upload an image” and choose a clear photo of the code.",
 		},
 		{
-			icon: <Gift size={32} className="text-slate-300" />,
-			title: "Check Your Result",
+			icon: Gift,
+			title: "See your result",
 			description:
-				"The system will instantly check your code and let you know if you're a lucky winner.",
+				"We validate your code right away. You’ll know on the spot whether you’ve won.",
 		},
 		{
-			icon: <PartyPopper size={32} className="text-slate-300" />,
-			title: "Claim Your Prize!",
+			icon: PartyPopper,
+			title: "Claim your prize",
 			description:
-				"If you win, you'll be directed to a prize page with all the details. We will contact you shortly to arrange your reward.",
+				"If you’re a winner, you’ll be taken to a summary page with your details. Our team will follow up with next steps for your reward.",
 		},
 	];
 
+	const tips = [
+		"Use good lighting and hold the QR steady if the camera struggles.",
+		"One entry per code — keep your card until the promotion ends if rules require it.",
+		"You must be 18 or older to play.",
+	];
+
 	return (
-		<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-slate-300 px-4 py-8">
-			<div className="w-full max-w-2xl bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl shadow-2xl">
-				<h1 className="text-4xl font-bold text-white text-center mb-8">
-					How to Play
+		<div className="w-full min-h-screen bg-gradient-to-br from-orange-950 via-stone-900 to-orange-950 text-stone-300 px-4 py-10 md:py-14">
+			<div className="mx-auto w-full max-w-2xl">
+				<p className="text-center font-bold text-orange-400 coiny text-xl md:text-2xl">
+					Baaloo
+				</p>
+				<h1 className="mt-2 text-center text-3xl font-bold text-white md:text-4xl">
+					How to play
 				</h1>
-				<div className="space-y-6">
-					{steps.map((step, index) => (
-						<div key={index} className="flex flex-col md:flex-row items-center md:items-start md:gap-6">
-							<div className="flex-shrink-0 bg-slate-800/50 p-4 rounded-full">
-								{step.icon}
+				<p className="mx-auto mt-3 max-w-lg text-center text-stone-400">
+					Four quick steps from your couch to your result — scratch,
+					scan, and see if luck is on your side.
+				</p>
+
+				<div className="mt-10 space-y-5 rounded-2xl border border-orange-500/20 bg-white/5 p-6 shadow-xl backdrop-blur-sm md:p-8">
+					{steps.map((step, index) => {
+						const Icon = step.icon;
+						return (
+							<div
+								key={step.title}
+								className="flex flex-col gap-4 border-b border-orange-900/40 pb-5 last:border-0 last:pb-0 md:flex-row md:items-start"
+							>
+								<div className="flex shrink-0 items-center gap-3 md:flex-col md:items-center">
+									<span className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-600 text-sm font-bold text-white">
+										{index + 1}
+									</span>
+									<div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-950/80 ring-1 ring-orange-500/30">
+										<Icon
+											className="text-orange-300"
+											size={28}
+											strokeWidth={2}
+										/>
+									</div>
+								</div>
+								<div className="min-w-0 flex-1">
+									<h2 className="text-lg font-semibold text-white md:text-xl">
+										{step.title}
+									</h2>
+									<p className="mt-1.5 text-sm leading-relaxed text-stone-400 md:text-base">
+										{step.description}
+									</p>
+								</div>
 							</div>
-							<div>
-								<h3 className="text-xl font-semibold w-full flex max-sm:justify-center text-white">
-									{step.title}
-								</h3>
-								<p className="text-slate-400 mt-1">
-									{step.description}
-								</p>
-							</div>
-						</div>
-					))}
+						);
+					})}
 				</div>
-				<div className="mt-10 text-center">
+
+				<div className="mt-8 rounded-2xl border border-orange-500/15 bg-orange-950/40 p-6 md:p-7">
+					<div className="flex items-center gap-2 text-orange-200">
+						<Lightbulb className="h-5 w-5 shrink-0" />
+						<h2 className="font-semibold text-white">
+							Helpful tips
+						</h2>
+					</div>
+					<ul className="mt-4 list-inside list-disc space-y-2 text-sm text-stone-400 md:text-base">
+						{tips.map((t) => (
+							<li key={t} className="leading-relaxed">
+								{t}
+							</li>
+						))}
+					</ul>
+				</div>
+
+				<div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 					<button
+						type="button"
 						onClick={() => navigate("/")}
-						className="inline-flex items-center gap-2 py-3 px-8 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
+						className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-orange-500 sm:w-auto"
 					>
 						<ArrowLeft size={18} />
-						Play Now
+						Play now
+					</button>
+					<button
+						type="button"
+						onClick={() => navigate("/about")}
+						className="inline-flex w-full items-center justify-center rounded-full border border-orange-400/40 px-8 py-3.5 text-base font-medium text-orange-100 transition hover:bg-white/5 sm:w-auto"
+					>
+						About Baaloo
 					</button>
 				</div>
 			</div>
@@ -75,4 +129,4 @@ const About = () => {
 	);
 };
 
-export default About;
+export default HowToPlay;

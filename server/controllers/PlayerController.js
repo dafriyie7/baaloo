@@ -1,6 +1,6 @@
 import Player from "../models/Player.js";
 import ScratchCode from "../models/ScratchCode.js";
-import { encrypt, hashForLookup } from "../lib/encryption.js";
+import { decrypt, hashForLookup } from "../lib/encryption.js";
 
 // add a player
 export const addPlayer = async (req, res) => {
@@ -13,11 +13,9 @@ export const addPlayer = async (req, res) => {
 				.json({ success: false, message: "all fields are required" });
 		}
 
-		// Encrypt the incoming code to match the database format
-		const encryptedCode = hashForLookup(code)
+		const lookupHash = hashForLookup(String(code).trim());
 
-		// Find the scratch code document by its code string
-		const scratchCode = await ScratchCode.findOne({ lookupHash: encryptedCode });
+		const scratchCode = await ScratchCode.findOne({ lookupHash });
 
 		// Verify the code exists, is a winner, and hasn't been claimed
 		if (!scratchCode) {
@@ -28,7 +26,7 @@ export const addPlayer = async (req, res) => {
 		if (scratchCode.redeemedBy) {
 			return res.status(400).json({
 				success: false,
-				message: "This winning code has already been claimed.",
+				message: "This code has already been used.",
 			});
 		}
 
@@ -51,7 +49,16 @@ export const addPlayer = async (req, res) => {
 			populate: { path: "batchNumber" },
 		});
 
-		return res.status(200).json({ success: true, data: player });
+		const payload = player.toObject();
+		if (payload.code?.code) {
+			try {
+				payload.code.plainCode = decrypt(payload.code.code);
+			} catch {
+				payload.code.plainCode = null;
+			}
+		}
+
+		return res.status(200).json({ success: true, data: payload });
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ success: false, message: error.message });

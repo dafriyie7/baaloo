@@ -138,10 +138,7 @@ const Codes = () => {
 	return (
 		<div className="w-full min-h-screen bg-gray-100">
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col items-center">
-				<GenerateCodeForm
-					onGenerationSuccess={handleGenerationSuccess}
-					existingBatches={batches}
-				/>
+				<GenerateCodeForm onGenerationSuccess={handleGenerationSuccess} />
 
 				{batches && batches.length > 0 ? (
 					<div className="w-full">
@@ -206,7 +203,7 @@ const Codes = () => {
 									<h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
 										Batch Analytics
 									</h3>
-									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 py-4 divide-x divide-gray-200">
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 py-4 divide-x divide-gray-200">
 										<StatCard
 											icon={
 												<Hash className="text-indigo-600" />
@@ -229,8 +226,8 @@ const Codes = () => {
 											icon={
 												<Gift className="text-pink-600" />
 											}
-											label="Winning Prize"
-											value={`${currency} ${selectedBatchDetails.winningPrize}`}
+											label="Jackpot (each)"
+											value={`${currency} ${selectedBatchDetails.jackpotPrizeEach ?? selectedBatchDetails.winningPrize ?? 0}`}
 											color="bg-pink-100"
 										/>
 										<StatCard
@@ -248,6 +245,14 @@ const Codes = () => {
 											label="Giveaway"
 											value={`${selectedBatchDetails.giveawayPercentage}%`}
 											color="bg-yellow-100"
+										/>
+										<StatCard
+											icon={
+												<Percent className="text-amber-600" />
+											}
+											label="Jackpot % of pool"
+											value={`${selectedBatchDetails.jackpotGiveawayPercentage ?? 0}%`}
+											color="bg-amber-100"
 										/>
 									</div>
 								</div>

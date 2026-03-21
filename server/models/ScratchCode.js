@@ -9,13 +9,19 @@ const scratchCodeSchema = new mongoose.Schema(
 			required: true,
 			index: true,
 		},
-		patternMatch: { type: [String], required: true },
+		/** Nine scratch symbols (v2 mechanic) */
+		symbols: { type: String, default: "", maxlength: 9 },
+		/** @deprecated v1 */
+		patternMatch: { type: [String], default: [] },
 		lookupHash: {
 			type: String,
 			required: true,
 			unique: true,
-			index: true, // fast hash-based lookup
+			index: true,
 		},
+		tier: { type: String, default: "loser" },
+		maxMatchCount: { type: Number, default: 0 },
+		prizeAmount: { type: Number, default: 0 },
 		isWinner: { type: Boolean, default: false },
 		isUsed: { type: Boolean, default: false },
 		isPrinted: { type: Boolean, default: false },
@@ -34,8 +40,7 @@ const scratchCodeSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Optional performance indexes
-scratchCodeSchema.index({ batch: 1, isWinner: 1 });
+scratchCodeSchema.index({ batchNumber: 1, isWinner: 1 });
 scratchCodeSchema.index({ isUsed: 1, isPrinted: 1 });
 
 const ScratchCode =

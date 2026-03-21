@@ -13,7 +13,11 @@ const CodeCard = ({ code }) => {
 			/>
 			<div className="">
 				<p className="font-mono text-base md:text-lg">{code.code}</p>
-				<p className="font-mono text-base md:text-lg">"{ code.patternMatch }"</p>
+				<p className="font-mono text-xs md:text-sm tracking-widest break-all">
+					{(code.displaySymbols || (code.patternMatch || []).join("") || "—")
+						.split("")
+						.join(" ")}
+				</p>
 				<p
 					className={`text-xs font-semibold ${
 						code.isUsed ? "text-red-500" : "text-green-600"

@@ -10,9 +10,9 @@ const ClaimWin = () => {
 	// A robust check in case the user lands here without winner data
 	if (!winner || !winner.name) {
 		return (
-			<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-slate-300 px-4 py-8">
-				<div className="w-full max-w-md bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl shadow-2xl text-center">
-					<h1 className="text-3xl font-bold text-slate-200 mb-4">
+			<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-950 via-stone-900 to-orange-950 text-stone-300 px-4 py-8">
+				<div className="w-full max-w-md bg-white/5 backdrop-blur-lg border border-orange-500/20 p-8 rounded-2xl shadow-2xl text-center">
+					<h1 className="text-3xl font-bold text-orange-100 mb-4">
 						No Winner Information
 					</h1>
 					<p>
@@ -33,10 +33,10 @@ const ClaimWin = () => {
 	};
 
 	return (
-		<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-slate-300 px-4 py-8">
-			<div className="w-full max-w-lg bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl shadow-2xl text-center">
+		<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-950 via-stone-900 to-orange-950 text-stone-300 px-4 py-8">
+			<div className="w-full max-w-lg bg-white/5 backdrop-blur-lg border border-orange-500/20 p-8 rounded-2xl shadow-2xl text-center">
 				<div className="flex flex-col items-center mb-6">
-					<Gift className="w-20 h-20 text-yellow-400 mb-4" />
+					<Gift className="w-20 h-20 text-orange-400 mb-4" />
 					<h1 className="text-4xl font-bold text-white">
 						You're a Winner!
 					</h1>
@@ -45,7 +45,7 @@ const ClaimWin = () => {
 					</p>
 				</div>
 
-				<div className="text-left bg-slate-900/50 p-6 rounded-lg border border-slate-700 space-y-4">
+				<div className="text-left bg-stone-950/60 p-6 rounded-lg border border-orange-900/50 space-y-4">
 					<div className="flex justify-between">
 						<span className="font-semibold text-slate-400">
 							Name:
@@ -62,17 +62,21 @@ const ClaimWin = () => {
 						<span className="font-semibold text-slate-400">
 							Winning Code:
 						</span>
-						<span className="font-mono text-green-400">
-							{winner.code.code}
+						<span className="font-mono text-orange-300">
+							{winner.code.plainCode ?? winner.code.code}
 						</span>
 					</div>
 					<div className="flex justify-between">
 						<span className="font-semibold text-slate-400">
 							Prize Amount:
 						</span>
-						<span className="font-bold text-yellow-400">
+						<span className="font-bold text-orange-300">
 							GH₵{" "}
-							{winner.code.batchNumber.winningPrize.toFixed(2)}
+							{Number(
+								winner.code.prizeAmount ??
+									winner.code.batchNumber?.winningPrize ??
+									0
+							).toFixed(2)}
 						</span>
 					</div>
 					<div className="flex justify-between">
@@ -92,7 +96,7 @@ const ClaimWin = () => {
 					</p>
 					<button
 						onClick={() => navigate("/")}
-						className="mt-6 inline-flex items-center gap-2 py-2 px-6 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
+						className="mt-6 inline-flex items-center gap-2 py-2 px-6 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-orange-700 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-transform duration-300 hover:scale-105"
 					>
 						<ArrowLeft size={18} />
 						Go Home

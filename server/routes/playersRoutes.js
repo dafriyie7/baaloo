@@ -4,7 +4,7 @@ import userAuth from "../middleware/userAuth.js";
 
 const playerRouter = express.Router();
 
-playerRouter.post("/add", userAuth, addPlayer);
+playerRouter.post("/add", addPlayer);
 playerRouter.get("/get", userAuth, getAllPlayers);
 
 export default playerRouter;

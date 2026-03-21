@@ -12,14 +12,26 @@
 	font-family: "Coiny";
 }
 
+.curved-underline {
+	text-decoration: underline;
+	text-decoration-style: wavy;
+	text-underline-offset: 0.2em;
+	text-decoration-thickness: 2px;
+	text-decoration-color: rgba(251, 146, 60, 0.95);
+}
+
 @layer utilities {
 	@keyframes shimmer {
 		0% {
 			transform: translateX(-200%);
 		}
+
 		100% {
 			transform: translateX(200%);
 		}
 	}
-	.animate-shimmer { animation: shimmer 1.5s infinite; }
+
+	.animate-shimmer {
+		animation: shimmer 1.5s infinite;
+	}
 }

@@ -128,9 +128,14 @@ const Players = () => {
 												{player.code?.isWinner ? (
 													<span className="font-semibold text-green-600">
 														GH₵{" "}
-														{player.code.batchNumber.winningPrize.toFixed(
-															2
-														)}
+														{Number(
+															player.code
+																.prizeAmount ??
+																player.code
+																	.batchNumber
+																	?.winningPrize ??
+																0
+														).toFixed(2)}
 													</span>
 												) : (
 													<p className="font-semibold text-red-500">
@@ -168,9 +173,12 @@ const Players = () => {
 										{player.code?.isWinner ? (
 											<span className="font-semibold text-green-600">
 												GH₵{" "}
-												{player.code.batchNumber.winningPrize.toFixed(
-													2
-												)}
+												{Number(
+													player.code.prizeAmount ??
+														player.code.batchNumber
+															?.winningPrize ??
+														0
+												).toFixed(2)}
 											</span>
 										) : (
 											<p className="font-semibold text-red-500">
