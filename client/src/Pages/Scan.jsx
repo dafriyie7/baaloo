@@ -263,9 +263,10 @@ const Scanner = () => {
 				aria-label="Baaloo hero"
 			>
 				<div className="pointer-events-none absolute inset-0 isolate">
-					<div className="hero-morph-flow" aria-hidden />
-					<div className="hero-morph-blobs" aria-hidden />
-					<div className="hero-morph-shimmer" aria-hidden />
+					<div className="bg-pattern-red" aria-hidden />
+					<div className="bg-pattern-orange" aria-hidden />
+					<div className="bg-pattern-green" aria-hidden />
+					<div className="bg-pattern-blue" aria-hidden />
 					<div
 						className="absolute inset-0 bg-gradient-to-t from-amber-950/80 via-amber-800/20 to-amber-200/20"
 						aria-hidden
