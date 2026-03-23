@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 const SCROLL_BLEND_RANGE = 96;
 
-const Navbar = ({ navRef }) => {
+const Navbar = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 
@@ -23,64 +23,43 @@ const Navbar = ({ navRef }) => {
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
-	const solid = scrollBlend;
-	const glass = 1 - scrollBlend;
-
 	return (
 		<nav
-			ref={navRef}
-			className="fixed top-0 left-0 z-50 flex w-full items-center justify-between px-4 py-2.5 transition-[padding,box-shadow,border-color] duration-300 md:px-12 md:py-3 lg:px-20"
-			style={{
-				backgroundColor: `rgba(250, 250, 249, ${0.38 * glass + 0.94 * solid})`,
-				backdropFilter: `saturate(1.15) blur(${12 + solid * 8}px)`,
-				WebkitBackdropFilter: `saturate(1.15) blur(${12 + solid * 8}px)`,
-				borderBottom: `1px solid rgba(228, 228, 231, ${0.35 * glass + solid})`,
-				boxShadow:
-					solid > 0.85
-						? "0 1px 0 rgba(0,0,0,0.04), 0 8px 24px -12px rgba(0,0,0,0.08)"
-						: "none",
-			}}
+			className={`fixed left-1/2 z-50 flex w-[95%] max-w-5xl -translate-x-1/2 items-center justify-between rounded-full bg-zinc-950/80 px-5 py-3 backdrop-blur-xl transition-all duration-500 md:px-8 md:py-3.5 ${
+				scrollBlend > 0.5 
+					? 'top-2 shadow-[0_8px_30px_rgb(0,0,0,0.4)] border border-white/20' 
+					: 'top-6 shadow-lg shadow-black/20 border border-white/10'
+			}`}
 		>
-			<a href="/" className="flex min-w-0 items-center gap-2">
-				<h1
-					className="coiny truncate text-xl font-bold text-zinc-900 md:text-2xl lg:text-3xl"
-					style={{
-						textShadow:
-							glass > 0.2
-								? `0 1px 2px rgba(255,255,255,${0.65 * glass}), 0 0 1px rgba(0,0,0,${0.12 * glass})`
-								: "none",
-					}}
-				>
+			<a href="/" className="flex min-w-0 items-center gap-3">
+				<h1 className="coiny truncate text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent drop-shadow-sm md:text-3xl">
 					Baaloo
 				</h1>
+				<div className="hidden sm:flex rounded-full bg-orange-500/10 px-2.5 py-0.5 text-[10px] font-bold text-orange-400 uppercase tracking-widest border border-orange-500/20">
+					18+ Only
+				</div>
 			</a>
 
-			<div className="flex items-center gap-2 text-zinc-800 md:gap-4">
-				<div className="rounded-md border border-zinc-400/55 px-2 py-0.5 text-xs font-bold text-zinc-800">
-					18+
-				</div>
-
-				<div className="hidden items-center gap-4 md:flex lg:gap-8">
+			<div className="flex items-center gap-3 md:gap-6">
+				<div className="hidden items-center gap-6 md:flex lg:gap-8">
 					{navLinks.map((link, i) => (
 						<a
 							key={i}
 							href={link.path}
-							className="group flex flex-col gap-0.5 text-sm font-medium text-zinc-800"
+							className={`relative text-sm font-semibold transition-colors hover:text-white ${
+								location.pathname === link.path ? "text-white" : "text-zinc-400"
+							}`}
 						>
 							{link.name}
-							<div
-								className={`h-0.5 bg-zinc-600 ${
-									location.pathname === link.path
-										? "w-full"
-										: "w-0"
-								} transition-all duration-300 group-hover:w-full`}
-							/>
+							{location.pathname === link.path && (
+								<div className="absolute -bottom-1 left-0 h-0.5 w-full rounded-full bg-orange-500" />
+							)}
 						</a>
 					))}
 					<button
 						type="button"
 						onClick={() => navigate("/how-to-play")}
-						className="rounded-full border border-zinc-400/80 px-4 py-1.5 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-100/90"
+						className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-zinc-900 shadow-md shadow-white/10 transition-all hover:scale-105 hover:bg-zinc-200 active:scale-95"
 					>
 						How to play
 					</button>
@@ -91,16 +70,10 @@ const Navbar = ({ navRef }) => {
 				<button
 					type="button"
 					onClick={() => setIsMenuOpen(!isMenuOpen)}
-					className="p-1 text-zinc-800"
+					className="p-1.5 text-zinc-300 transition-transform active:scale-90"
 					aria-label="Menu"
 				>
-					<svg
-						className="h-6 w-6"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						viewBox="0 0 24 24"
-					>
+					<svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
 						<line x1="4" y1="6" x2="20" y2="6" />
 						<line x1="4" y1="12" x2="20" y2="12" />
 						<line x1="4" y1="18" x2="20" y2="18" />
@@ -108,39 +81,21 @@ const Navbar = ({ navRef }) => {
 				</button>
 			</div>
 
-			<div
-				className={`fixed left-0 top-0 flex h-screen w-full flex-col items-center justify-center gap-6 bg-zinc-50 text-base font-medium text-zinc-800 transition-transform duration-500 md:hidden ${
-					isMenuOpen ? "translate-x-0" : "-translate-x-full"
+			{/* Mobile menu overlay */}
+			<div className={`fixed inset-0 -z-10 bg-zinc-950/60 backdrop-blur-md transition-opacity duration-300 md:hidden ${isMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setIsMenuOpen(false)} />
+
+			<div className={`absolute right-0 top-[110%] flex w-[calc(100vw-2.5rem)] flex-col gap-4 overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/95 p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 md:hidden origin-top-right ${
+					isMenuOpen ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
 				}`}
 			>
-				<button
-					type="button"
-					className="absolute right-4 top-4 text-zinc-700"
-					onClick={() => setIsMenuOpen(false)}
-					aria-label="Close menu"
-				>
-					<svg
-						className="h-6 w-6"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						viewBox="0 0 24 24"
-					>
-						<line x1="18" y1="6" x2="6" y2="18" />
-						<line x1="6" y1="6" x2="18" y2="18" />
-					</svg>
-				</button>
-
 				{navLinks.map((link, i) => (
 					<a
 						key={i}
 						href={link.path}
 						onClick={() => setIsMenuOpen(false)}
-						className={
-							location.pathname === link.path
-								? "border-b-2 border-zinc-700"
-								: ""
-						}
+						className={`text-lg font-bold px-2 py-1 ${
+							location.pathname === link.path ? "text-orange-400" : "text-zinc-300"
+						}`}
 					>
 						{link.name}
 					</a>
@@ -152,7 +107,7 @@ const Navbar = ({ navRef }) => {
 						navigate("/how-to-play");
 						setIsMenuOpen(false);
 					}}
-					className="rounded-full border-2 border-zinc-400 px-8 py-2.5 text-zinc-900 hover:bg-zinc-100"
+					className="mt-2 w-full rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-orange-500/25 active:scale-95 transition-transform"
 				>
 					How to play
 				</button>

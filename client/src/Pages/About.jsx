@@ -5,27 +5,35 @@ const About = () => {
 	const navigate = useNavigate();
 
 	return (
-		<div className="w-full min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 text-stone-300 px-4 py-10 md:py-14">
-			<div className="mx-auto w-full max-w-2xl">
-				<p className="text-center font-bold text-amber-300/95 coiny text-2xl md:text-3xl">
-					Baaloo
-				</p>
-				<h1 className="mt-2 text-center text-3xl font-bold text-white md:text-4xl">
-					About us
-				</h1>
-				<p className="mx-auto mt-3 max-w-lg text-center text-lg text-stone-400">
-					Instant scratch-and-win, built to be simple, fast, and fair.
-				</p>
+		<div className="relative min-h-screen overflow-hidden bg-zinc-50 px-4 py-36 text-zinc-900 md:py-48">
+			{/* Ambient glows */}
+			<div className="absolute left-0 top-0 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-300/30 blur-[120px]" aria-hidden />
+			<div className="absolute bottom-0 right-0 -z-10 h-[500px] w-[500px] translate-x-1/3 translate-y-1/3 rounded-full bg-amber-200/40 blur-[100px]" aria-hidden />
 
-				<div className="mt-10 space-y-6 rounded-2xl border border-amber-500/15 bg-white/5 p-6 shadow-xl backdrop-blur-sm md:p-8">
-					<section>
-						<div className="flex items-center gap-2 text-amber-200/90">
-							<Sparkles className="h-5 w-5" strokeWidth={2} />
-							<h2 className="text-lg font-semibold text-white">
+			<div className="relative z-10 mx-auto w-full max-w-3xl">
+				<div className="text-center">
+					<p className="inline-block rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-600 shadow-sm">
+						The Baaloo Story
+					</p>
+					<h1 className="mt-6 text-4xl font-black text-zinc-900 md:text-6xl">
+						About us
+					</h1>
+					<p className="mx-auto mt-6 max-w-xl text-lg font-medium text-zinc-500">
+						Instant scratch-and-win, built to be simple, fast, and fair.
+					</p>
+				</div>
+
+				<div className="mt-16 overflow-hidden rounded-[2rem] border border-amber-200/50 bg-white/80 p-8 shadow-xl shadow-zinc-200/50 backdrop-blur-xl md:p-10">
+					<section className="group relative transition-all duration-300">
+						<div className="flex items-center gap-4 text-orange-600">
+							<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-200/60 transition-colors group-hover:bg-orange-100 group-hover:ring-orange-300">
+								<Sparkles className="h-6 w-6" strokeWidth={2.5} />
+							</div>
+							<h2 className="text-2xl font-bold text-zinc-900 transition-colors group-hover:text-amber-900">
 								What we do
 							</h2>
 						</div>
-						<p className="mt-3 text-sm leading-relaxed text-stone-400 md:text-base">
+						<p className="mt-5 text-base font-medium leading-relaxed text-zinc-500 transition-colors group-hover:text-zinc-600">
 							Baaloo is a digital scratch experience. You enter a
 							few details, scan the QR code on your physical card,
 							and get an immediate result. Winners see a
@@ -34,16 +42,20 @@ const About = () => {
 						</p>
 					</section>
 
-					<section className="border-t border-stone-700/50 pt-6">
-						<div className="flex items-center gap-2 text-amber-200/90">
-							<Shield className="h-5 w-5" strokeWidth={2} />
-							<h2 className="text-lg font-semibold text-white">
+					<div className="my-8 h-px bg-zinc-200" />
+
+					<section className="group relative transition-all duration-300">
+						<div className="flex items-center gap-4 text-orange-600">
+							<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-200/60 transition-colors group-hover:bg-orange-100 group-hover:ring-orange-300">
+								<Shield className="h-6 w-6" strokeWidth={2.5} />
+							</div>
+							<h2 className="text-2xl font-bold text-zinc-900 transition-colors group-hover:text-amber-900">
 								Play responsibly
 							</h2>
 						</div>
-						<p className="mt-3 text-sm leading-relaxed text-stone-400 md:text-base">
+						<p className="mt-5 text-base font-medium leading-relaxed text-zinc-500 transition-colors group-hover:text-zinc-600">
 							Baaloo is for adults{" "}
-							<span className="font-medium text-amber-100/85">
+							<span className="font-bold text-amber-600">
 								18+
 							</span>{" "}
 							only. Please read the rules on your promotion
@@ -54,14 +66,18 @@ const About = () => {
 						</p>
 					</section>
 
-					<section className="border-t border-stone-700/50 pt-6">
-						<div className="flex items-center gap-2 text-amber-200/90">
-							<HeartHandshake className="h-5 w-5" strokeWidth={2} />
-							<h2 className="text-lg font-semibold text-white">
+					<div className="my-8 h-px bg-zinc-200" />
+
+					<section className="group relative transition-all duration-300">
+						<div className="flex items-center gap-4 text-orange-600">
+							<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-200/60 transition-colors group-hover:bg-orange-100 group-hover:ring-orange-300">
+								<HeartHandshake className="h-6 w-6" strokeWidth={2.5} />
+							</div>
+							<h2 className="text-2xl font-bold text-zinc-900 transition-colors group-hover:text-amber-900">
 								Your information
 							</h2>
 						</div>
-						<p className="mt-3 text-sm leading-relaxed text-stone-400 md:text-base">
+						<p className="mt-5 text-base font-medium leading-relaxed text-zinc-500 transition-colors group-hover:text-zinc-600">
 							We ask for your name and phone number so entries are
 							unique and we can contact winners. Use the same
 							details you&apos;d expect us to reach you on if you
@@ -72,19 +88,19 @@ const About = () => {
 					</section>
 				</div>
 
-				<div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+				<div className="mt-16 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 					<button
 						type="button"
 						onClick={() => navigate("/")}
-						className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-800 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-amber-700 sm:w-auto"
+						className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-zinc-900 px-10 py-4 text-lg font-bold text-white shadow-xl shadow-zinc-900/20 transition-all hover:scale-105 hover:bg-zinc-800 hover:shadow-2xl active:scale-95 sm:w-auto"
 					>
-						<ArrowLeft size={18} />
+						<ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" strokeWidth={2.5} />
 						Play now
 					</button>
 					<button
 						type="button"
 						onClick={() => navigate("/how-to-play")}
-						className="inline-flex w-full items-center justify-center rounded-full border border-amber-500/25 px-8 py-3.5 text-base font-medium text-amber-100/90 transition hover:bg-white/5 sm:w-auto"
+						className="inline-flex w-full items-center justify-center rounded-full border border-zinc-200 bg-white px-10 py-4 text-lg font-bold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 hover:shadow active:scale-95 sm:w-auto"
 					>
 						How to play
 					</button>

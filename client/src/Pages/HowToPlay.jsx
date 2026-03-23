@@ -45,81 +45,85 @@ const HowToPlay = () => {
 	];
 
 	return (
-		<div className="w-full min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 text-stone-300 px-4 py-10 md:py-14">
-			<div className="mx-auto w-full max-w-2xl">
-				<p className="text-center font-bold text-amber-300/95 coiny text-xl md:text-2xl">
-					Baaloo
-				</p>
-				<h1 className="mt-2 text-center text-3xl font-bold text-white md:text-4xl">
-					How to play
-				</h1>
-				<p className="mx-auto mt-3 max-w-lg text-center text-stone-400">
-					Four quick steps from your couch to your result — scratch,
-					scan, and see if luck is on your side.
-				</p>
+		<div className="relative min-h-screen overflow-hidden bg-zinc-50 px-4 py-36 text-zinc-900 md:py-48">
+			{/* Ambient glows */}
+			<div className="absolute left-0 top-0 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-300/30 blur-[120px]" aria-hidden />
+			<div className="absolute bottom-0 right-0 -z-10 h-[500px] w-[500px] translate-x-1/3 translate-y-1/3 rounded-full bg-amber-200/40 blur-[100px]" aria-hidden />
 
-				<div className="mt-10 space-y-5 rounded-2xl border border-amber-500/15 bg-white/5 p-6 shadow-xl backdrop-blur-sm md:p-8">
+			<div className="relative z-10 mx-auto w-full max-w-3xl">
+				<div className="text-center">
+					<p className="inline-block rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-600 shadow-sm">
+						Tutorial
+					</p>
+					<h1 className="mt-6 text-4xl font-black text-zinc-900 md:text-6xl">
+						How to play
+					</h1>
+					<p className="mx-auto mt-6 max-w-xl text-lg font-medium text-zinc-500">
+						Four quick steps from your couch to your result — scratch,
+						scan, and see if luck is on your side.
+					</p>
+				</div>
+
+				<div className="mt-16 space-y-6">
 					{steps.map((step, index) => {
 						const Icon = step.icon;
 						return (
 							<div
 								key={step.title}
-								className="flex flex-col gap-4 border-b border-stone-700/50 pb-5 last:border-0 last:pb-0 md:flex-row md:items-start"
+								className="group relative overflow-hidden rounded-[2rem] border border-amber-200/40 bg-white/80 p-6 shadow-xl shadow-zinc-200/50 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-900/10 md:p-8"
 							>
-								<div className="flex shrink-0 items-center gap-3 md:flex-col md:items-center">
-									<span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-800 text-sm font-bold text-white">
-										{index + 1}
-									</span>
-									<div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-stone-900/90 ring-1 ring-amber-500/20">
-										<Icon
-											className="text-amber-200/90"
-											size={28}
-											strokeWidth={2}
-										/>
+								<div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
+									<div className="flex shrink-0 items-center justify-between md:flex-col md:items-center md:gap-4">
+										<span className="text-5xl font-black text-zinc-200 transition-colors group-hover:text-orange-200">
+											0{index + 1}
+										</span>
+										<div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-200/60 transition-colors group-hover:bg-orange-100 group-hover:ring-orange-300">
+											<Icon className="h-7 w-7 text-orange-600 fade-in" strokeWidth={2.5} />
+										</div>
 									</div>
-								</div>
-								<div className="min-w-0 flex-1">
-									<h2 className="text-lg font-semibold text-white md:text-xl">
-										{step.title}
-									</h2>
-									<p className="mt-1.5 text-sm leading-relaxed text-stone-400 md:text-base">
-										{step.description}
-									</p>
+									<div className="min-w-0 flex-1 pt-2">
+										<h2 className="text-2xl font-bold text-zinc-900 transition-colors">
+											{step.title}
+										</h2>
+										<p className="mt-3 text-base font-medium leading-relaxed text-zinc-500 transition-colors group-hover:text-zinc-600">
+											{step.description}
+										</p>
+									</div>
 								</div>
 							</div>
 						);
 					})}
 				</div>
 
-				<div className="mt-8 rounded-2xl border border-amber-500/12 bg-stone-950/45 p-6 md:p-7">
-					<div className="flex items-center gap-2 text-amber-100/85">
-						<Lightbulb className="h-5 w-5 shrink-0" />
-						<h2 className="font-semibold text-white">
+				<div className="mt-12 overflow-hidden rounded-[2rem] border border-amber-200/40 bg-orange-50/50 p-8 shadow-inner backdrop-blur-md">
+					<div className="flex items-center gap-3 text-orange-600">
+						<Lightbulb className="h-6 w-6 shrink-0" strokeWidth={2.5} />
+						<h2 className="text-xl font-bold text-zinc-900">
 							Helpful tips
 						</h2>
 					</div>
-					<ul className="mt-4 list-inside list-disc space-y-2 text-sm text-stone-400 md:text-base">
+					<ul className="mt-6 list-inside list-disc space-y-3 text-base font-medium text-zinc-600">
 						{tips.map((t) => (
-							<li key={t} className="leading-relaxed">
+							<li key={t} className="leading-relaxed marker:text-orange-500">
 								{t}
 							</li>
 						))}
 					</ul>
 				</div>
 
-				<div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+				<div className="mt-16 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 					<button
 						type="button"
 						onClick={() => navigate("/")}
-						className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-800 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-amber-700 sm:w-auto"
+						className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-zinc-900 px-10 py-4 text-lg font-bold text-white shadow-xl shadow-zinc-900/20 transition-all hover:scale-105 hover:bg-zinc-800 hover:shadow-2xl active:scale-95 sm:w-auto"
 					>
-						<ArrowLeft size={18} />
+						<ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" strokeWidth={2.5} />
 						Play now
 					</button>
 					<button
 						type="button"
 						onClick={() => navigate("/about")}
-						className="inline-flex w-full items-center justify-center rounded-full border border-amber-500/25 px-8 py-3.5 text-base font-medium text-amber-100/90 transition hover:bg-white/5 sm:w-auto"
+						className="inline-flex w-full items-center justify-center rounded-full border border-zinc-200 bg-white px-10 py-4 text-lg font-bold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 hover:shadow active:scale-95 sm:w-auto"
 					>
 						About Baaloo
 					</button>
