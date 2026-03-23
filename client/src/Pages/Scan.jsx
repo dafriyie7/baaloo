@@ -10,30 +10,8 @@ import {
 	Trophy,
 	ChevronDown,
 } from "lucide-react";
-import firstImg from "../assets/img1.png";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppcontext } from "../context/AppContext";
-
-const HERO_LAYERS = [
-	{
-		kind: "gradient",
-		style: {
-			background:
-				"linear-gradient(135deg, #7c2d12 0%, #0f172a 48%, #c2410c 100%)",
-		},
-	},
-	{
-		kind: "image",
-		src: firstImg,
-	},
-	{
-		kind: "gradient",
-		style: {
-			background:
-				"linear-gradient(135deg, #1c1917 0%, #9a3412 45%, #431407 100%)",
-		},
-	},
-];
 
 const PLAYER_STEPS = [
 	{
@@ -98,21 +76,15 @@ const Scanner = () => {
 	const [message, setMessage] = useState("");
 	const [scannerInstance, setScannerInstance] = useState(null);
 	const [isWinner, setIsWinner] = useState(false);
-	const [heroSlide, setHeroSlide] = useState(0);
 	const [openFaq, setOpenFaq] = useState(0);
 	const entryRef = useRef(null);
+	const heroRef = useRef(null);
+	const heroWheelCooldownRef = useRef(false);
 
 	const { setWinner, isLoading, setIsLoading } = useAppcontext();
 	const { code } = useParams();
 
 	const navigate = useNavigate();
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			setHeroSlide((i) => (i + 1) % HERO_LAYERS.length);
-		}, 2000);
-		return () => clearInterval(id);
-	}, []);
 
 	useEffect(() => {
 		if (step === "scan" && !scannerInstance) {
@@ -133,6 +105,37 @@ const Scanner = () => {
 			};
 		}
 	}, [step, scannerInstance]);
+
+	/** One wheel tick (scroll down) while the hero fills the view jumps to #scratch-entry */
+	useEffect(() => {
+		if (step !== "details") return;
+
+		const onWheel = (e) => {
+			if (e.deltaY <= 0) return;
+			if (heroWheelCooldownRef.current) return;
+
+			const hero = heroRef.current;
+			const entry = entryRef.current;
+			if (!hero || !entry) return;
+
+			const hr = hero.getBoundingClientRect();
+			const vh = window.innerHeight;
+			const heroStillDominant =
+				hr.bottom > vh * 0.42 && hr.top < vh * 0.55;
+
+			if (!heroStillDominant) return;
+
+			e.preventDefault();
+			heroWheelCooldownRef.current = true;
+			entry.scrollIntoView({ behavior: "smooth", block: "start" });
+			window.setTimeout(() => {
+				heroWheelCooldownRef.current = false;
+			}, 700);
+		};
+
+		window.addEventListener("wheel", onWheel, { passive: false });
+		return () => window.removeEventListener("wheel", onWheel);
+	}, [step]);
 
 	const startScan = async () => {
 		try {
@@ -253,51 +256,42 @@ const Scanner = () => {
 	};
 
 	const renderDetailsLanding = () => (
-		<div className="w-full bg-stone-100 text-gray-800">
-			<section className="relative min-h-[min(92vh,880px)] w-full overflow-hidden">
-				{HERO_LAYERS.map((layer, i) =>
-					layer.kind === "gradient" ? (
-						<div
-							key={i}
-							className={`absolute inset-0 transition-opacity duration-[700ms] ${
-								i === heroSlide ? "opacity-100" : "opacity-0"
-							}`}
-							style={layer.style}
-							aria-hidden={i !== heroSlide}
-						/>
-					) : (
-						<div
-							key={i}
-							className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[700ms] ${
-								i === heroSlide ? "opacity-100" : "opacity-0"
-							}`}
-							style={{ backgroundImage: `url(${layer.src})` }}
-							aria-hidden={i !== heroSlide}
-						/>
-					)
-				)}
-				<div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-orange-950/50" />
+		<div className="w-full bg-gradient-to-b from-amber-50 via-amber-50/90 to-yellow-50/50 text-gray-800">
+			<section
+				ref={heroRef}
+				className="relative flex min-h-[calc(100dvh-var(--app-nav-height,4.5rem))] w-full flex-col overflow-hidden"
+				aria-label="Baaloo hero"
+			>
+				<div className="pointer-events-none absolute inset-0 isolate">
+					<div className="hero-morph-flow" aria-hidden />
+					<div className="hero-morph-blobs" aria-hidden />
+					<div className="hero-morph-shimmer" aria-hidden />
+					<div
+						className="absolute inset-0 bg-gradient-to-t from-amber-950/80 via-amber-800/20 to-amber-200/20"
+						aria-hidden
+					/>
+				</div>
 
-				<div className="relative z-10 flex min-h-[min(92vh,880px)] flex-col items-center justify-center px-4 pb-36 pt-8 text-center md:px-8 md:pb-40">
-					<div className="flex animate-bounce items-center gap-2 rounded-full border border-orange-400/40 bg-orange-950/60 px-4 py-2 text-orange-100 backdrop-blur-sm">
-						<Sparkles className="h-4 w-4 text-orange-300" />
+				<div className="relative z-10 flex min-h-[calc(100dvh-var(--app-nav-height,4.5rem))] flex-1 flex-col items-center justify-center px-4 pb-40 pt-6 text-center md:px-8 md:pb-44 md:pt-8">
+					<div className="flex animate-bounce items-center gap-2 rounded-full border border-amber-300/60 bg-amber-950/55 px-4 py-2 text-amber-50 backdrop-blur-sm shadow-[0_0_20px_rgba(251,146,60,0.3)]">
+						<Sparkles className="h-4 w-4 text-amber-200" />
 						<span className="text-xs font-semibold tracking-wide md:text-sm">
 							INSTANT WIN GAME
 						</span>
-						<Sparkles className="h-4 w-4 text-orange-300" />
+						<Sparkles className="h-4 w-4 text-amber-200" />
 					</div>
 
-					<h1 className="mt-6 max-w-4xl font-bold leading-[0.95] text-white drop-shadow-lg [text-shadow:2px_2px_0_#7c2d12]">
-						<span className="block text-[clamp(2.75rem,10vw,5.5rem)]">
+					<h1 className="mt-6 max-w-4xl font-bold leading-[0.95] drop-shadow-lg [text-shadow:2px_2px_0_rgba(120,53,15,0.85)]">
+						<span className="block text-[clamp(2.75rem,10vw,5.5rem)] text-white">
 							SCRATCH
 						</span>
-						<span className="block text-[clamp(2.75rem,10vw,5.5rem)] text-orange-200">
+						<span className="block bg-gradient-to-b from-amber-100 via-amber-200 to-orange-200 bg-clip-text text-transparent text-[clamp(2.75rem,10vw,5.5rem)] [text-shadow:none] drop-shadow-sm">
 							&amp; WIN
 						</span>
 					</h1>
-					<p className="mt-4 max-w-lg text-lg text-white/90 md:text-xl">
+					<p className="mt-4 max-w-lg text-lg text-white/95 md:text-xl">
 						Your lucky moment starts here —{" "}
-						<span className="curved-underline text-orange-200">
+						<span className="curved-underline font-semibold text-amber-100">
 							Baaloo
 						</span>{" "}
 						makes it quick and easy.
@@ -305,18 +299,18 @@ const Scanner = () => {
 					<button
 						type="button"
 						onClick={scrollToEntry}
-						className="mt-10 rounded-full bg-orange-500 px-10 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-orange-400 md:text-lg"
+						className="mt-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-400 px-10 py-3.5 text-base font-bold text-amber-950 shadow-lg shadow-orange-500/30 transition hover:from-amber-400 hover:to-orange-300 md:text-lg"
 					>
 						Let&apos;s play
 					</button>
 				</div>
 
-				<div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-6 md:px-8">
-					<div className="mx-auto max-w-2xl rounded-2xl border border-orange-200/30 bg-white/95 px-6 py-5 text-center shadow-xl backdrop-blur-sm md:px-10">
-						<p className="text-sm font-semibold text-orange-900 md:text-base">
+				<div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 md:px-8 md:pb-8">
+					<div className="mx-auto max-w-2xl rounded-2xl border border-amber-300/40 bg-white/95 px-6 py-5 text-center shadow-xl shadow-amber-200/30 backdrop-blur-sm md:px-10">
+						<p className="text-sm font-semibold text-amber-900 md:text-base">
 							Play in seconds
 						</p>
-						<p className="mt-2 text-2xl font-bold tracking-tight text-orange-600 md:text-3xl">
+						<p className="mt-2 bg-gradient-to-r from-amber-900 via-amber-700 to-orange-600 bg-clip-text text-2xl font-bold tracking-tight text-transparent md:text-3xl">
 							Scan. Win. Smile.
 						</p>
 						<p className="mt-3 text-sm text-gray-600">
@@ -330,10 +324,10 @@ const Scanner = () => {
 			<section
 				ref={entryRef}
 				id="scratch-entry"
-				className="scroll-mt-24 px-4 py-14 md:py-16"
+				className="scroll-mt-[max(1.25rem,var(--app-nav-height,4.5rem))] px-4 py-14 md:py-16"
 			>
-				<div className="mx-auto max-w-lg rounded-2xl border border-orange-100 bg-white p-6 shadow-lg md:p-10">
-					<p className="text-center text-sm font-semibold uppercase tracking-wide text-orange-800">
+				<div className="mx-auto max-w-lg rounded-2xl border border-amber-100/80 bg-white p-6 shadow-lg md:p-10">
+					<p className="text-center text-sm font-semibold uppercase tracking-wide text-amber-900">
 						Baaloo scratch &amp; win
 					</p>
 					<h2 className="mt-2 text-center text-2xl font-bold text-gray-900 md:text-3xl">
@@ -361,7 +355,7 @@ const Scanner = () => {
 								onChange={(e) => setname(e.target.value)}
 								required
 								placeholder="Enter your full name"
-								className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+								className="block w-full rounded-xl border border-amber-200/60 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400/35"
 							/>
 						</div>
 						<div>
@@ -379,12 +373,12 @@ const Scanner = () => {
 								required
 								pattern="\d{10}"
 								placeholder="e.g. 0240000000"
-								className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+								className="block w-full rounded-xl border border-amber-200/60 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400/35"
 							/>
 						</div>
 						<button
 							type="submit"
-							className="w-full rounded-full bg-orange-600 py-3.5 text-base font-semibold text-white shadow-md transition hover:bg-orange-700"
+							className="w-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 py-3.5 text-base font-bold text-amber-950 shadow-md shadow-amber-500/25 transition hover:from-amber-400 hover:to-yellow-400"
 						>
 							Continue to scan
 						</button>
@@ -394,7 +388,7 @@ const Scanner = () => {
 
 			<section className="bg-white px-4 py-14 md:py-20">
 				<div className="mx-auto max-w-6xl">
-					<h2 className="text-center text-2xl font-bold text-orange-950 md:text-3xl">
+					<h2 className="text-center text-2xl font-bold text-stone-900 md:text-3xl">
 						Win in 4 easy steps
 					</h2>
 					<div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -403,10 +397,10 @@ const Scanner = () => {
 							return (
 								<div
 									key={s.title}
-									className="rounded-2xl border border-orange-100/80 bg-orange-50/40 p-5 shadow-sm"
+									className="rounded-2xl border border-amber-100/70 bg-amber-50/30 p-5 shadow-sm"
 								>
 									<div className="flex items-start justify-between gap-2">
-										<div className="flex items-center gap-2 text-orange-900">
+										<div className="flex items-center gap-2 text-amber-950">
 											<Icon
 												className="h-6 w-6 shrink-0"
 												strokeWidth={2}
@@ -415,7 +409,7 @@ const Scanner = () => {
 												{s.title}
 											</span>
 										</div>
-										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-600 text-sm font-bold text-white">
+										<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-600 to-yellow-500 text-sm font-bold text-amber-950 shadow-sm">
 											0{idx + 1}
 										</span>
 									</div>
@@ -431,7 +425,7 @@ const Scanner = () => {
 
 			<section className="px-4 py-14 md:py-20">
 				<div className="mx-auto max-w-3xl">
-					<h2 className="text-center text-2xl font-bold text-orange-950 md:text-3xl">
+					<h2 className="text-center text-2xl font-bold text-stone-900 md:text-3xl">
 						Frequently asked questions
 					</h2>
 					<p className="mt-3 text-center text-gray-600">
@@ -450,7 +444,7 @@ const Scanner = () => {
 										onClick={() =>
 											setOpenFaq(open ? -1 : i)
 										}
-										className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left font-medium text-orange-900 md:px-5"
+										className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left font-medium text-amber-950 md:px-5"
 									>
 										<span>
 											{i + 1}. {item.title}
@@ -473,7 +467,7 @@ const Scanner = () => {
 					<div className="mt-8 text-center">
 						<a
 							href="/how-to-play"
-							className="inline-block rounded-full border-2 border-orange-600 px-6 py-2.5 text-sm font-semibold text-orange-800 transition hover:bg-orange-50"
+							className="inline-block rounded-full border-2 border-yellow-500 px-6 py-2.5 text-sm font-semibold text-amber-900 transition hover:bg-yellow-50"
 						>
 							How to play
 						</a>
@@ -487,27 +481,27 @@ const Scanner = () => {
 				</div>
 			</section>
 
-			<section className="h-3 w-full bg-gradient-to-r from-orange-600 via-orange-400 to-orange-700" />
+			<section className="h-3 w-full bg-gradient-to-r from-amber-900 via-yellow-600 to-amber-800" />
 
-			<section className="bg-gradient-to-b from-orange-900 to-orange-950 px-4 py-16 text-center text-white">
+			<section className="bg-gradient-to-b from-amber-900 via-amber-950 to-amber-950 px-4 py-16 text-center text-white">
 				<h2 className="text-2xl font-bold md:text-3xl">
 					Ready when you are
 				</h2>
-				<p className="mx-auto mt-3 max-w-md text-white/85">
+				<p className="mx-auto mt-3 max-w-md text-amber-100/90">
 					Have your card handy? Jump straight in — it only takes a
 					moment.
 				</p>
 				<button
 					type="button"
 					onClick={scrollToEntry}
-					className="mt-8 rounded-full bg-orange-500 px-12 py-4 text-lg font-semibold text-white shadow-lg transition hover:bg-orange-400"
+					className="mt-8 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 px-12 py-4 text-lg font-bold text-amber-950 shadow-lg shadow-amber-500/30 transition hover:from-amber-400 hover:to-yellow-300"
 				>
 					Start now
 				</button>
 			</section>
 
-			<footer className="border-t border-orange-200/50 bg-stone-200/80 px-4 py-10 text-center text-sm text-gray-600">
-				<p className="font-bold text-orange-900 coiny text-lg">Baaloo</p>
+			<footer className="border-t border-amber-200/40 bg-stone-200/80 px-4 py-10 text-center text-sm text-gray-600">
+				<p className="font-bold text-amber-950 coiny text-lg">Baaloo</p>
 				<p className="mt-2">Instant scratch &amp; win. Play responsibly.</p>
 				<p className="mt-1 text-xs text-gray-500">18+ only.</p>
 			</footer>
@@ -521,10 +515,10 @@ const Scanner = () => {
 
 		if (step === "scan") {
 			return (
-				<div className="flex min-h-screen w-full flex-col items-center justify-center bg-stone-100 px-4 py-12">
-					<div className="w-full max-w-md rounded-2xl border border-orange-100 bg-white p-8 shadow-xl">
+				<div className="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-b from-amber-50 to-yellow-50/70 px-4 py-12">
+					<div className="w-full max-w-md rounded-2xl border border-amber-200/60 bg-white p-8 shadow-xl shadow-amber-200/20">
 						<div className="mb-6 flex justify-center">
-							<div className="flex items-center gap-2 rounded-full bg-orange-700 px-4 py-2 text-white">
+							<div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 px-4 py-2 text-amber-950 font-semibold shadow-sm">
 								<QrCode className="h-5 w-5" />
 								<span className="text-sm font-semibold">
 									Scan your code
@@ -539,12 +533,12 @@ const Scanner = () => {
 						</p>
 						<div
 							id="reader"
-							className="mt-6 w-full overflow-hidden rounded-xl border-2 border-orange-100 shadow-inner"
+							className="mt-6 w-full overflow-hidden rounded-xl border-2 border-amber-100 shadow-inner"
 						/>
 
 						<div className="mt-6 flex w-full flex-col items-center gap-3">
 							{isLoading ? (
-								<p className="animate-pulse py-3 font-medium text-orange-800">
+								<p className="animate-pulse py-3 font-medium text-amber-900">
 									Checking your code...
 								</p>
 							) : scanning ? (
@@ -559,13 +553,13 @@ const Scanner = () => {
 								<button
 									type="button"
 									onClick={startScan}
-									className="flex w-full items-center justify-center gap-2 rounded-full bg-orange-700 px-4 py-3 font-semibold text-white transition hover:bg-orange-800"
+									className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-4 py-3 font-bold text-amber-950 shadow-md shadow-amber-400/25 transition hover:from-amber-400 hover:to-yellow-400"
 								>
 									Start Scanning
 								</button>
 							)}
 
-							<label className="w-full cursor-pointer rounded-full border border-gray-200 py-3 text-center text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+							<label className="w-full cursor-pointer rounded-full border border-amber-300 py-3 text-center text-sm font-medium text-amber-900 transition hover:bg-yellow-50">
 								Upload an Image
 								<input
 									type="file"
@@ -589,19 +583,19 @@ const Scanner = () => {
 
 		if (step === "end") {
 			return (
-				<div className="flex min-h-screen w-full flex-col items-center justify-center bg-stone-100 px-4 py-12">
-					<div className="flex w-full max-w-md flex-col items-center rounded-2xl border border-orange-100 bg-white p-8 text-center shadow-xl">
+				<div className="flex min-h-screen w-full flex-col items-center justify-center bg-gradient-to-b from-amber-50 to-yellow-50/70 px-4 py-12">
+					<div className="flex w-full max-w-md flex-col items-center rounded-2xl border border-amber-200/60 bg-white p-8 text-center shadow-xl shadow-amber-200/20">
 						{isWinner ? (
 							<>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
-									className="mb-4 h-20 w-20 text-orange-500"
+									className="mb-4 h-20 w-20 text-yellow-500"
 									viewBox="0 0 24 24"
 									fill="currentColor"
 								>
 									<path d="M12.89,3L14.85,3.4L11.11,21L9.15,20.6L12.89,3M19,2H5A3,3 0 0,0 2,5V6A1,1 0 0,0 3,7H4.53L8.27,24H15.73L19.47,7H21A1,1 0 0,0 22,6V5A3,3 0 0,0 19,2Z" />
 								</svg>
-								<h1 className="mb-2 text-3xl font-bold text-orange-700">
+								<h1 className="mb-2 text-3xl font-bold text-amber-900">
 									Congratulations!
 								</h1>
 							</>
@@ -624,7 +618,7 @@ const Scanner = () => {
 						<button
 							type="button"
 							onClick={resetFlow}
-							className="w-full rounded-full bg-orange-700 px-6 py-3 font-semibold text-white transition hover:bg-orange-800 sm:w-auto"
+							className="w-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-6 py-3 font-bold text-amber-950 shadow-md shadow-amber-400/25 transition hover:from-amber-400 hover:to-yellow-400 sm:w-auto"
 						>
 							Play Again
 						</button>

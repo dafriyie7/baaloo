@@ -30,6 +30,14 @@ export const decrypt = (enc) => {
 	]).toString("utf8");
 };
 
+/**
+ * Canonical form for scratch redemption codes before hashing.
+ * Accepts typed/pasted values with spaces, dashes, or URL noise; codes are hex (UUID-derived).
+ */
+export const normalizeScratchCodeForLookup = (input) => {
+	return String(input).toUpperCase().replace(/[^0-9A-F]/g, "");
+};
+
 export const hashForLookup = (code) => {
 	return crypto.createHash("sha256").update(code).digest("hex");
 };

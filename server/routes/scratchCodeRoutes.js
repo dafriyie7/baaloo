@@ -1,7 +1,8 @@
 import express from "express";
 import {
-	generateBatch,
+	generateBatchStructured,
 	getAllScratchCodes,
+	listBatches,
 	redeemScratchCode,
 } from "../controllers/scratchCodeController.js";
 import userAuth from "../middleware/userAuth.js";
@@ -9,8 +10,9 @@ import userAuth from "../middleware/userAuth.js";
 const scratchCodeRouter = express.Router();
 
 scratchCodeRouter
-	.post("/generate", userAuth, generateBatch)
+	.post("/generate-structured", userAuth, generateBatchStructured)
 	.post("/redeem", userAuth, redeemScratchCode)
+	.get("/batches", userAuth, listBatches)
 	.get("/get", userAuth, getAllScratchCodes)
 
 export default scratchCodeRouter;

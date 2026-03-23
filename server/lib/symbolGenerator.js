@@ -1,6 +1,14 @@
-import { maxFrequencyNine } from "./scratchTierMath.js";
+import {
+	JACKPOT_MAX_MATCH_COUNT,
+	maxSymbolFrequency,
+	SCRATCH_SYMBOL_COUNT,
+} from "./scratchTierMath.js";
 
 const DEFAULT_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+const N = SCRATCH_SYMBOL_COUNT;
+const JACKPOT_PEAK = JACKPOT_MAX_MATCH_COUNT;
+const INDEXES = Array.from({ length: N }, (_, i) => i);
 
 function pickRandom(alphabet) {
 	return alphabet[Math.floor(Math.random() * alphabet.length)];
@@ -14,42 +22,64 @@ function shuffleInPlace(arr) {
 	return arr;
 }
 
-/** @returns {string} length 9 */
+/**
+ * Length SCRATCH_SYMBOL_COUNT; exactly one symbol appears JACKPOT_PEAK times (9), rest lower.
+ */
 export function generateJackpotSymbols(alphabet = DEFAULT_ALPHABET) {
-	const c = pickRandom(alphabet);
-	return c.repeat(9);
+	if (alphabet.length < 2) {
+		throw new Error("Alphabet must have at least 2 characters for jackpot panel");
+	}
+	const winningChar = pickRandom(alphabet);
+	const others = [...alphabet].filter((c) => c !== winningChar);
+	const positions = shuffleInPlace([...INDEXES]);
+	const winSet = new Set(positions.slice(0, JACKPOT_PEAK));
+	const arr = [];
+
+	for (let i = 0; i < N; i++) {
+		if (winSet.has(i)) {
+			arr[i] = winningChar;
+		} else {
+			arr[i] = pickRandom(others);
+		}
+	}
+
+	const s = arr.join("");
+	if (maxSymbolFrequency(s) !== JACKPOT_PEAK) {
+		return generateJackpotSymbols(alphabet);
+	}
+	return s;
 }
 
-/** Max frequency ≤ 2 */
+/** Max frequency ≤ 2 (losers and R1 “stake back” cards look the same). */
 export function generateLoserSymbols(alphabet = DEFAULT_ALPHABET, maxAttempts = 500) {
 	for (let a = 0; a < maxAttempts; a++) {
 		let s = "";
-		for (let i = 0; i < 9; i++) s += pickRandom(alphabet);
-		if (maxFrequencyNine(s) <= 2) return s;
+		for (let i = 0; i < N; i++) s += pickRandom(alphabet);
+		if (maxSymbolFrequency(s) <= 2) return s;
 	}
 	throw new Error("Failed to generate loser symbols; try a larger alphabet");
 }
 
 /**
- * Exactly max frequency K (K = 3..8). One symbol appears K times; all others < K.
+ * R3/R5/R7: one symbol appears K times; all others strictly fewer than K (K = 3..8).
  */
-export function generateMKSymbols(k, alphabet = DEFAULT_ALPHABET) {
+export function generateRepeatTierSymbols(k, alphabet = DEFAULT_ALPHABET) {
 	if (k < 3 || k > 8) {
-		throw new Error("m-tier K must be between 3 and 8");
+		throw new Error("R-tier repetition K must be between 3 and 8");
 	}
 
 	const winningChar = pickRandom(alphabet);
 	const others = [...alphabet].filter((c) => c !== winningChar);
 	if (others.length === 0) {
-		throw new Error("Alphabet too small for m-tier generation");
+		throw new Error("Alphabet too small for R-tier generation");
 	}
 
-	const idxs = shuffleInPlace([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+	const idxs = shuffleInPlace([...INDEXES]);
 	const winSet = new Set(idxs.slice(0, k));
 	const arr = [];
 	const counts = { [winningChar]: k };
 
-	for (let i = 0; i < 9; i++) {
+	for (let i = 0; i < N; i++) {
 		if (winSet.has(i)) {
 			arr[i] = winningChar;
 		}
@@ -57,7 +87,7 @@ export function generateMKSymbols(k, alphabet = DEFAULT_ALPHABET) {
 
 	const maxOther = k - 1;
 
-	for (let i = 0; i < 9; i++) {
+	for (let i = 0; i < N; i++) {
 		if (winSet.has(i)) continue;
 
 		let chosen = null;
@@ -82,7 +112,7 @@ export function generateMKSymbols(k, alphabet = DEFAULT_ALPHABET) {
 		}
 
 		if (!chosen) {
-			return generateMKSymbols(k, alphabet);
+			return generateRepeatTierSymbols(k, alphabet);
 		}
 
 		arr[i] = chosen;
@@ -90,8 +120,8 @@ export function generateMKSymbols(k, alphabet = DEFAULT_ALPHABET) {
 	}
 
 	const s = arr.join("");
-	if (maxFrequencyNine(s) !== k) {
-		return generateMKSymbols(k, alphabet);
+	if (maxSymbolFrequency(s) !== k) {
+		return generateRepeatTierSymbols(k, alphabet);
 	}
 	return s;
 }

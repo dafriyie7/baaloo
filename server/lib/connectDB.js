@@ -13,14 +13,19 @@ connection.on("disconnected", () => {
 
 const connectDB = async () => {
 	try {
-		if (!process.env.MONGO_URI) {
+		const raw = process.env.MONGO_URI?.trim();
+		if (!raw) {
 			throw new Error(
 				"MONGO_URI is not defined in the environment variables."
 			);
 		}
 
-		// The connect promise resolves on a successful connection.
-		await mongoose.connect(`${process.env.MONGO_URI}/baaloo`);
+		// If URI already has a database path (e.g. .../baaloo or .../baaloo?opts), use as-is.
+		// Otherwise append /baaloo for shorthand URIs like mongodb://localhost:27017
+		const hasDbPath = /^mongodb(\+srv)?:\/\/[^/]+\/[^/?]+/.test(raw);
+		const uri = hasDbPath ? raw : `${raw.replace(/\/$/, "")}/baaloo`;
+
+		await mongoose.connect(uri);
 		console.log("Successfully connected to MongoDB.");
 	} catch (error) {
 		console.error("Failed to connect to MongoDB:", error.message);

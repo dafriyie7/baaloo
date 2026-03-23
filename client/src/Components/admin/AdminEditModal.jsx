@@ -118,23 +118,27 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 	};
 
 	return (
-		<div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+		<div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 			<div
 				ref={modalRef}
-				className="bg-white w-full max-w-lg p-8 rounded-2xl shadow-lg relative space-y-8"
+				className="bg-white w-full max-w-lg p-8 rounded-md border border-amber-100 shadow-xl relative space-y-8"
 			>
 				<button
+					type="button"
 					onClick={onClose}
-					className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+					className="absolute top-4 right-4 p-1 rounded-md text-stone-400 hover:text-stone-800 hover:bg-amber-50 transition-colors"
+					aria-label="Close"
 				>
-					<X size={24} />
+					<X size={22} />
 				</button>
 
-				{/* Update Profile Section */}
 				<div>
-					<h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-						Manage: {admin.name}
+					<h2 className="text-2xl font-bold text-stone-900 mb-1 text-center pr-8">
+						{admin.name}
 					</h2>
+					<p className="text-sm text-stone-500 text-center mb-6">
+						Edit account details or reset password.
+					</p>
 					<form
 						onSubmit={handleProfileUpdate}
 						className="w-full space-y-4 text-left"
@@ -143,38 +147,37 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 							type="text"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							placeholder="Full Name"
-							className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							placeholder="Full name"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 						/>
 						<input
 							type="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							placeholder="Email Address"
-							className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							placeholder="Email address"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 						/>
 						<input
 							type="tel"
 							value={phone}
 							onChange={(e) => setPhone(e.target.value)}
-							placeholder="Phone Number"
-							className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							placeholder="Phone number"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 						/>
 						<div className="pt-2 w-full flex justify-center">
 							<button
 								type="submit"
-								className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-amber-800 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors"
 							>
-								Save Details
+								Save details
 							</button>
 						</div>
 					</form>
 				</div>
 
-				{/* Change Password Section */}
-				<div>
-					<h3 className="text-xl font-bold text-gray-800 mb-4 text-center">
-						Reset Password
+				<div className="border-t border-amber-100 pt-8">
+					<h3 className="text-lg font-bold text-stone-900 mb-4 text-center">
+						Reset password
 					</h3>
 					<form
 						onSubmit={handlePasswordChange}
@@ -184,28 +187,28 @@ const AdminEditModal = ({ admin, isOpen, onClose, onUpdate, onRemove }) => {
 							type="password"
 							value={newPassword}
 							onChange={(e) => setNewPassword(e.target.value)}
-							placeholder="Enter new password"
+							placeholder="New password"
 							required
-							className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 						/>
 						<div className="pt-2 w-full flex justify-center">
 							<button
 								type="submit"
-								className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-stone-800 hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 transition-colors"
 							>
-								Update Password
+								Update password
 							</button>
 						</div>
 					</form>
 				</div>
 
-				{/* Danger Zone */}
-				<div className="border-t pt-6">
+				<div className="border-t border-amber-100 pt-6">
 					<button
+						type="button"
 						onClick={handleRemove}
-						className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+						className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-colors"
 					>
-						Remove Admin
+						Remove admin
 					</button>
 				</div>
 			</div>

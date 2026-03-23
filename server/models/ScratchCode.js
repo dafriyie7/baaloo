@@ -9,8 +9,8 @@ const scratchCodeSchema = new mongoose.Schema(
 			required: true,
 			index: true,
 		},
-		/** Nine scratch symbols (v2 mechanic) */
-		symbols: { type: String, default: "", maxlength: 9 },
+		/** Scratch panel (v2); length matches SCRATCH_SYMBOL_COUNT on server (16). */
+		symbols: { type: String, default: "", maxlength: 16 },
 		/** @deprecated v1 */
 		patternMatch: { type: [String], default: [] },
 		lookupHash: {

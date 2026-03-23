@@ -40,11 +40,17 @@ const Login = () => {
 	};
 
 	return (
-		<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
-			<div className="w-full max-w-md bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl shadow-2xl">
-				<h1 className="text-3xl font-bold text-slate-200 mb-6">
-					Admin Login
+		<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 px-4 py-10">
+			<div className="w-full max-w-md bg-white/95 backdrop-blur-md border border-amber-200/35 p-8 rounded-2xl shadow-2xl shadow-stone-950/25">
+				<p className="text-xs font-semibold uppercase tracking-widest text-amber-800 mb-1">
+					Baaloo
+				</p>
+				<h1 className="text-3xl font-bold text-stone-900 mb-1">
+					Admin sign in
 				</h1>
+				<p className="text-sm text-stone-500 mb-8">
+					Use your admin email or phone and password.
+				</p>
 				<form
 					onSubmit={handleLogin}
 					className="w-full space-y-4 text-left"
@@ -52,9 +58,9 @@ const Login = () => {
 					<div>
 						<label
 							htmlFor="identifier"
-							className="block text-sm font-medium text-slate-300 mb-1"
+							className="block text-sm font-medium text-stone-700 mb-1"
 						>
-							Email or Phone
+							Email or phone
 						</label>
 						<input
 							type="text"
@@ -62,14 +68,14 @@ const Login = () => {
 							value={identifier}
 							onChange={(e) => setIdentifier(e.target.value)}
 							required
-							placeholder="Enter your email or phone"
-							className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+							placeholder="you@example.com"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-300"
 						/>
 					</div>
 					<div>
 						<label
 							htmlFor="password"
-							className="block text-sm font-medium text-slate-300 mb-1"
+							className="block text-sm font-medium text-stone-700 mb-1"
 						>
 							Password
 						</label>
@@ -79,16 +85,16 @@ const Login = () => {
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
 							required
-							placeholder="Enter your account password"
-							className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+							placeholder="••••••••"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-300"
 						/>
 					</div>
 					<div className="pt-4 w-full flex justify-center">
 						<button
 							type="submit"
-							className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
+							className="w-full py-3.5 px-6 rounded-xl text-sm font-semibold text-white bg-amber-800 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors"
 						>
-							Login
+							Sign in
 						</button>
 					</div>
 					{/* <p

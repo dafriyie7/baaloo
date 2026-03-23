@@ -2,18 +2,41 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useAppcontext } from "../../context/AppContext";
 import StatCard from "../../Components/admin/StatCard";
-import { Shield, Hash, Users, UserPlus } from "lucide-react";
+import {
+	Banknote,
+	CircleDollarSign,
+	LayoutDashboard,
+	PiggyBank,
+	PieChart,
+	Shield,
+	Hash,
+	TrendingUp,
+	Users,
+	UserPlus,
+} from "lucide-react";
 import axios from "../../../lib/api";
 import AdminEditModal from "../../Components/admin/AdminEditModal";
+import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 
 const Manage = () => {
-	const { user, setIsLoading, navigate } = useAppcontext();
+	const { user, setIsLoading, navigate, currency } = useAppcontext();
 
 	const [stats, setStats] = useState({
 		totalBatches: 0,
 		totalCodes: 0,
 		totalPlayers: 0,
 		totalAdmins: 0,
+		totalBookedRevenue: 0,
+		totalPrizePoolCommitted: 0,
+		stickerMarginBooked: 0,
+		totalMarginRetainedPlanned: 0,
+		revenueFromRedemptions: 0,
+		revenueLast7Days: 0,
+		totalPrizePaid: 0,
+		netCashFromPlayedTickets: 0,
+		realizedVsBookedPct: 0,
+		prizePoolShareOfBookedPct: 0,
+		stickerShareOfBookedPct: 0,
 	});
 	const [admins, setAdmins] = useState([]);
 	const [newName, setNewName] = useState("");
@@ -97,75 +120,311 @@ const Manage = () => {
 	};
 
 	return (
-		<div className="w-full min-h-screen bg-gray-100">
+		<div className="w-full">
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto">
-				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-gray-800">
+					<AdminPageHeading icon={LayoutDashboard}>
 						Welcome, {user?.name || "Admin"}!
-					</h1>
+					</AdminPageHeading>
+					<p className="mt-1 text-stone-600 text-sm sm:text-base">
+						Revenue and pools from batches, plus admin access.
+					</p>
 				</div>
 
-				{/* Stats Overview */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
 					<StatCard
 						label="Total Batches"
 						value={stats.totalBatches}
-						icon={<Hash className="text-indigo-600" />}
-						color="bg-indigo-100"
+						icon={<Hash strokeWidth={2} />}
+						color="bg-amber-50 text-amber-700"
 						handleClick={() => navigate("/admin/codes")}
 					/>
 					<StatCard
 						label="Total Codes"
 						value={stats.totalCodes.toLocaleString()}
-						icon={<Hash className="text-blue-600" />}
-						color="bg-blue-100"
+						icon={<Hash strokeWidth={2} />}
+						color="bg-amber-50 text-amber-800"
 						handleClick={() => navigate("/admin/codes")}
 					/>
 					<StatCard
 						label="Total Players"
 						value={stats.totalPlayers.toLocaleString()}
-						icon={<Users className="text-green-600" />}
-						color="bg-green-100"
+						icon={<Users strokeWidth={2} />}
+						color="bg-emerald-50 text-emerald-700"
 						handleClick={() => navigate("/admin/players")}
 					/>
 					<StatCard
 						label="Admins"
 						value={stats.totalAdmins}
-						icon={<Shield className="text-red-600" />}
-						color="bg-red-100"
+						icon={<Shield strokeWidth={2} />}
+						color="bg-stone-200 text-stone-800"
 					/>
 				</div>
 
-				{/* Admin Management Section */}
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-					{/* Admin List */}
-					<div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm">
-						<h2 className="text-xl font-bold text-gray-800 mb-4">
+				<section className="mb-10 rounded-lg border border-amber-100/90 bg-white p-5 shadow-sm sm:p-6">
+					<div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+						<div>
+							<h2 className="text-lg font-bold text-stone-900 sm:text-xl">
+								Revenue &amp; prize pools
+							</h2>
+							<p className="text-sm text-stone-500">
+								Booked sticker capacity per batch vs money collected on played
+								tickets and prizes paid out.
+							</p>
+						</div>
+						<p className="text-xs font-medium uppercase tracking-wide text-stone-400">
+							All batches, {currency}
+						</p>
+					</div>
+
+					<div className="mb-6">
+						<div className="mb-1 flex items-baseline justify-between gap-2">
+							<span className="text-sm font-semibold text-stone-700">
+								Realized revenue vs booked gross
+							</span>
+							<span className="text-sm font-bold tabular-nums text-amber-900">
+								{stats.realizedVsBookedPct}%
+							</span>
+						</div>
+						<div
+							className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100"
+							role="img"
+							aria-label={`${stats.realizedVsBookedPct} percent of booked gross collected from played tickets`}
+						>
+							<div
+								className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-500 transition-[width] duration-500"
+								style={{
+									width: `${Math.min(100, Math.max(0, stats.realizedVsBookedPct))}%`,
+								}}
+							/>
+						</div>
+						<p className="mt-1.5 text-xs text-stone-500">
+							{currency}{" "}
+							{Number(stats.revenueFromRedemptions ?? 0).toLocaleString(
+								undefined,
+								{
+									minimumFractionDigits: 0,
+									maximumFractionDigits: 2,
+								}
+							)}{" "}
+							from redemptions vs {currency}{" "}
+							{Number(stats.totalBookedRevenue ?? 0).toLocaleString(undefined, {
+								minimumFractionDigits: 0,
+								maximumFractionDigits: 2,
+							})}{" "}
+							booked at batch creation (price × codes).
+						</p>
+					</div>
+
+					<div className="mb-6">
+						<div className="mb-1 flex items-baseline justify-between gap-2">
+							<span className="text-sm font-semibold text-stone-700">
+								Booked revenue split
+							</span>
+							<span className="text-xs text-stone-500">
+								Giveaway pool {stats.prizePoolShareOfBookedPct}% · House share
+								of sticker {stats.stickerShareOfBookedPct}%
+							</span>
+						</div>
+						<div className="flex h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
+							<div
+								className="bg-emerald-500 transition-[width] duration-500"
+								style={{
+									width: `${Math.min(100, Math.max(0, stats.prizePoolShareOfBookedPct))}%`,
+								}}
+								title="Committed prize pool"
+							/>
+							<div
+								className="bg-stone-500 transition-[width] duration-500"
+								style={{
+									width: `${Math.min(100, Math.max(0, stats.stickerShareOfBookedPct))}%`,
+								}}
+								title="Non-giveaway slice of sticker"
+							/>
+						</div>
+						<p className="mt-1.5 text-xs text-stone-500">
+							Pool budget {currency}{" "}
+							{Number(stats.totalPrizePoolCommitted ?? 0).toLocaleString(
+								undefined,
+								{
+									minimumFractionDigits: 0,
+									maximumFractionDigits: 2,
+								}
+							)}
+							{" · "}
+							House slice of sticker {currency}{" "}
+							{Number(stats.stickerMarginBooked ?? 0).toLocaleString(undefined, {
+								minimumFractionDigits: 0,
+								maximumFractionDigits: 2,
+							})}
+						</p>
+					</div>
+
+					<div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+						<div className="rounded-md border border-amber-50 bg-stone-50/80 p-4">
+							<div className="mb-2 flex items-center gap-2 text-stone-500">
+								<Banknote className="h-4 w-4 shrink-0" strokeWidth={2} />
+								<span className="text-xs font-semibold uppercase tracking-wide">
+									Booked gross
+								</span>
+							</div>
+							<p className="text-xl font-bold tabular-nums text-stone-900 sm:text-2xl">
+								{currency}{" "}
+								{Number(stats.totalBookedRevenue ?? 0).toLocaleString(
+									undefined,
+									{
+										minimumFractionDigits: 0,
+										maximumFractionDigits: 2,
+									}
+								)}
+							</p>
+							<p className="mt-0.5 text-xs text-stone-500">
+								Σ (codes × price) when batches were generated
+							</p>
+						</div>
+						<div className="rounded-md border border-amber-50 bg-stone-50/80 p-4">
+							<div className="mb-2 flex items-center gap-2 text-stone-500">
+								<TrendingUp className="h-4 w-4 shrink-0" strokeWidth={2} />
+								<span className="text-xs font-semibold uppercase tracking-wide">
+									Revenue in (plays)
+								</span>
+							</div>
+							<p className="text-xl font-bold tabular-nums text-stone-900 sm:text-2xl">
+								{currency}{" "}
+								{Number(stats.revenueFromRedemptions ?? 0).toLocaleString(
+									undefined,
+									{
+										minimumFractionDigits: 0,
+										maximumFractionDigits: 2,
+									}
+								)}
+							</p>
+							<p className="mt-0.5 text-xs text-stone-500">
+								Σ ticket price on redeemed codes
+							</p>
+						</div>
+						<div className="rounded-md border border-amber-50 bg-stone-50/80 p-4">
+							<div className="mb-2 flex items-center gap-2 text-stone-500">
+								<CircleDollarSign
+									className="h-4 w-4 shrink-0"
+									strokeWidth={2}
+								/>
+								<span className="text-xs font-semibold uppercase tracking-wide">
+									Last 7 days
+								</span>
+							</div>
+							<p className="text-xl font-bold tabular-nums text-stone-900 sm:text-2xl">
+								{currency}{" "}
+								{Number(stats.revenueLast7Days ?? 0).toLocaleString(undefined, {
+									minimumFractionDigits: 0,
+									maximumFractionDigits: 2,
+								})}
+							</p>
+							<p className="mt-0.5 text-xs text-stone-500">
+								Ticket value from redemptions this week
+							</p>
+						</div>
+						<div className="rounded-md border border-amber-50 bg-stone-50/80 p-4">
+							<div className="mb-2 flex items-center gap-2 text-stone-500">
+								<PieChart className="h-4 w-4 shrink-0" strokeWidth={2} />
+								<span className="text-xs font-semibold uppercase tracking-wide">
+									Prizes paid
+								</span>
+							</div>
+							<p className="text-xl font-bold tabular-nums text-stone-900 sm:text-2xl">
+								{currency}{" "}
+								{Number(stats.totalPrizePaid ?? 0).toLocaleString(undefined, {
+									minimumFractionDigits: 0,
+									maximumFractionDigits: 2,
+								})}
+							</p>
+							<p className="mt-0.5 text-xs text-stone-500">
+								Winning tickets only (redeemed)
+							</p>
+						</div>
+						<div className="rounded-md border border-amber-50 bg-stone-50/80 p-4">
+							<div className="mb-2 flex items-center gap-2 text-stone-500">
+								<Hash className="h-4 w-4 shrink-0" strokeWidth={2} />
+								<span className="text-xs font-semibold uppercase tracking-wide">
+									Net (plays − prizes)
+								</span>
+							</div>
+							<p
+								className={`text-xl font-bold tabular-nums sm:text-2xl ${
+									Number(stats.netCashFromPlayedTickets) >= 0
+										? "text-emerald-800"
+										: "text-rose-700"
+								}`}
+							>
+								{currency}{" "}
+								{Number(stats.netCashFromPlayedTickets ?? 0).toLocaleString(
+									undefined,
+									{
+										minimumFractionDigits: 0,
+										maximumFractionDigits: 2,
+									}
+								)}
+							</p>
+							<p className="mt-0.5 text-xs text-stone-500">
+								Cash-in from plays minus prize outflow
+							</p>
+						</div>
+						<div className="rounded-md border border-amber-50 bg-stone-50/80 p-4">
+							<div className="mb-2 flex items-center gap-2 text-stone-500">
+								<PiggyBank className="h-4 w-4 shrink-0" strokeWidth={2} />
+								<span className="text-xs font-semibold uppercase tracking-wide">
+									Pool margin (plan)
+								</span>
+							</div>
+							<p className="text-xl font-bold tabular-nums text-stone-900 sm:text-2xl">
+								{currency}{" "}
+								{Number(
+									stats.totalMarginRetainedPlanned ?? 0
+								).toLocaleString(undefined, {
+									minimumFractionDigits: 0,
+									maximumFractionDigits: 2,
+								})}
+							</p>
+							<p className="mt-0.5 text-xs text-stone-500">
+								Rounding / unused slice of prize budget (per batch design)
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+					<div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-md border border-amber-100/80 shadow-sm">
+						<h2 className="text-xl font-bold text-stone-900 mb-1">
 							Administrators
 						</h2>
+						<p className="text-sm text-stone-500 mb-5">
+							Who can access this dashboard.
+						</p>
 						{admins.length === 0 ? (
-							<div className="w-full flex justify-center"><p className="text-gray-600">No admin to display</p></div>
+							<div className="rounded-md border border-dashed border-amber-200 bg-amber-50/40 py-12 px-4 text-center">
+								<p className="text-stone-600">No admins to display.</p>
+							</div>
 						) : (
 							<ul className="space-y-3">
 								{admins.map((admin) => (
 									<li
 										key={admin.email}
-										className="flex items-center justify-between p-4 bg-gray-50 rounded-xl shadow-sm"
+										className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-stone-50/80 rounded-md border border-amber-100/60"
 									>
-										<div>
-											<p className="font-semibold text-gray-800">
+										<div className="min-w-0">
+											<p className="font-semibold text-stone-900">
 												{admin.name}
 											</p>
-											<p className="text-sm text-gray-600">
+											<p className="text-sm text-stone-600 truncate">
 												{admin.email}
 											</p>
 										</div>
 										<button
+											type="button"
 											onClick={() =>
 												handleOpenModal(admin)
 											}
-											className="text-sm font-medium text-white bg-slate-700 hover:bg-slate-800 px-4 py-2 rounded-full"
+											className="text-sm font-medium text-white bg-amber-800 hover:bg-amber-700 px-4 py-2 rounded-md shrink-0 transition-colors"
 										>
 											Manage
 										</button>
@@ -175,49 +434,55 @@ const Manage = () => {
 						)}
 					</div>
 
-					{/* Add New Admin Form */}
-					<div className="bg-white p-6 rounded-2xl shadow-sm">
-						<h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-							<UserPlus size={24} />
-							Add New Admin
+					<div className="bg-white p-6 sm:p-8 rounded-md border border-amber-100/80 shadow-sm">
+						<h2 className="text-xl font-bold text-stone-900 mb-1 flex items-center gap-2">
+							<UserPlus
+								className="text-amber-800 shrink-0"
+								size={24}
+								strokeWidth={2}
+							/>
+							Add admin
 						</h2>
+						<p className="text-sm text-stone-500 mb-5">
+							New admins can sign in with the email you add.
+						</p>
 						<form onSubmit={handleAddAdmin} className="space-y-4">
 							<input
 								type="text"
 								value={newName}
 								onChange={(e) => setNewName(e.target.value)}
-								placeholder="Full Name"
+								placeholder="Full name"
 								required
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 							/>
 							<input
 								type="email"
 								value={newEmail}
 								onChange={(e) => setNewEmail(e.target.value)}
-								placeholder="Email Address"
+								placeholder="Email address"
 								required
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 							/>
 							<input
 								type="text"
-								placeholder="Phone Number (optional)"
+								placeholder="Phone (optional)"
 								value={newPhone}
 								onChange={(e) => setNewPhone(e.target.value)}
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 							/>
 							<input
 								type="password"
 								placeholder="Password (optional)"
 								value={newPassword}
 								onChange={(e) => setNewPassword(e.target.value)}
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 							/>
 							<div className="pt-2">
 								<button
 									type="submit"
-									className="w-full py-3 px-12 border border-transparent rounded-full text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+									className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-amber-800 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors"
 								>
-									Add Admin
+									Add admin
 								</button>
 							</div>
 						</form>

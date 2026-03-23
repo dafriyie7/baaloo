@@ -1,6 +1,10 @@
 import Player from "../models/Player.js";
 import ScratchCode from "../models/ScratchCode.js";
-import { decrypt, hashForLookup } from "../lib/encryption.js";
+import {
+	decrypt,
+	hashForLookup,
+	normalizeScratchCodeForLookup,
+} from "../lib/encryption.js";
 
 // add a player
 export const addPlayer = async (req, res) => {
@@ -13,7 +17,14 @@ export const addPlayer = async (req, res) => {
 				.json({ success: false, message: "all fields are required" });
 		}
 
-		const lookupHash = hashForLookup(String(code).trim());
+		const normalized = normalizeScratchCodeForLookup(code);
+		if (!normalized) {
+			return res.status(400).json({
+				success: false,
+				message: "Enter a valid redemption code.",
+			});
+		}
+		const lookupHash = hashForLookup(normalized);
 
 		const scratchCode = await ScratchCode.findOne({ lookupHash });
 

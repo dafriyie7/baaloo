@@ -302,19 +302,132 @@ export const deleteAdminById = async (req, res) => {
 	}
 };
 
+const r2 = (n) => Math.round(Number(n || 0) * 100) / 100;
+
 // get management data for dashboard
 export const getManagementData = async (req, res) => {
 	try {
-		const totalBatches = await Batch.countDocuments();
-		const totalCodes = await ScratchCode.countDocuments();
-		const totalPlayers = await Player.countDocuments();
-		const admins = await User.find().select("-password");
+		const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+		const [
+			totalBatches,
+			totalCodes,
+			totalPlayers,
+			admins,
+			batchRollup,
+			realizedRevAgg,
+			revenueLast7dAgg,
+			prizeAgg,
+		] = await Promise.all([
+			Batch.countDocuments(),
+			ScratchCode.countDocuments(),
+			Player.countDocuments(),
+			User.find().select("-password"),
+			Batch.aggregate([
+				{
+					$group: {
+						_id: null,
+						totalBookedRevenue: {
+							$sum: { $ifNull: ["$totalRevenue", 0] },
+						},
+						totalPrizePoolCommitted: {
+							$sum: { $ifNull: ["$totalPrizePool", 0] },
+						},
+						totalMarginRetainedPlanned: {
+							$sum: { $ifNull: ["$marginRetainedFromPrizePool", 0] },
+						},
+					},
+				},
+			]),
+			ScratchCode.aggregate([
+				{ $match: { isUsed: true } },
+				{
+					$lookup: {
+						from: "batches",
+						localField: "batchNumber",
+						foreignField: "_id",
+						as: "b",
+					},
+				},
+				{ $unwind: "$b" },
+				{ $group: { _id: null, total: { $sum: "$b.costPerCode" } } },
+			]),
+			ScratchCode.aggregate([
+				{
+					$match: {
+						isUsed: true,
+						redeemedAt: { $gte: sevenDaysAgo },
+					},
+				},
+				{
+					$lookup: {
+						from: "batches",
+						localField: "batchNumber",
+						foreignField: "_id",
+						as: "b",
+					},
+				},
+				{ $unwind: "$b" },
+				{ $group: { _id: null, total: { $sum: "$b.costPerCode" } } },
+			]),
+			ScratchCode.aggregate([
+				{ $match: { isUsed: true, isWinner: true } },
+				{
+					$group: {
+						_id: null,
+						total: { $sum: { $ifNull: ["$prizeAmount", 0] } },
+					},
+				},
+			]),
+		]);
+
+		const br = batchRollup[0] || {};
+		const totalBookedRevenue = r2(br.totalBookedRevenue);
+		const totalPrizePoolCommitted = r2(br.totalPrizePoolCommitted);
+		const totalMarginRetainedPlanned = r2(br.totalMarginRetainedPlanned);
+		const stickerMarginBooked = r2(
+			totalBookedRevenue - totalPrizePoolCommitted
+		);
+		const revenueFromRedemptions = r2(realizedRevAgg[0]?.total);
+		const revenueLast7Days = r2(revenueLast7dAgg[0]?.total);
+		const totalPrizePaid = r2(prizeAgg[0]?.total);
+		const netCashFromPlayedTickets = r2(
+			revenueFromRedemptions - totalPrizePaid
+		);
+		const realizedVsBookedPct =
+			totalBookedRevenue > 0
+				? Math.min(
+						100,
+						Math.round(
+							(revenueFromRedemptions / totalBookedRevenue) * 1000
+						) / 10
+					)
+				: 0;
+		const prizePoolShareOfBookedPct =
+			totalBookedRevenue > 0
+				? Math.round(
+						(totalPrizePoolCommitted / totalBookedRevenue) * 1000
+					) / 10
+				: 0;
+		const stickerShareOfBookedPct =
+			Math.round((100 - prizePoolShareOfBookedPct) * 10) / 10;
 
 		const stats = {
 			totalBatches,
 			totalCodes,
 			totalPlayers,
 			totalAdmins: admins.length,
+			totalBookedRevenue,
+			totalPrizePoolCommitted,
+			stickerMarginBooked,
+			totalMarginRetainedPlanned,
+			revenueFromRedemptions,
+			revenueLast7Days,
+			totalPrizePaid,
+			netCashFromPlayedTickets,
+			realizedVsBookedPct,
+			prizePoolShareOfBookedPct,
+			stickerShareOfBookedPct,
 		};
 
 		res.status(200).json({

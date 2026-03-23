@@ -22,7 +22,9 @@ const batchSchema = new mongoose.Schema(
 		tierCountsSnapshot: { type: mongoose.Schema.Types.Mixed },
 
 		jackpotPrizeEach: { type: Number, default: 0 },
-		/** Shown in admin / legacy: headline jackpot per ticket */
+		/** Structured generation: sum of per-tier leftovers below one ticket (house margin) */
+		marginRetainedFromPrizePool: { type: Number, default: 0 },
+		/** Shown in admin: headline jackpot per ticket */
 		winningPrize: { type: Number, default: 0 },
 
 		symbolAlphabet: { type: String, default: "ABCDEFGHIJKLMNOPQRSTUVWXYZ" },

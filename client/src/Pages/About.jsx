@@ -5,9 +5,9 @@ const About = () => {
 	const navigate = useNavigate();
 
 	return (
-		<div className="w-full min-h-screen bg-gradient-to-br from-orange-950 via-stone-900 to-orange-950 text-stone-300 px-4 py-10 md:py-14">
+		<div className="w-full min-h-screen bg-gradient-to-br from-stone-950 via-stone-900 to-stone-950 text-stone-300 px-4 py-10 md:py-14">
 			<div className="mx-auto w-full max-w-2xl">
-				<p className="text-center font-bold text-orange-400 coiny text-2xl md:text-3xl">
+				<p className="text-center font-bold text-amber-300/95 coiny text-2xl md:text-3xl">
 					Baaloo
 				</p>
 				<h1 className="mt-2 text-center text-3xl font-bold text-white md:text-4xl">
@@ -17,9 +17,9 @@ const About = () => {
 					Instant scratch-and-win, built to be simple, fast, and fair.
 				</p>
 
-				<div className="mt-10 space-y-6 rounded-2xl border border-orange-500/20 bg-white/5 p-6 shadow-xl backdrop-blur-sm md:p-8">
+				<div className="mt-10 space-y-6 rounded-2xl border border-amber-500/15 bg-white/5 p-6 shadow-xl backdrop-blur-sm md:p-8">
 					<section>
-						<div className="flex items-center gap-2 text-orange-300">
+						<div className="flex items-center gap-2 text-amber-200/90">
 							<Sparkles className="h-5 w-5" strokeWidth={2} />
 							<h2 className="text-lg font-semibold text-white">
 								What we do
@@ -34,8 +34,8 @@ const About = () => {
 						</p>
 					</section>
 
-					<section className="border-t border-orange-900/40 pt-6">
-						<div className="flex items-center gap-2 text-orange-300">
+					<section className="border-t border-stone-700/50 pt-6">
+						<div className="flex items-center gap-2 text-amber-200/90">
 							<Shield className="h-5 w-5" strokeWidth={2} />
 							<h2 className="text-lg font-semibold text-white">
 								Play responsibly
@@ -43,7 +43,7 @@ const About = () => {
 						</div>
 						<p className="mt-3 text-sm leading-relaxed text-stone-400 md:text-base">
 							Baaloo is for adults{" "}
-							<span className="font-medium text-orange-200">
+							<span className="font-medium text-amber-100/85">
 								18+
 							</span>{" "}
 							only. Please read the rules on your promotion
@@ -54,8 +54,8 @@ const About = () => {
 						</p>
 					</section>
 
-					<section className="border-t border-orange-900/40 pt-6">
-						<div className="flex items-center gap-2 text-orange-300">
+					<section className="border-t border-stone-700/50 pt-6">
+						<div className="flex items-center gap-2 text-amber-200/90">
 							<HeartHandshake className="h-5 w-5" strokeWidth={2} />
 							<h2 className="text-lg font-semibold text-white">
 								Your information
@@ -76,7 +76,7 @@ const About = () => {
 					<button
 						type="button"
 						onClick={() => navigate("/")}
-						className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-orange-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-orange-500 sm:w-auto"
+						className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-800 px-8 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-amber-700 sm:w-auto"
 					>
 						<ArrowLeft size={18} />
 						Play now
@@ -84,7 +84,7 @@ const About = () => {
 					<button
 						type="button"
 						onClick={() => navigate("/how-to-play")}
-						className="inline-flex w-full items-center justify-center rounded-full border border-orange-400/40 px-8 py-3.5 text-base font-medium text-orange-100 transition hover:bg-white/5 sm:w-auto"
+						className="inline-flex w-full items-center justify-center rounded-full border border-amber-500/25 px-8 py-3.5 text-base font-medium text-amber-100/90 transition hover:bg-white/5 sm:w-auto"
 					>
 						How to play
 					</button>

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 /**
- * Atomic monthly sequence per PREFIX-yyyyMM for batch IDs, e.g. BAA-202612 → 1,2,3…
+ * Atomic sequence per YYMM-PPP bucket for batch IDs (calendar month + price segment), e.g. 2603-010 → 1…676 (AA–ZZ).
  */
 const batchSequenceCounterSchema = new mongoose.Schema(
 	{

@@ -17,7 +17,7 @@
 	text-decoration-style: wavy;
 	text-underline-offset: 0.2em;
 	text-decoration-thickness: 2px;
-	text-decoration-color: rgba(251, 146, 60, 0.95);
+	text-decoration-color: rgba(253, 186, 116, 0.9);
 }
 
 @layer utilities {
@@ -33,5 +33,139 @@
 
 	.animate-shimmer {
 		animation: shimmer 1.5s infinite;
+	}
+}
+
+/* Full-viewport hero: warm orange/amber/gold only — no hue-rotate into yellow-green */
+.hero-morph-flow {
+	position: absolute;
+	inset: -25%;
+	background: linear-gradient(125deg,
+			#431407,
+			#7c2d12,
+			#9a3412,
+			#c2410c,
+			#ea580c,
+			#f97316,
+			#fb923c,
+			#fdba74,
+			#d97706,
+			#b45309,
+			#92400e);
+	background-size: 400% 400%;
+	animation: hero-morph-flow 12s ease-in-out infinite;
+	will-change: background-position, filter;
+}
+
+.hero-morph-blobs {
+	position: absolute;
+	inset: 0;
+	background:
+		radial-gradient(ellipse 70% 55% at 20% 45%,
+			rgba(251, 191, 36, 0.5),
+			transparent 52%),
+		radial-gradient(ellipse 55% 45% at 82% 28%,
+			rgba(249, 115, 22, 0.45),
+			transparent 48%),
+		radial-gradient(ellipse 65% 50% at 48% 88%,
+			rgba(154, 52, 18, 0.55),
+			transparent 50%);
+	mix-blend-mode: soft-light;
+	animation: hero-morph-blobs 8s ease-in-out infinite;
+	will-change: transform, opacity, filter;
+}
+
+.hero-morph-shimmer {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(105deg,
+			transparent 0%,
+			rgba(255, 255, 255, 0.1) 45%,
+			rgba(255, 210, 170, 0.18) 50%,
+			rgba(255, 255, 255, 0.07) 55%,
+			transparent 100%);
+	background-size: 200% 100%;
+	animation: hero-morph-shimmer 6.5s ease-in-out infinite;
+	mix-blend-mode: overlay;
+	pointer-events: none;
+}
+
+@keyframes hero-morph-flow {
+
+	0%,
+	100% {
+		background-position: 0% 50%;
+		filter: saturate(1.06) brightness(1);
+	}
+
+	33% {
+		background-position: 85% 35%;
+		filter: saturate(1.18) brightness(1.05);
+	}
+
+	66% {
+		background-position: 25% 75%;
+		filter: saturate(1.12) brightness(1.03);
+	}
+}
+
+@keyframes hero-morph-blobs {
+
+	0%,
+	100% {
+		transform: scale(1) translate(0, 0);
+		opacity: 0.92;
+		filter: saturate(1.05) brightness(1);
+	}
+
+	33% {
+		transform: scale(1.06) translate(2%, -3%);
+		opacity: 1;
+		filter: saturate(1.12) brightness(1.04);
+	}
+
+	66% {
+		transform: scale(1.03) translate(-2%, 2%);
+		opacity: 0.96;
+		filter: saturate(1.08) brightness(1.02);
+	}
+}
+
+@keyframes hero-morph-shimmer {
+
+	0%,
+	100% {
+		background-position: -100% 0;
+		opacity: 0.35;
+	}
+
+	50% {
+		background-position: 200% 0;
+		opacity: 0.55;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.hero-morph-flow,
+	.hero-morph-blobs,
+	.hero-morph-shimmer {
+		animation: none;
+	}
+
+	.hero-morph-flow {
+		background-position: 40% 50%;
+		filter: saturate(1.05);
+	}
+
+	.hero-morph-blobs {
+		transform: none;
+		filter: saturate(1.05);
+		opacity: 0.95;
+	}
+
+	.hero-morph-shimmer {
+		opacity: 0.25;
+		background-position: 50% 0;
 	}
 }

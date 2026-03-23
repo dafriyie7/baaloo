@@ -13,6 +13,7 @@ import Login from "./Pages/Login";
 import Register from "./Pages/Register";
 import Profile from "./Pages/admin/Profile";
 import Manage from "./Pages/admin/Manage";
+import Batches from "./Pages/admin/Batches";
 import NotFound from "./Pages/NotFound";
 import HowToPlay from "./Pages/HowToPlay";
 
@@ -41,6 +42,7 @@ const App = () => {
 				
 				<Route path="/admin" element={isLoggedIn ? <Layout /> : <Login />} >
 					<Route index element={<Manage />} />
+					<Route path="batches" element={<Batches />} />
 					<Route path="players" element={<Players />} />
 					<Route path="codes" element={<Codes />} />
 					<Route path="profile" element={<Profile />} />

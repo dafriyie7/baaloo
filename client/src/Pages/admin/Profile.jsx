@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import axios from "../../../lib/api";
+import { UserCircle } from "lucide-react";
 import { useAppcontext } from "../../context/AppContext";
+import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 
 const Profile = () => {
 	const { user, setIsLoading, login } = useAppcontext();
@@ -66,13 +68,19 @@ const Profile = () => {
 	};
 
 	return (
-		<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4 py-8">
-			<div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg space-y-8">
-				{/* Update Profile Section */}
+		<div className="w-full flex flex-col items-center px-4 py-8 sm:py-12">
+			<div className="w-full max-w-md bg-white p-8 rounded-md border border-amber-100/90 shadow-sm space-y-10">
 				<div>
-					<h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-						Update Profile
-					</h1>
+					<AdminPageHeading
+						icon={UserCircle}
+						align="center"
+						className="mb-1"
+					>
+						Your profile
+					</AdminPageHeading>
+					<p className="text-sm text-stone-500 text-center mb-6">
+						Name and phone shown in the admin area.
+					</p>
 					<form
 						onSubmit={handleProfileUpdate}
 						className="w-full space-y-4 text-left"
@@ -80,7 +88,7 @@ const Profile = () => {
 						<div>
 							<label
 								htmlFor="name"
-								className="block text-sm font-medium text-gray-700 mb-1"
+								className="block text-sm font-medium text-stone-700 mb-1"
 							>
 								Name
 							</label>
@@ -89,13 +97,13 @@ const Profile = () => {
 								id="name"
 								value={name}
 								onChange={(e) => setName(e.target.value)}
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 							/>
 						</div>
 						<div>
 							<label
 								htmlFor="phone"
-								className="block text-sm font-medium text-gray-700 mb-1"
+								className="block text-sm font-medium text-stone-700 mb-1"
 							>
 								Phone
 							</label>
@@ -104,25 +112,27 @@ const Profile = () => {
 								id="phone"
 								value={phone}
 								onChange={(e) => setPhone(e.target.value)}
-								className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+								className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 							/>
 						</div>
 						<div className="pt-2 w-full flex justify-center">
 							<button
 								type="submit"
-								className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-amber-800 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors"
 							>
-								Save Changes
+								Save changes
 							</button>
 						</div>
 					</form>
 				</div>
 
-				{/* Change Password Section */}
-				<div>
-					<h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-						Change Password
-					</h1>
+				<div className="border-t border-amber-100 pt-10">
+					<h2 className="text-xl font-bold text-stone-900 mb-1 text-center">
+						Change password
+					</h2>
+					<p className="text-sm text-stone-500 text-center mb-6">
+						Use a strong password you do not reuse elsewhere.
+					</p>
 					<form
 						onSubmit={handlePasswordChange}
 						className="w-full space-y-4 text-left"
@@ -132,25 +142,25 @@ const Profile = () => {
 							id="oldPassword"
 							value={oldPassword}
 							onChange={(e) => setOldPassword(e.target.value)}
-							placeholder="Old Password"
+							placeholder="Current password"
 							required
-							className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 						/>
 						<input
 							type="password"
 							id="newPassword"
 							value={newPassword}
 							onChange={(e) => setNewPassword(e.target.value)}
-							placeholder="New Password"
+							placeholder="New password"
 							required
-							className="block w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 rounded-full shadow-sm focus:outline-none focus:ring-slate-500 focus:border-slate-500"
+							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 						/>
 						<div className="pt-2 w-full flex justify-center">
 							<button
 								type="submit"
-								className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-stone-800 hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 transition-colors"
 							>
-								Update Password
+								Update password
 							</button>
 						</div>
 					</form>
