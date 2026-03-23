@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import toast from "react-hot-toast";
 import axios from "../../../lib/api";
 import { SCRATCH_SYMBOL_COUNT } from "../../constants/scratchMechanic";
@@ -64,9 +64,30 @@ const GenerateCodeForm = ({
 	const [jackpotCount, setJackpotCount] = useState("12");
 	const [rTierRows, setRTierRows] = useState(emptyRTierRows);
 	const [symbolSet, setSymbolSet] = useState("");
+	const [svgThemeType, setSvgThemeType] = useState("");
+	const [themeTypes, setThemeTypes] = useState([]);
 	const [isMenuOpen, setIsMenuOpen] = useState(true);
 
 	const { currency, isLoading, setIsLoading } = useAppcontext();
+
+	const svgThemeSelected = svgThemeType.trim().length > 0;
+
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const { data } = await axios.get("/svgs/types");
+				if (!cancelled && data.success) {
+					setThemeTypes(data.data ?? []);
+				}
+			} catch {
+				/* optional field */
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	/** Base + tier split + optional jackpot/loser lines (jackpot/loser only when jackpot count ≥ 1). */
 	const batchPreview = useMemo(() => {
@@ -275,7 +296,10 @@ const GenerateCodeForm = ({
 				jackpotCount: jc,
 				rTierPayouts,
 			};
-			if (symbolSet.trim().length >= SCRATCH_SYMBOL_COUNT) {
+			const theme = svgThemeType.trim().toLowerCase();
+			if (theme) {
+				body.svgThemeType = theme;
+			} else if (symbolSet.trim().length >= SCRATCH_SYMBOL_COUNT) {
 				body.symbolSet = symbolSet.trim();
 			}
 
@@ -283,7 +307,9 @@ const GenerateCodeForm = ({
 				totalCodes: n,
 				jackpotCount: jc,
 				rTierRows: rTierPayouts.length,
-				customSymbols: symbolSet.trim().length >= SCRATCH_SYMBOL_COUNT,
+				customSymbols:
+					!theme && symbolSet.trim().length >= SCRATCH_SYMBOL_COUNT,
+				svgTheme: Boolean(theme),
 			});
 
 			const { data } = await axios.post(
@@ -746,24 +772,71 @@ const GenerateCodeForm = ({
 
 				<div>
 					<label
+						htmlFor="svgThemeType"
+						className="block text-sm font-medium text-gray-700"
+					>
+						SVG theme (optional)
+					</label>
+					<p className="text-xs text-gray-500 mt-0.5 mb-1">
+						Scratch symbols for the batch come only from this theme: each file’s
+						asset name (from the filename, e.g.{" "}
+						<code className="text-[11px]">helmet.svg</code> →{" "}
+						<code className="text-[11px]">helmet</code>) is one symbol. The server
+						builds the alphabet from those names (sorted, unique). Code cards show
+						those SVGs. The custom symbol set below is disabled while a theme is
+						selected. You need <strong>at least 8 different</strong> assets in
+						the theme (losers / R1 use at most two of the same symbol on the{" "}
+						{formatCount(SCRATCH_SYMBOL_COUNT)}-cell panel).
+					</p>
+					<select
+						id="svgThemeType"
+						value={svgThemeType}
+						onChange={(e) => setSvgThemeType(e.target.value)}
+						className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-amber-700/25 focus:border-amber-700 text-sm bg-white"
+					>
+						<option value="">None (A–Z letters on code cards)</option>
+						{themeTypes.map((t) => (
+							<option key={t} value={t}>
+								{t}
+							</option>
+						))}
+					</select>
+				</div>
+
+				<div>
+					<label
 						htmlFor="symbolSet"
 						className="block text-sm font-medium text-gray-700"
 					>
 						Symbol set (optional)
 					</label>
 					<p className="text-xs text-gray-500 mt-0.5 mb-1">
-						{formatCount(SCRATCH_SYMBOL_COUNT)}+ characters for a custom alphabet;
-						otherwise default A–Z. R3/R5/R7 need enough symbols for filler logic.
-						Jackpot: 9 matching symbols on the{" "}
-						{formatCount(SCRATCH_SYMBOL_COUNT)}-cell panel.
+						{svgThemeSelected ? (
+							<span className="text-amber-900/90">
+								Not used while an SVG theme is selected (alphabet comes from
+								theme files).
+							</span>
+						) : (
+							<>
+								{formatCount(SCRATCH_SYMBOL_COUNT)}+ characters for a custom
+								alphabet; otherwise default A–Z. R3/R5/R7 need enough symbols
+								for filler logic. Jackpot: 9 matching symbols on the{" "}
+								{formatCount(SCRATCH_SYMBOL_COUNT)}-cell panel.
+							</>
+						)}
 					</p>
 					<input
 						id="symbolSet"
 						value={symbolSet}
 						onChange={(e) => setSymbolSet(e.target.value)}
 						type="text"
+						disabled={svgThemeSelected}
 						placeholder="Default: ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-						className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-amber-700/25 focus:border-amber-700 font-mono text-sm"
+						className={`block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-amber-700/25 focus:border-amber-700 font-mono text-sm ${
+							svgThemeSelected
+								? "cursor-not-allowed bg-gray-100 text-gray-500"
+								: ""
+						}`}
 					/>
 				</div>
 

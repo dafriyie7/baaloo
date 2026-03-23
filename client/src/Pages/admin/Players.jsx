@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axiosInstance from "../../../lib/api";
 import StatCard from "../../Components/admin/StatCard";
@@ -14,87 +14,68 @@ const inputClass =
 
 const Players = () => {
 	const [players, setPlayers] = useState([]);
+	const [batchOptions, setBatchOptions] = useState([]);
+	const [totalPlayers, setTotalPlayers] = useState(0);
 	const [loserCount, setLoserCount] = useState(0);
 	const [winnerCount, setWinnerCount] = useState(0);
+	const [filteredWinners, setFilteredWinners] = useState(0);
+	const [filteredLosers, setFilteredLosers] = useState(0);
 	const { setIsLoading, currency } = useAppcontext();
 
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [batchFilter, setBatchFilter] = useState("all");
 
-	const fetchPlayers = async () => {
+	useEffect(() => {
+		const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+		return () => clearTimeout(t);
+	}, [search]);
+
+	const fetchPlayers = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const { data } = await axiosInstance.get("/players/get");
+			const params = {};
+			if (debouncedSearch) params.search = debouncedSearch;
+			if (statusFilter !== "all") params.outcome = statusFilter;
+			if (batchFilter !== "all") params.batch = batchFilter;
+
+			const { data } = await axiosInstance.get("/players/get", {
+				params,
+			});
 
 			if (data.success) {
-				setPlayers(data.data.players);
-				setLoserCount(data.data.losersCount);
-				setWinnerCount(data.data.winnersCount);
+				const d = data.data;
+				setPlayers(d.players ?? []);
+				setBatchOptions(d.batchOptions ?? []);
+				setTotalPlayers(d.totalPlayers ?? 0);
+				setLoserCount(d.losersCount ?? 0);
+				setWinnerCount(d.winnersCount ?? 0);
+				setFilteredWinners(d.filteredWinners ?? 0);
+				setFilteredLosers(d.filteredLosers ?? 0);
 			} else {
 				console.log(data.message);
 				toast.error(data.message);
 			}
 		} catch (error) {
 			console.error(
-				"Error fetching filter options:",
+				"Error fetching players:",
 				error.response?.data || error.message
 			);
 			toast.error(
 				error.response?.data?.message ||
-					"An error occurred while fetching filter options."
+					"An error occurred while fetching players."
 			);
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [debouncedSearch, statusFilter, batchFilter, setIsLoading]);
 
 	useEffect(() => {
 		fetchPlayers();
-	}, []);
+	}, [fetchPlayers]);
 
 	const searchTrim = search.trim().toLowerCase();
-
-	const batchOptions = useMemo(() => {
-		const map = new Map();
-		for (const p of players) {
-			const b = p.code?.batchNumber;
-			const id = b?._id?.toString();
-			if (!id) continue;
-			const label =
-				typeof b.batchNumber === "string" && b.batchNumber
-					? b.batchNumber
-					: id.slice(-6);
-			if (!map.has(id)) map.set(id, label);
-		}
-		return Array.from(map.entries())
-			.map(([id, label]) => ({ id, label }))
-			.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
-	}, [players]);
-
-	const filteredPlayers = useMemo(() => {
-		return players.filter((p) => {
-			if (statusFilter === "winner" && !p.code?.isWinner) return false;
-			if (statusFilter === "loser" && p.code?.isWinner) return false;
-			if (batchFilter !== "all") {
-				const bid = p.code?.batchNumber?._id?.toString();
-				if (bid !== batchFilter) return false;
-			}
-			if (searchTrim) {
-				const name = (p.name || "").toLowerCase();
-				const phone = (p.phone || "").toLowerCase();
-				if (!name.includes(searchTrim) && !phone.includes(searchTrim))
-					return false;
-			}
-			return true;
-		});
-	}, [players, searchTrim, statusFilter, batchFilter]);
-
-	const displayWinnerCount = useMemo(
-		() => filteredPlayers.filter((p) => p.code?.isWinner).length,
-		[filteredPlayers]
-	);
-	const displayLoserCount = filteredPlayers.length - displayWinnerCount;
 
 	const filtersActive =
 		searchTrim !== "" ||
@@ -193,9 +174,9 @@ const Players = () => {
 						<>
 							Showing{" "}
 							<span className="font-semibold text-stone-700">
-								{filteredPlayers.length}
+								{players.length}
 							</span>{" "}
-							of {players.length} players
+							of {totalPlayers} players
 							<span className="text-stone-400"> · </span>
 							<span className="text-stone-400">
 								Global totals: {winnerCount} winners, {loserCount}{" "}
@@ -214,19 +195,19 @@ const Players = () => {
 					<StatCard
 						icon={<Users strokeWidth={2} />}
 						label={filtersActive ? "Matching players" : "Total players"}
-						value={filtersActive ? filteredPlayers.length : players.length}
+						value={players.length}
 						color="bg-amber-50 text-amber-700"
 					/>
 					<StatCard
 						icon={<Trophy strokeWidth={2} />}
 						label={filtersActive ? "Winners (filtered)" : "Winners"}
-						value={filtersActive ? displayWinnerCount : winnerCount}
+						value={filtersActive ? filteredWinners : winnerCount}
 						color="bg-emerald-50 text-emerald-700"
 					/>
 					<StatCard
 						icon={<Annoyed strokeWidth={2} />}
 						label={filtersActive ? "Losers (filtered)" : "Losers"}
-						value={filtersActive ? displayLoserCount : loserCount}
+						value={filtersActive ? filteredLosers : loserCount}
 						color="bg-stone-200 text-stone-700"
 					/>
 				</div>
@@ -253,8 +234,8 @@ const Players = () => {
 								</tr>
 							</thead>
 							<tbody className="bg-white divide-y divide-amber-50">
-								{filteredPlayers && filteredPlayers.length > 0 ? (
-									filteredPlayers.map((player) => (
+								{players.length > 0 ? (
+									players.map((player) => (
 										<tr
 											key={player._id}
 											className="hover:bg-amber-50/30 transition-colors"
@@ -295,7 +276,7 @@ const Players = () => {
 											</td>
 										</tr>
 									))
-								) : players.length > 0 ? (
+								) : totalPlayers > 0 ? (
 									<tr>
 										<td
 											colSpan="5"
@@ -318,8 +299,8 @@ const Players = () => {
 						</table>
 					</div>
 					<div className="sm:hidden space-y-3">
-						{filteredPlayers && filteredPlayers.length > 0 ? (
-							filteredPlayers.map((player) => (
+						{players.length > 0 ? (
+							players.map((player) => (
 								<div
 									key={player._id}
 									className="p-4 border border-amber-100 rounded-md bg-stone-50/50"
@@ -369,7 +350,7 @@ const Players = () => {
 									</div>
 								</div>
 							))
-						) : players.length > 0 ? (
+						) : totalPlayers > 0 ? (
 							<p className="text-center text-stone-500 py-8">
 								No players match these filters.
 							</p>

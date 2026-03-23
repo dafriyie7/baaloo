@@ -1,10 +1,18 @@
 import axios from "../../../lib/api";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Layers2, QrCode, RefreshCw, Search, X } from "lucide-react";
+import {
+	Layers2,
+	PlusCircle,
+	QrCode,
+	RefreshCw,
+	Search,
+	X,
+} from "lucide-react";
 import { useAppcontext } from "../../context/AppContext";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
+import GenerateBatchModal from "../../Components/admin/GenerateBatchModal";
 
 const selectClass =
 	"w-full min-w-[10rem] px-3 py-2 border border-amber-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/35 focus:border-amber-300 bg-white text-stone-900 text-sm";
@@ -42,16 +50,33 @@ function formatDate(iso) {
 const Batches = () => {
 	const { setIsLoading, currency } = useAppcontext();
 	const [batches, setBatches] = useState([]);
+	const [totalAll, setTotalAll] = useState(-1);
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [period, setPeriod] = useState("all");
 	const [sort, setSort] = useState("newest");
+	const [generateModalOpen, setGenerateModalOpen] = useState(false);
+
+	useEffect(() => {
+		const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+		return () => clearTimeout(t);
+	}, [search]);
 
 	const fetchBatches = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const { data } = await axios.get("/scratch-codes/batches");
+			const { data } = await axios.get("/scratch-codes/batches", {
+				params: {
+					search: debouncedSearch || undefined,
+					period,
+					sort,
+				},
+			});
 			if (data.success) {
 				setBatches(data.data ?? []);
+				setTotalAll(
+					typeof data.totalAll === "number" ? data.totalAll : 0
+				);
 			} else {
 				toast.error(data.message || "Could not load batches.");
 			}
@@ -63,7 +88,12 @@ const Batches = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [setIsLoading]);
+	}, [debouncedSearch, period, sort, setIsLoading]);
+
+	const handleGenerationSuccess = useCallback(() => {
+		setGenerateModalOpen(false);
+		fetchBatches();
+	}, [fetchBatches]);
 
 	useEffect(() => {
 		fetchBatches();
@@ -77,46 +107,6 @@ const Batches = () => {
 
 	const searchTrim = search.trim().toLowerCase();
 
-	const filteredBatches = useMemo(() => {
-		let list = [...batches];
-		if (searchTrim) {
-			list = list.filter((b) =>
-				(String(b.batchNumber ?? "")).toLowerCase().includes(searchTrim)
-			);
-		}
-		if (period !== "all") {
-			const days =
-				period === "7d" ? 7 : period === "30d" ? 30 : 90;
-			const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
-			list = list.filter(
-				(b) => new Date(b.createdAt).getTime() >= cutoff
-			);
-		}
-		list.sort((a, b) => {
-			const ca = Number(a.codesInserted ?? 0);
-			const cb = Number(b.codesInserted ?? 0);
-			const pa = Number(a.costPerCode ?? 0);
-			const pb = Number(b.costPerCode ?? 0);
-			const ta = new Date(a.createdAt).getTime();
-			const tb = new Date(b.createdAt).getTime();
-			switch (sort) {
-				case "oldest":
-					return ta - tb;
-				case "codes_desc":
-					return cb - ca;
-				case "codes_asc":
-					return ca - cb;
-				case "price_desc":
-					return pb - pa;
-				case "price_asc":
-					return pa - pb;
-				default:
-					return tb - ta;
-			}
-		});
-		return list;
-	}, [batches, searchTrim, period, sort]);
-
 	const filtersActive = searchTrim !== "" || period !== "all" || sort !== "newest";
 
 	const clearFilters = () => {
@@ -127,6 +117,11 @@ const Batches = () => {
 
 	return (
 		<div className="w-full p-4 sm:p-6 lg:p-8">
+			<GenerateBatchModal
+				isOpen={generateModalOpen}
+				onClose={() => setGenerateModalOpen(false)}
+				onGenerationSuccess={handleGenerationSuccess}
+			/>
 			<div className="mx-auto flex w-full max-w-6xl flex-col">
 				<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="text-center sm:text-left">
@@ -134,32 +129,57 @@ const Batches = () => {
 							Batches
 						</AdminPageHeading>
 						<p className="mt-1 text-sm text-stone-600">
-							All scratch batches. Filter, sort, then open a batch in
-							Codes to print and analyze.
+							All scratch batches. Filter, sort, generate new ones, or open
+							a batch in Codes to print and analyze.
 						</p>
 					</div>
-					<button
-						type="button"
-						onClick={() => fetchBatches()}
-						className="inline-flex shrink-0 items-center justify-center gap-2 self-center rounded-md border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-50 sm:self-auto"
-					>
-						<RefreshCw className="h-4 w-4" strokeWidth={2} />
-						Refresh
-					</button>
+					<div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+						<button
+							type="button"
+							onClick={() => setGenerateModalOpen(true)}
+							className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+						>
+							<PlusCircle className="h-5 w-5" strokeWidth={2} />
+							Generate batch
+						</button>
+						<button
+							type="button"
+							onClick={() => fetchBatches()}
+							className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-50"
+						>
+							<RefreshCw className="h-4 w-4" strokeWidth={2} />
+							Refresh
+						</button>
+					</div>
 				</div>
 
-				{batches.length === 0 ? (
+				{totalAll < 0 ? (
+					<p className="py-10 text-center text-sm text-stone-500">
+						Loading batches…
+					</p>
+				) : totalAll === 0 ? (
 					<div className="rounded-md border border-dashed border-amber-200 bg-amber-50/40 px-6 py-14 text-center">
 						<p className="text-stone-600">
-							No batches yet. Generate one from the Codes page.
+							No batches yet. Generate your first batch here or from the
+							Codes page.
 						</p>
-						<Link
-							to="/admin/codes"
-							className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-amber-900 underline-offset-2 hover:underline"
-						>
-							<QrCode className="h-4 w-4" strokeWidth={2} />
-							Go to Codes
-						</Link>
+						<div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+							<button
+								type="button"
+								onClick={() => setGenerateModalOpen(true)}
+								className="inline-flex items-center gap-2 rounded-md bg-amber-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+							>
+								<PlusCircle className="h-5 w-5" strokeWidth={2} />
+								Generate batch
+							</button>
+							<Link
+								to="/admin/codes"
+								className="inline-flex items-center gap-2 text-sm font-semibold text-amber-900 underline-offset-2 hover:underline"
+							>
+								<QrCode className="h-4 w-4" strokeWidth={2} />
+								Go to Codes
+							</Link>
+						</div>
 					</div>
 				) : (
 					<>
@@ -229,12 +249,12 @@ const Batches = () => {
 						<p className="mb-3 text-center text-xs text-stone-500 sm:text-left">
 							Showing{" "}
 							<span className="font-semibold text-stone-700">
-								{filteredBatches.length}
+								{batches.length}
 							</span>{" "}
-							of {batches.length} batches
+							of {totalAll} batches
 						</p>
 
-						{filteredBatches.length === 0 ? (
+						{batches.length === 0 ? (
 							<div className="rounded-md border border-dashed border-amber-200 bg-amber-50/40 px-6 py-12 text-center text-stone-600">
 								<p>No batches match these filters.</p>
 								<button
@@ -271,7 +291,7 @@ const Batches = () => {
 											</tr>
 										</thead>
 										<tbody className="divide-y divide-stone-100">
-											{filteredBatches.map((b) => (
+											{batches.map((b) => (
 												<tr
 													key={b._id}
 													className="text-stone-800 transition-colors hover:bg-amber-50/40"

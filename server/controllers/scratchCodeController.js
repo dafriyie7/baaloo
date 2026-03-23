@@ -2,6 +2,7 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 import ScratchCode from "../models/ScratchCode.js";
 import Batch from "../models/Batch.js";
+import Svg from "../models/Svg.js";
 import QRCode from "qrcode";
 import {
 	encrypt,
@@ -11,7 +12,7 @@ import {
 } from "../lib/encryption.js";
 import {
 	JACKPOT_MAX_MATCH_COUNT,
-	maxSymbolFrequency,
+	maxTokenFrequency,
 	R_STAKE_TIER,
 	R_WIN_TIERS,
 	SCRATCH_SYMBOL_COUNT,
@@ -21,10 +22,12 @@ import {
 	generateLoserSymbols,
 	generateRepeatTierSymbols,
 } from "../lib/symbolGenerator.js";
+import { escapeRegex } from "../lib/escapeRegex.js";
 import {
 	allocateNextBatchNumber,
 	isValidManualBatchNumber,
 } from "../lib/generateBatchNumber.js";
+import { buildSymbolToUrlMap } from "../lib/svgSymbolMap.js";
 
 const ALLOWED_TIERS = new Set([
 	"loser",
@@ -34,10 +37,7 @@ const ALLOWED_TIERS = new Set([
 ]);
 const DEFAULT_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-/**
- * 20 hex chars (80-bit). Strong enough for very large batches; much easier to read than 128-bit UUID hex.
- * Legacy rows may still use 32-char codes from older generation.
- */
+/** 20 hex chars (80-bit); formatted in groups for display in the admin UI. */
 function newScratchShortCode() {
 	return crypto.randomBytes(10).toString("hex").toUpperCase();
 }
@@ -56,6 +56,17 @@ function floorJackpotPrizeEach(amount) {
 }
 
 const LOG_GEN_STRUCTURED = "[scratch generate-structured]";
+
+function parseOptionalSvgThemeType(raw) {
+	if (raw == null || String(raw).trim() === "") return "";
+	const s = String(raw).trim().toLowerCase();
+	if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(s)) {
+		throw new Error(
+			"svgThemeType must be a lowercase slug (letters, digits, hyphens)."
+		);
+	}
+	return s;
+}
 
 function structuredGenFail(res, status, message) {
 	console.error(LOG_GEN_STRUCTURED, "client error", { status, message });
@@ -109,12 +120,27 @@ function buildPlans(counts, jackpotPrizeEach, tierPrizes) {
 	return plans;
 }
 
-function symbolsForPlan(plan, alphabet) {
-	if (plan.tier === "jackpot") return generateJackpotSymbols(alphabet);
-	if (plan.tier === "loser" || plan.tier === R_STAKE_TIER) {
-		return generateLoserSymbols(alphabet);
+/** @param {string[]} alphabetTokens */
+function tokensForPlan(plan, alphabetTokens) {
+	if (plan.tier === "jackpot") {
+		return generateJackpotSymbols(alphabetTokens);
 	}
-	return generateRepeatTierSymbols(plan.maxMatchCount, alphabet);
+	if (plan.tier === "loser" || plan.tier === R_STAKE_TIER) {
+		return generateLoserSymbols(alphabetTokens);
+	}
+	return generateRepeatTierSymbols(plan.maxMatchCount, alphabetTokens);
+}
+
+const BATCH_ALPHABET_SEP = "\x1e";
+
+function panelTokensForApi(code) {
+	if (
+		!Array.isArray(code.symbolTokens) ||
+		code.symbolTokens.length !== SCRATCH_SYMBOL_COUNT
+	) {
+		return [];
+	}
+	return code.symbolTokens.map(String);
 }
 
 /**
@@ -132,7 +158,15 @@ export const generateBatchStructured = async (req, res) => {
 			jackpotCount: jackpotCountRaw,
 			rTierPayouts,
 			symbolSet,
+			svgThemeType: svgThemeTypeRaw,
 		} = req.body;
+
+		let svgThemeType = "";
+		try {
+			svgThemeType = parseOptionalSvgThemeType(svgThemeTypeRaw);
+		} catch (e) {
+			return structuredGenFail(res, 400, e.message);
+		}
 
 		const totalCodes = parseInt(totalCodesRaw, 10);
 		const costPerCode = Number(costRaw);
@@ -346,10 +380,52 @@ export const generateBatchStructured = async (req, res) => {
 
 		const otherPrizePool = roundMoney(totalPrizePool - jackpotPool);
 
-		const alphabet =
-			typeof symbolSet === "string" && symbolSet.length >= SCRATCH_SYMBOL_COUNT
-				? symbolSet
-				: DEFAULT_ALPHABET;
+		let alphabetTokens;
+		if (svgThemeType) {
+			const svgRows = await Svg.find({ type: svgThemeType }).lean();
+			if (svgRows.length === 0) {
+				return structuredGenFail(
+					res,
+					400,
+					`No SVGs found for theme "${svgThemeType}". Upload assets in Admin → SVGs or clear the theme.`
+				);
+			}
+			alphabetTokens = [
+				...new Set(
+					svgRows
+						.map((r) => String(r.name ?? "").trim())
+						.filter(Boolean)
+				),
+			].sort();
+			if (alphabetTokens.length < 2) {
+				return structuredGenFail(
+					res,
+					400,
+					`SVG theme "${svgThemeType}" needs at least two distinct asset names.`
+				);
+			}
+		} else {
+			const raw =
+				typeof symbolSet === "string" &&
+				symbolSet.length >= SCRATCH_SYMBOL_COUNT
+					? symbolSet
+					: DEFAULT_ALPHABET;
+			alphabetTokens = [...raw];
+		}
+
+		const symbolAlphabetStored = alphabetTokens.join(BATCH_ALPHABET_SEP);
+
+		const minDistinctForLoserStyle = Math.ceil(SCRATCH_SYMBOL_COUNT / 2);
+		if (
+			((counts.loser || 0) > 0 || (counts.r1 || 0) > 0) &&
+			alphabetTokens.length < minDistinctForLoserStyle
+		) {
+			return structuredGenFail(
+				res,
+				400,
+				`Losers and R1 tickets need at least ${minDistinctForLoserStyle} distinct symbols (${SCRATCH_SYMBOL_COUNT} cells, at most 2 of the same symbol). This alphabet has ${alphabetTokens.length}. Add more SVG assets or a longer symbol set.`
+			);
+		}
 
 		console.log(LOG_GEN_STRUCTURED, "inserting", {
 			batchNumber: resolvedBatchNumber,
@@ -364,7 +440,6 @@ export const generateBatchStructured = async (req, res) => {
 
 		const batch = await Batch.create({
 			batchNumber: resolvedBatchNumber,
-			pattern: [],
 			mechanicVersion: 2,
 			costPerCode,
 			totalCodes,
@@ -374,7 +449,6 @@ export const generateBatchStructured = async (req, res) => {
 			totalPrizePool,
 			jackpotPool,
 			otherPrizePool,
-			totalPrizeBudget: totalPrizePool,
 			tierDistributionSnapshot: {
 				structured: true,
 				jackpotCount,
@@ -385,7 +459,8 @@ export const generateBatchStructured = async (req, res) => {
 			jackpotPrizeEach,
 			winningPrize: jackpotPrizeEach,
 			marginRetainedFromPrizePool,
-			symbolAlphabet: alphabet,
+			symbolAlphabet: symbolAlphabetStored,
+			svgThemeType,
 		});
 
 		const docs = [];
@@ -393,15 +468,14 @@ export const generateBatchStructured = async (req, res) => {
 			const shortCode = newScratchShortCode();
 			const encryptedCode = encrypt(shortCode);
 			const lookupHash = hashForLookup(shortCode);
-			const symbols = symbolsForPlan(plan, alphabet);
-			const maxMatch = maxSymbolFrequency(symbols);
+			const tokens = tokensForPlan(plan, alphabetTokens);
+			const maxMatch = maxTokenFrequency(tokens);
 
 			docs.push({
 				code: encryptedCode,
 				lookupHash,
 				batchNumber: batch._id,
-				symbols,
-				patternMatch: [...symbols],
+				symbolTokens: tokens,
 				tier: plan.tier,
 				maxMatchCount: maxMatch,
 				prizeAmount: plan.prizeAmount,
@@ -453,14 +527,79 @@ export const generateBatchStructured = async (req, res) => {
 	}
 };
 
+const BATCH_SORT_KEYS = new Set([
+	"newest",
+	"oldest",
+	"codes_desc",
+	"codes_asc",
+	"price_desc",
+	"price_asc",
+]);
+
+function sortBatchesList(data, sortKey) {
+	const key = BATCH_SORT_KEYS.has(sortKey) ? sortKey : "newest";
+	data.sort((a, b) => {
+		const ca = Number(a.codesInserted ?? 0);
+		const cb = Number(b.codesInserted ?? 0);
+		const pa = Number(a.costPerCode ?? 0);
+		const pb = Number(b.costPerCode ?? 0);
+		const ta = new Date(a.createdAt).getTime();
+		const tb = new Date(b.createdAt).getTime();
+		switch (key) {
+			case "oldest":
+				return ta - tb;
+			case "codes_desc":
+				return cb - ca;
+			case "codes_asc":
+				return ca - cb;
+			case "price_desc":
+				return pb - pa;
+			case "price_asc":
+				return pa - pb;
+			default:
+				return tb - ta;
+		}
+	});
+}
+
 /**
- * List all batches (newest first) with inserted code counts.
+ * List batches with inserted code counts.
+ * Query: search (batch id substring), period (all|7d|30d|90d), sort (newest|…).
  */
 export const listBatches = async (req, res) => {
 	try {
-		const batches = await Batch.find().sort({ createdAt: -1 }).lean();
+		const search = String(req.query.search ?? "").trim();
+		const period = String(req.query.period ?? "all").toLowerCase();
+		const sort = String(req.query.sort ?? "newest").toLowerCase();
+
+		const [totalAll, batches] = await Promise.all([
+			Batch.countDocuments(),
+			(async () => {
+				const match = {};
+				if (search) {
+					match.batchNumber = {
+						$regex: escapeRegex(search),
+						$options: "i",
+					};
+				}
+				if (period === "7d" || period === "30d" || period === "90d") {
+					const days =
+						period === "7d" ? 7 : period === "30d" ? 30 : 90;
+					match.createdAt = {
+						$gte: new Date(Date.now() - days * 86400000),
+					};
+				}
+				return Batch.find(match).lean();
+			})(),
+		]);
+
 		if (batches.length === 0) {
-			return res.status(200).json({ success: true, data: [] });
+			return res.status(200).json({
+				success: true,
+				data: [],
+				totalAll,
+				totalMatching: 0,
+			});
 		}
 		const ids = batches.map((b) => b._id);
 		const counts = await ScratchCode.aggregate([
@@ -474,7 +613,13 @@ export const listBatches = async (req, res) => {
 			...b,
 			codesInserted: byId.get(b._id.toString()) ?? 0,
 		}));
-		return res.status(200).json({ success: true, data });
+		sortBatchesList(data, sort);
+		return res.status(200).json({
+			success: true,
+			data,
+			totalAll,
+			totalMatching: data.length,
+		});
 	} catch (error) {
 		console.error("[scratch batches list]", error);
 		return res.status(500).json({ success: false, message: error.message });
@@ -547,6 +692,8 @@ export const getAllScratchCodes = async (req, res) => {
 					currentPage: 1,
 					totalFiltered: 0,
 					batchUsage: null,
+					svgThemeType: "",
+					svgSymbolMap: null,
 				},
 			});
 		}
@@ -568,6 +715,8 @@ export const getAllScratchCodes = async (req, res) => {
 					currentPage: 1,
 					totalFiltered: 0,
 					batchUsage: null,
+					svgThemeType: "",
+					svgSymbolMap: null,
 				},
 			});
 		}
@@ -664,6 +813,20 @@ export const getAllScratchCodes = async (req, res) => {
 			tierPrizeAmounts,
 		};
 
+		const activeBatch = batches.find(
+			(b) => String(b._id) === String(resolvedBatchId)
+		);
+		const svgThemeTypeForBatch = String(
+			activeBatch?.svgThemeType ?? ""
+		).trim();
+		let svgSymbolMap = null;
+		if (svgThemeTypeForBatch) {
+			const svgRows = await Svg.find({ type: svgThemeTypeForBatch }).lean();
+			if (svgRows.length > 0) {
+				svgSymbolMap = buildSymbolToUrlMap(svgRows);
+			}
+		}
+
 		const withQRCodes = await Promise.all(
 			codes.map(async (c) => {
 				let plainCode;
@@ -676,10 +839,7 @@ export const getAllScratchCodes = async (req, res) => {
 				const scanUrl = `${origin}/scratch/${plainCode}`;
 				const qrImage = await QRCode.toDataURL(scanUrl);
 
-				const displaySymbols =
-					c.symbols && c.symbols.length === SCRATCH_SYMBOL_COUNT
-						? c.symbols
-						: (c.patternMatch || []).join("") || "";
+				const displaySymbols = panelTokensForApi(c);
 
 				return {
 					...c,
@@ -702,6 +862,8 @@ export const getAllScratchCodes = async (req, res) => {
 				currentPage: page,
 				totalFiltered,
 				batchUsage,
+				svgThemeType: svgThemeTypeForBatch,
+				svgSymbolMap,
 			},
 		});
 	} catch (error) {

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { SCRATCH_SYMBOL_COUNT } from "../lib/scratchTierMath.js";
 
 const scratchCodeSchema = new mongoose.Schema(
 	{
@@ -9,10 +10,17 @@ const scratchCodeSchema = new mongoose.Schema(
 			required: true,
 			index: true,
 		},
-		/** Scratch panel (v2); length matches SCRATCH_SYMBOL_COUNT on server (16). */
-		symbols: { type: String, default: "", maxlength: 16 },
-		/** @deprecated v1 */
-		patternMatch: { type: [String], default: [] },
+		/** Panel cells: SCRATCH_SYMBOL_COUNT string tokens (letters or Svg.name). */
+		symbolTokens: {
+			type: [{ type: String, maxlength: 64 }],
+			required: true,
+			validate: {
+				validator(v) {
+					return Array.isArray(v) && v.length === SCRATCH_SYMBOL_COUNT;
+				},
+				message: `symbolTokens must be an array of length ${SCRATCH_SYMBOL_COUNT}`,
+			},
+		},
 		lookupHash: {
 			type: String,
 			required: true,

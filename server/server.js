@@ -1,3 +1,5 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
@@ -7,6 +9,9 @@ import connectDB from "./lib/connectDB.js";
 import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
 import authRouter from "./routes/adminRoutes.js";
+import svgRouter from "./routes/svgRoutes.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = process.env.PORT;
 
@@ -28,9 +33,18 @@ app.use(cookieParser());
 
 app.get("/", (req, res) => res.send("server running"));
 
+app.use(
+	"/uploads",
+	express.static(path.join(__dirname, "uploads"), {
+		maxAge: "7d",
+		immutable: false,
+	})
+);
+
 app.use("/api/players", playerRouter)
 	.use("/api/scratch-codes", scratchCodeRouter)
-	.use("/api/auth", authRouter);
+	.use("/api/auth", authRouter)
+	.use("/api/svgs", svgRouter);
 
 const startServer = async () => {
 	try {

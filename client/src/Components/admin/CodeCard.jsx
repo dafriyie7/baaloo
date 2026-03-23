@@ -5,7 +5,7 @@ import {
 } from "../../constants/scratchMechanic";
 import { useAppcontext } from "../../context/AppContext";
 
-/** Hex redemption codes: show as XXXX-XXXX-… (20-char new codes, 32-char legacy). */
+/** Hex redemption codes: grouped as XXXX-XXXX-… for readability. */
 function formatRedemptionCodeForDisplay(plain) {
 	const compact = String(plain)
 		.replace(/[^0-9A-Fa-f]/g, "")
@@ -16,15 +16,11 @@ function formatRedemptionCodeForDisplay(plain) {
 }
 
 function normalizeSymbolChars(code) {
-	let raw = code.displaySymbols;
+	const raw = code.displaySymbols;
 	if (Array.isArray(raw)) {
-		return raw.map((c) => String(c).charAt(0)).filter(Boolean);
+		return raw.map((c) => String(c)).filter(Boolean);
 	}
-	if (typeof raw === "string" && raw.length > 0) {
-		return raw.replace(/\s/g, "").split("");
-	}
-	const pm = (code.patternMatch || []).join("");
-	return pm.length > 0 ? pm.split("") : [];
+	return [];
 }
 
 function formatTierLabel(tier) {
@@ -61,6 +57,12 @@ function tierPeakCaption(code) {
 	return "";
 }
 
+function symbolImageSrc(ch, symbolSvgMap, svgStaticOrigin) {
+	if (!symbolSvgMap || !svgStaticOrigin) return null;
+	const path = symbolSvgMap[ch];
+	return path ? `${svgStaticOrigin}${path}` : null;
+}
+
 function tierBadgeClass(tier) {
 	if (tier === "jackpot") {
 		return "border-amber-300/70 bg-amber-50 text-amber-950";
@@ -77,11 +79,21 @@ function tierBadgeClass(tier) {
 	return "border-stone-200 bg-white text-stone-700";
 }
 
-const CodeCard = ({ code }) => {
+function SvgCellPlaceholder() {
+	return (
+		<div
+			className="h-[90%] w-[90%] max-h-full max-w-full rounded-sm bg-stone-200/75 ring-1 ring-stone-300/40"
+			aria-hidden
+		/>
+	);
+}
+
+const CodeCard = ({ code, symbolSvgMap = null, svgStaticOrigin = "" }) => {
 	const { currency } = useAppcontext();
 
 	const symbolChars = useMemo(() => normalizeSymbolChars(code), [code]);
 	const panelGrid = symbolChars.length === SCRATCH_SYMBOL_COUNT;
+	const svgPanelOnly = Boolean(symbolSvgMap && svgStaticOrigin);
 	const peakCaption = tierPeakCaption(code);
 
 	const fmtMoney = (n) =>
@@ -126,28 +138,77 @@ const CodeCard = ({ code }) => {
 							<div
 								className="mt-1 grid grid-cols-4 gap-1 rounded-sm border border-stone-200 bg-white p-1.5"
 								role="img"
-								aria-label="Scratch symbols in four by four grid"
+								aria-label={
+									svgPanelOnly
+										? "Scratch SVG symbols in four by four grid"
+										: "Scratch symbols in four by four grid"
+								}
 							>
-								{symbolChars.map((ch, i) => (
-									<div
-										key={`${ch}-${i}`}
-										className="flex aspect-square items-center justify-center rounded-sm border border-stone-100 bg-stone-50/90 font-mono text-sm font-semibold text-stone-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] sm:text-base"
-									>
-										{ch}
-									</div>
-								))}
+								{symbolChars.map((ch, i) => {
+									const src = symbolImageSrc(
+										ch,
+										symbolSvgMap,
+										svgStaticOrigin
+									);
+									return (
+										<div
+											key={`cell-${i}-${ch}`}
+											className="flex aspect-square items-center justify-center overflow-hidden rounded-sm border border-stone-100 bg-stone-50/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+										>
+											{svgPanelOnly ? (
+												src ? (
+													<img
+														src={src}
+														alt=""
+														className="max-h-[90%] max-w-[90%] object-contain"
+													/>
+												) : (
+													<SvgCellPlaceholder />
+												)
+											) : (
+												<span className="font-mono text-sm font-semibold text-stone-800 sm:text-base">
+													{ch}
+												</span>
+											)}
+										</div>
+									);
+								})}
 							</div>
 						) : (
 							<div className="mt-1 flex flex-wrap justify-center gap-1 rounded-sm border border-stone-200 bg-white p-2">
 								{symbolChars.length > 0 ? (
-									symbolChars.map((ch, i) => (
-										<span
-											key={`${ch}-${i}`}
-											className="inline-flex min-w-[1.75rem] items-center justify-center rounded-sm border border-stone-100 bg-stone-50 px-1.5 py-1 font-mono text-xs font-semibold text-stone-800"
-										>
-											{ch}
-										</span>
-									))
+									symbolChars.map((ch, i) => {
+										const src = symbolImageSrc(
+											ch,
+											symbolSvgMap,
+											svgStaticOrigin
+										);
+										return (
+											<span
+												key={`cell-${i}-${ch}`}
+												className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-sm border border-stone-100 bg-stone-50 px-1 py-1"
+											>
+												{svgPanelOnly ? (
+													src ? (
+														<img
+															src={src}
+															alt=""
+															className="max-h-7 max-w-7 object-contain"
+														/>
+													) : (
+														<span
+															className="inline-block h-6 w-6 rounded-sm bg-stone-200/75 ring-1 ring-stone-300/40"
+															aria-hidden
+														/>
+													)
+												) : (
+													<span className="font-mono text-xs font-semibold text-stone-800">
+														{ch}
+													</span>
+												)}
+											</span>
+										);
+									})
 								) : (
 									<span className="text-xs font-medium text-stone-400">
 										—

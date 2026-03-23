@@ -10,12 +10,14 @@ import {
 	Users,
 	Menu,
 	X,
+	Images,
 } from "lucide-react";
 
 const navLinks = [
 	{ name: "Dashboard", path: "/admin", icon: LayoutDashboard },
 	{ name: "Batches", path: "/admin/batches", icon: Layers2 },
 	{ name: "Codes", path: "/admin/codes", icon: QrCode },
+	{ name: "SVGs", path: "/admin/svgs", icon: Images },
 	{ name: "Players", path: "/admin/players", icon: Users },
 ];
 
@@ -26,6 +28,8 @@ function linkActive(pathname, linkPath) {
 	if (linkPath === "/admin/codes" && pathname.startsWith("/admin/codes"))
 		return true;
 	if (linkPath === "/admin/players" && pathname.startsWith("/admin/players"))
+		return true;
+	if (linkPath === "/admin/svgs" && pathname.startsWith("/admin/svgs"))
 		return true;
 	return false;
 }

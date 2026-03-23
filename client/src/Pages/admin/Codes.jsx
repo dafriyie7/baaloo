@@ -26,6 +26,11 @@ const TIER_OPTIONS = [
 const selectClass =
 	"w-full min-w-[10rem] px-3 py-2 border border-amber-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/35 focus:border-amber-300 bg-white text-stone-900 text-sm";
 
+function svgStaticOrigin() {
+	const api = axios.defaults.baseURL || "";
+	return api.replace(/\/api\/?$/i, "") || "";
+}
+
 function formatCount(n) {
 	const x = Number(n);
 	if (!Number.isFinite(x)) return String(n);
@@ -57,8 +62,11 @@ const Codes = () => {
 	const [outcomeFilter, setOutcomeFilter] = useState("all");
 	const [tierFilter, setTierFilter] = useState("all");
 	const [sortBy, setSortBy] = useState("newest");
+	const [svgSymbolMap, setSvgSymbolMap] = useState(null);
 
 	const { setIsLoading, currency } = useAppcontext();
+
+	const svgOrigin = useMemo(() => svgStaticOrigin(), []);
 
 	const tierBreakdownRows = useMemo(() => {
 		if (!batchUsage?.tierBreakdown) return [];
@@ -111,6 +119,7 @@ const Codes = () => {
 					setCurrentPage(data.data.currentPage);
 					setTotalFiltered(data.data.totalFiltered ?? 0);
 					setBatchUsage(data.data.batchUsage ?? null);
+					setSvgSymbolMap(data.data.svgSymbolMap ?? null);
 					const fetchedBatches = data.data.batches;
 					setBatches(fetchedBatches);
 
@@ -624,7 +633,12 @@ const Codes = () => {
 							{codes && codes.length > 0 ? (
 								<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
 									{codes.map((code) => (
-										<CodeCard key={code._id} code={code} />
+										<CodeCard
+											key={code._id}
+											code={code}
+											symbolSvgMap={svgSymbolMap}
+											svgStaticOrigin={svgOrigin}
+										/>
 									))}
 								</div>
 							) : (

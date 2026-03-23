@@ -1,6 +1,6 @@
 import {
 	JACKPOT_MAX_MATCH_COUNT,
-	maxSymbolFrequency,
+	maxTokenFrequency,
 	SCRATCH_SYMBOL_COUNT,
 } from "./scratchTierMath.js";
 
@@ -10,8 +10,8 @@ const N = SCRATCH_SYMBOL_COUNT;
 const JACKPOT_PEAK = JACKPOT_MAX_MATCH_COUNT;
 const INDEXES = Array.from({ length: N }, (_, i) => i);
 
-function pickRandom(alphabet) {
-	return alphabet[Math.floor(Math.random() * alphabet.length)];
+function pickRandom(tokens) {
+	return tokens[Math.floor(Math.random() * tokens.length)];
 }
 
 function shuffleInPlace(arr) {
@@ -22,54 +22,79 @@ function shuffleInPlace(arr) {
 	return arr;
 }
 
+function defaultAlphabetTokens() {
+	return [...DEFAULT_ALPHABET];
+}
+
 /**
- * Length SCRATCH_SYMBOL_COUNT; exactly one symbol appears JACKPOT_PEAK times (9), rest lower.
+ * Length SCRATCH_SYMBOL_COUNT; exactly one token appears JACKPOT_PEAK times (9), rest lower.
+ * @param {string[]} alphabetTokens — distinct symbol ids (letters or full asset names)
  */
-export function generateJackpotSymbols(alphabet = DEFAULT_ALPHABET) {
-	if (alphabet.length < 2) {
-		throw new Error("Alphabet must have at least 2 characters for jackpot panel");
+export function generateJackpotSymbols(alphabetTokens = defaultAlphabetTokens()) {
+	if (alphabetTokens.length < 2) {
+		throw new Error(
+			"Alphabet must have at least 2 symbols for jackpot panel"
+		);
 	}
-	const winningChar = pickRandom(alphabet);
-	const others = [...alphabet].filter((c) => c !== winningChar);
+	const winning = pickRandom(alphabetTokens);
+	const others = alphabetTokens.filter((t) => t !== winning);
 	const positions = shuffleInPlace([...INDEXES]);
 	const winSet = new Set(positions.slice(0, JACKPOT_PEAK));
 	const arr = [];
 
 	for (let i = 0; i < N; i++) {
 		if (winSet.has(i)) {
-			arr[i] = winningChar;
+			arr[i] = winning;
 		} else {
 			arr[i] = pickRandom(others);
 		}
 	}
 
-	const s = arr.join("");
-	if (maxSymbolFrequency(s) !== JACKPOT_PEAK) {
-		return generateJackpotSymbols(alphabet);
+	if (maxTokenFrequency(arr) !== JACKPOT_PEAK) {
+		return generateJackpotSymbols(alphabetTokens);
 	}
-	return s;
+	return arr;
 }
 
-/** Max frequency ≤ 2 (losers and R1 “stake back” cards look the same). */
-export function generateLoserSymbols(alphabet = DEFAULT_ALPHABET, maxAttempts = 500) {
+/**
+ * Max frequency ≤ 2 (losers and R1 “stake back” cards look the same).
+ * With small alphabets, pure random draws rarely hit the constraint; we then
+ * build 8 distinct tokens × 2 copies (shuffled) when 2×|alphabet| ≥ N.
+ */
+export function generateLoserSymbols(
+	alphabetTokens = defaultAlphabetTokens(),
+	maxAttempts = 20000
+) {
 	for (let a = 0; a < maxAttempts; a++) {
-		let s = "";
-		for (let i = 0; i < N; i++) s += pickRandom(alphabet);
-		if (maxSymbolFrequency(s) <= 2) return s;
+		const arr = [];
+		for (let i = 0; i < N; i++) {
+			arr.push(pickRandom(alphabetTokens));
+		}
+		if (maxTokenFrequency(arr) <= 2) return arr;
+	}
+	if (alphabetTokens.length * 2 >= N) {
+		const order = shuffleInPlace([...alphabetTokens]);
+		const needDistinct = Math.ceil(N / 2);
+		const picked = order.slice(0, needDistinct);
+		const pool = picked.flatMap((t) => [t, t]);
+		return shuffleInPlace(pool);
 	}
 	throw new Error("Failed to generate loser symbols; try a larger alphabet");
 }
 
 /**
- * R3/R5/R7: one symbol appears K times; all others strictly fewer than K (K = 3..8).
+ * R3/R5/R7: one token appears K times; all others strictly fewer than K (K = 3..8).
  */
-export function generateRepeatTierSymbols(k, alphabet = DEFAULT_ALPHABET) {
+export function generateRepeatTierSymbols(
+	k,
+	alphabetTokens = defaultAlphabetTokens()
+) {
 	if (k < 3 || k > 8) {
 		throw new Error("R-tier repetition K must be between 3 and 8");
 	}
 
-	const winningChar = pickRandom(alphabet);
-	const others = [...alphabet].filter((c) => c !== winningChar);
+	const winning = pickRandom(alphabetTokens);
+	const others = alphabetTokens.filter((t) => t !== winning);
 	if (others.length === 0) {
 		throw new Error("Alphabet too small for R-tier generation");
 	}
@@ -77,11 +102,11 @@ export function generateRepeatTierSymbols(k, alphabet = DEFAULT_ALPHABET) {
 	const idxs = shuffleInPlace([...INDEXES]);
 	const winSet = new Set(idxs.slice(0, k));
 	const arr = [];
-	const counts = { [winningChar]: k };
+	const counts = { [winning]: k };
 
 	for (let i = 0; i < N; i++) {
 		if (winSet.has(i)) {
-			arr[i] = winningChar;
+			arr[i] = winning;
 		}
 	}
 
@@ -112,16 +137,15 @@ export function generateRepeatTierSymbols(k, alphabet = DEFAULT_ALPHABET) {
 		}
 
 		if (!chosen) {
-			return generateRepeatTierSymbols(k, alphabet);
+			return generateRepeatTierSymbols(k, alphabetTokens);
 		}
 
 		arr[i] = chosen;
 		counts[chosen] = (counts[chosen] || 0) + 1;
 	}
 
-	const s = arr.join("");
-	if (maxSymbolFrequency(s) !== k) {
-		return generateRepeatTierSymbols(k, alphabet);
+	if (maxTokenFrequency(arr) !== k) {
+		return generateRepeatTierSymbols(k, alphabetTokens);
 	}
-	return s;
+	return arr;
 }

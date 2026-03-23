@@ -13,7 +13,6 @@ export default {
                 "totalCodes": 10,
                 "giveawayPercentage": 100,
                 "totalRevenue": 10,
-                "totalPrizeBudget": 0,
                 "winningPrize": 1,
                 "createdAt": "2025-10-15T11:38:42.310Z",
                 "updatedAt": "2025-10-15T11:38:42.310Z",

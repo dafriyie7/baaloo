@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Svg from "../models/Svg.js";
 
 // Set up event listeners for the Mongoose connection singleton once.
 const { connection } = mongoose;
@@ -27,6 +28,17 @@ const connectDB = async () => {
 
 		await mongoose.connect(uri);
 		console.log("Successfully connected to MongoDB.");
+
+		// Drop indexes not declared on the schema (e.g. stale Svg compound indexes)
+		// so inserts are governed by { type, name } only.
+		try {
+			await Svg.syncIndexes();
+		} catch (syncErr) {
+			console.error(
+				"Svg.syncIndexes() failed — SVG uploads may hit duplicate-key errors until indexes are fixed:",
+				syncErr.message
+			);
+		}
 	} catch (error) {
 		console.error("Failed to connect to MongoDB:", error.message);
 		throw error;

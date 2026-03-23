@@ -3,8 +3,6 @@ import mongoose from "mongoose";
 const batchSchema = new mongoose.Schema(
 	{
 		batchNumber: { type: String, required: true, unique: true },
-		/** @deprecated Legacy v1 batches only */
-		pattern: { type: [String], default: [] },
 		mechanicVersion: { type: Number, default: 2 },
 
 		costPerCode: { type: Number, required: true },
@@ -28,9 +26,8 @@ const batchSchema = new mongoose.Schema(
 		winningPrize: { type: Number, default: 0 },
 
 		symbolAlphabet: { type: String, default: "ABCDEFGHIJKLMNOPQRSTUVWXYZ" },
-
-		/** @deprecated Use totalPrizePool */
-		totalPrizeBudget: { type: Number, default: 0 },
+		/** Theme slug for uploaded SVGs (Svg.type); empty = alphabet-only tokens (A–Z default) */
+		svgThemeType: { type: String, default: "", trim: true, maxlength: 64 },
 	},
 	{ timestamps: true }
 );
