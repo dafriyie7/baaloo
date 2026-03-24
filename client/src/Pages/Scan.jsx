@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppcontext } from "../context/AppContext";
+import Won from "../Components/Won";
+import Lost from "../Components/Lost";
+import Cashback from "../Components/Cashback";
 
 const PLAYER_STEPS = [
 	{
@@ -76,6 +79,7 @@ const Scanner = () => {
 	const [message, setMessage] = useState("");
 	const [scannerInstance, setScannerInstance] = useState(null);
 	const [isWinner, setIsWinner] = useState(false);
+	const [isCashback, setIsCashback] = useState(false);
 	const [openFaq, setOpenFaq] = useState(0);
 	const entryRef = useRef(null);
 	const heroRef = useRef(null);
@@ -203,7 +207,11 @@ const Scanner = () => {
 
 			if (data.success) {
 				const isWinner = data.data.code.isWinner;
+				const isCashbackFlag = data.data.code.isCashback || false;
+				
 				setIsWinner(isWinner);
+				setIsCashback(isCashbackFlag);
+				
 				toast.success("Your entry has been recorded!");
 
 				sessionStorage.setItem("winner", JSON.stringify(data.data));
@@ -212,7 +220,11 @@ const Scanner = () => {
 				if (isWinner) {
 					navigate("/claim");
 				} else {
-					setMessage("Sorry, not a winner this time.");
+					if (isCashbackFlag) {
+						setMessage("You got your cashback!");
+					} else {
+						setMessage("Sorry, not a winner this time.");
+					}
 					setStep("end");
 				}
 			}
@@ -599,50 +611,14 @@ const Scanner = () => {
 		}
 
 		if (step === "end") {
-			return (
-				<div className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-zinc-50 px-4 py-12 relative overflow-hidden">
-					<div className="absolute top-1/2 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-300/20 blur-[100px]" aria-hidden />
-					<div className="flex w-full max-w-md flex-col items-center rounded-2xl border border-amber-200/60 bg-white p-8 text-center shadow-xl shadow-amber-200/20">
-						{isWinner ? (
-							<>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									className="mb-4 h-20 w-20 text-yellow-500"
-									viewBox="0 0 24 24"
-									fill="currentColor"
-								>
-									<path d="M12.89,3L14.85,3.4L11.11,21L9.15,20.6L12.89,3M19,2H5A3,3 0 0,0 2,5V6A1,1 0 0,0 3,7H4.53L8.27,24H15.73L19.47,7H21A1,1 0 0,0 22,6V5A3,3 0 0,0 19,2Z" />
-								</svg>
-								<h1 className="mb-2 text-3xl font-bold text-amber-900">
-									Congratulations!
-								</h1>
-							</>
-						) : (
-							<>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									className="mb-4 h-20 w-20 text-gray-400"
-									viewBox="0 0 24 24"
-									fill="currentColor"
-								>
-									<path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
-								</svg>
-								<h1 className="mb-2 text-3xl font-bold text-gray-800">
-									So Close!
-								</h1>
-							</>
-						)}
-						<p className="mb-8 text-gray-600">{message}</p>
-						<button
-							type="button"
-							onClick={resetFlow}
-							className="w-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-6 py-3 font-bold text-amber-950 shadow-md shadow-amber-400/25 transition hover:from-amber-400 hover:to-yellow-400 sm:w-auto"
-						>
-							Play Again
-						</button>
-					</div>
-				</div>
-			);
+			if (isCashback) {
+				return <Cashback message={message} onRetry={resetFlow} amount="3.00" onClaim={() => toast.success("Cashback claimed!")} />;
+			}
+			if (isWinner) {
+				const winnerData = sessionStorage.getItem("winner") ? JSON.parse(sessionStorage.getItem("winner")) : null;
+				return <Won winner={winnerData} onHome={() => navigate("/")} />;
+			}
+			return <Lost message={message} onRetry={resetFlow} onHome={() => navigate("/")} />;
 		}
 	};
 
