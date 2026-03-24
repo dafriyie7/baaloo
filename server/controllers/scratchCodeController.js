@@ -2,6 +2,7 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 import ScratchCode from "../models/ScratchCode.js";
 import Batch from "../models/Batch.js";
+import Player from "../models/Player.js";
 import Svg from "../models/Svg.js";
 import QRCode from "qrcode";
 import {
@@ -622,6 +623,61 @@ export const listBatches = async (req, res) => {
 		});
 	} catch (error) {
 		console.error("[scratch batches list]", error);
+		return res.status(500).json({ success: false, message: error.message });
+	}
+};
+
+/**
+ * Remove a batch, all its scratch codes, and clear Player.code pointing at those codes.
+ */
+export const deleteBatch = async (req, res) => {
+	try {
+		const { id } = req.params;
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Invalid batch id." });
+		}
+		const batchOid = new mongoose.Types.ObjectId(id);
+		const batch = await Batch.findById(batchOid).lean();
+		if (!batch) {
+			return res
+				.status(404)
+				.json({ success: false, message: "Batch not found." });
+		}
+
+		const codeDocs = await ScratchCode.find({ batchNumber: batchOid })
+			.select("_id")
+			.lean();
+		const codeIdList = codeDocs.map((c) => c._id);
+
+		const session = await mongoose.startSession();
+		try {
+			await session.withTransaction(async () => {
+				if (codeIdList.length > 0) {
+					await Player.updateMany(
+						{ code: { $in: codeIdList } },
+						{ $set: { code: null } },
+						{ session }
+					);
+					await ScratchCode.deleteMany(
+						{ batchNumber: batchOid },
+						{ session }
+					);
+				}
+				await Batch.deleteOne({ _id: batchOid }, { session });
+			});
+		} finally {
+			session.endSession();
+		}
+
+		return res.json({
+			success: true,
+			message: `Batch "${batch.batchNumber}" and ${codeIdList.length} scratch code(s) were deleted.`,
+			deletedCodeCount: codeIdList.length,
+		});
+	} catch (error) {
+		console.error("[scratch delete batch]", error);
 		return res.status(500).json({ success: false, message: error.message });
 	}
 };

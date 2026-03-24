@@ -123,20 +123,25 @@ const Codes = () => {
 					const fetchedBatches = data.data.batches;
 					setBatches(fetchedBatches);
 
-					if (isInitialLoad && fetchedBatches.length > 0) {
-						const batchParam = searchParams.get("batch");
-						const fromParam =
-							batchParam &&
-							fetchedBatches.find(
-								(b) => String(b._id) === String(batchParam)
-							);
-						if (fromParam) {
-							setSelectedBatchId(String(fromParam._id));
-							setSelectedBatchDetails(fromParam);
+					if (isInitialLoad) {
+						if (fetchedBatches.length === 0) {
+							setSelectedBatchId("");
+							setSelectedBatchDetails(null);
 						} else {
-							const first = fetchedBatches[0];
-							setSelectedBatchId(String(first._id));
-							setSelectedBatchDetails(first);
+							const batchParam = searchParams.get("batch");
+							const fromParam =
+								batchParam &&
+								fetchedBatches.find(
+									(b) => String(b._id) === String(batchParam)
+								);
+							if (fromParam) {
+								setSelectedBatchId(String(fromParam._id));
+								setSelectedBatchDetails(fromParam);
+							} else {
+								const first = fetchedBatches[0];
+								setSelectedBatchId(String(first._id));
+								setSelectedBatchDetails(first);
+							}
 						}
 					} else {
 						const details = fetchedBatches.find(

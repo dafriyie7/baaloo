@@ -8,10 +8,12 @@ import {
 	QrCode,
 	RefreshCw,
 	Search,
+	Trash2,
 	X,
 } from "lucide-react";
 import { useAppcontext } from "../../context/AppContext";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
+import ConfirmDeleteByNameModal from "../../Components/admin/ConfirmDeleteByNameModal";
 import GenerateBatchModal from "../../Components/admin/GenerateBatchModal";
 
 const selectClass =
@@ -56,6 +58,7 @@ const Batches = () => {
 	const [period, setPeriod] = useState("all");
 	const [sort, setSort] = useState("newest");
 	const [generateModalOpen, setGenerateModalOpen] = useState(false);
+	const [batchPendingDelete, setBatchPendingDelete] = useState(null);
 
 	useEffect(() => {
 		const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
@@ -117,6 +120,53 @@ const Batches = () => {
 
 	return (
 		<div className="w-full p-4 sm:p-6 lg:p-8">
+			<ConfirmDeleteByNameModal
+				isOpen={Boolean(batchPendingDelete)}
+				onClose={() => setBatchPendingDelete(null)}
+				title="Delete batch"
+				description={
+					batchPendingDelete ? (
+						<>
+							<p>
+								This permanently deletes the batch and every scratch code in
+								it. Players linked to those codes will no longer have a code
+								attached.
+							</p>
+							<p className="mt-3 text-stone-700">
+								Type this batch number exactly (case-sensitive):
+							</p>
+							<p className="mt-1 rounded-md border border-amber-100 bg-stone-50 px-3 py-2 text-center font-mono text-sm font-semibold text-stone-900">
+								{batchPendingDelete.batchNumber}
+							</p>
+						</>
+					) : null
+				}
+				requiredExactText={batchPendingDelete?.batchNumber ?? ""}
+				fieldLabel="Batch number"
+				confirmButtonLabel="Delete batch"
+				onDelete={async () => {
+					if (!batchPendingDelete?._id) return false;
+					try {
+						const { data } = await axios.delete(
+							`/scratch-codes/batches/${batchPendingDelete._id}`
+						);
+						if (data.success) {
+							toast.success(data.message);
+							await fetchBatches();
+							return true;
+						}
+						toast.error(data.message || "Delete failed.");
+						return false;
+					} catch (error) {
+						toast.error(
+							error.response?.data?.message ||
+								error.message ||
+								"Delete failed."
+						);
+						return false;
+					}
+				}}
+			/>
 			<GenerateBatchModal
 				isOpen={generateModalOpen}
 				onClose={() => setGenerateModalOpen(false)}
@@ -329,13 +379,23 @@ const Batches = () => {
 														{formatDate(b.createdAt)}
 													</td>
 													<td className="px-4 py-3 text-right">
-														<Link
-															to={`/admin/codes?batch=${encodeURIComponent(b._id)}`}
-															className="inline-flex items-center gap-1 rounded-md bg-amber-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
-														>
-															<QrCode className="h-3.5 w-3.5" />
-															Codes
-														</Link>
+														<div className="flex flex-wrap items-center justify-end gap-2">
+															<Link
+																to={`/admin/codes?batch=${encodeURIComponent(b._id)}`}
+																className="inline-flex items-center gap-1 rounded-md bg-amber-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+															>
+																<QrCode className="h-3.5 w-3.5" />
+																Codes
+															</Link>
+															<button
+																type="button"
+																onClick={() => setBatchPendingDelete(b)}
+																className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-900 shadow-sm transition-colors hover:bg-rose-100"
+															>
+																<Trash2 className="h-3.5 w-3.5" />
+																Delete
+															</button>
+														</div>
 													</td>
 												</tr>
 											))}

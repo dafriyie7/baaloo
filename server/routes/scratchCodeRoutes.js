@@ -1,5 +1,6 @@
 import express from "express";
 import {
+	deleteBatch,
 	generateBatchStructured,
 	getAllScratchCodes,
 	listBatches,
@@ -13,6 +14,7 @@ scratchCodeRouter
 	.post("/generate-structured", userAuth, generateBatchStructured)
 	.post("/redeem", userAuth, redeemScratchCode)
 	.get("/batches", userAuth, listBatches)
+	.delete("/batches/:id", userAuth, deleteBatch)
 	.get("/get", userAuth, getAllScratchCodes)
 
 export default scratchCodeRouter;
