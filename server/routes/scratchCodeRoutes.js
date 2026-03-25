@@ -1,4 +1,5 @@
 import express from "express";
+import { generatePriceTagBatch } from "../controllers/priceTagBatchController.js";
 import {
 	deleteBatch,
 	generateBatchStructured,
@@ -12,6 +13,7 @@ const scratchCodeRouter = express.Router();
 
 scratchCodeRouter
 	.post("/generate-structured", userAuth, generateBatchStructured)
+	.post("/generate-price-tag", userAuth, generatePriceTagBatch)
 	.post("/redeem", userAuth, redeemScratchCode)
 	.get("/batches", userAuth, listBatches)
 	.delete("/batches/:id", userAuth, deleteBatch)

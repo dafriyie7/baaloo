@@ -322,6 +322,7 @@ const Batches = () => {
 										<thead>
 											<tr className="border-b border-amber-100 bg-stone-50/90 text-xs font-semibold uppercase tracking-wide text-stone-500">
 												<th className="px-4 py-3">Batch ID</th>
+												<th className="px-4 py-3">Mechanic</th>
 												<th className="px-4 py-3 text-right tabular-nums">
 													Codes
 												</th>
@@ -348,6 +349,11 @@ const Batches = () => {
 												>
 													<td className="px-4 py-3 font-mono text-xs font-semibold text-stone-900 sm:text-sm">
 														{b.batchNumber}
+													</td>
+													<td className="px-4 py-3 text-xs text-stone-600">
+														{b.gameMode === "price_tag_v1"
+															? "Price tag"
+															: "Classic"}
 													</td>
 													<td className="px-4 py-3 text-right tabular-nums">
 														<span className="font-medium">

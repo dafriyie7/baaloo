@@ -12,6 +12,10 @@ import { buildSymbolToUrlMap } from "../lib/svgSymbolMap.js";
 
 const TYPE_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
+function roundMoney(n) {
+	return Math.round(Number(n) * 100) / 100;
+}
+
 export function normalizeThemeType(raw) {
 	const s = String(raw ?? "")
 		.trim()
@@ -179,6 +183,35 @@ export const bulkUploadSvgs = async (req, res) => {
 	} catch (err) {
 		console.error("[svgs bulk]", err);
 		return res.status(400).json({ success: false, message: err.message });
+	}
+};
+
+export const patchSvg = async (req, res) => {
+	try {
+		const { id } = req.params;
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			return res.status(400).json({ success: false, message: "Invalid id." });
+		}
+		const raw = req.body?.prizeAmount;
+		const prizeAmount = Number(raw);
+		if (!Number.isFinite(prizeAmount) || prizeAmount < 0) {
+			return res.status(400).json({
+				success: false,
+				message: "prizeAmount must be a non-negative number.",
+			});
+		}
+		const updated = await Svg.findByIdAndUpdate(
+			id,
+			{ $set: { prizeAmount: roundMoney(prizeAmount) } },
+			{ new: true, runValidators: true }
+		).lean();
+		if (!updated) {
+			return res.status(404).json({ success: false, message: "SVG not found." });
+		}
+		return res.json({ success: true, data: updated });
+	} catch (err) {
+		console.error("[svgs patch]", err);
+		return res.status(500).json({ success: false, message: err.message });
 	}
 };
 

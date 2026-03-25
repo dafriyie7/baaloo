@@ -10,6 +10,7 @@ import {
 	listSvgs,
 	nameFromOriginalFilename,
 	normalizeThemeType,
+	patchSvg,
 } from "../controllers/svgController.js";
 import { ensureSvgTypeDir } from "../lib/svgPaths.js";
 
@@ -52,6 +53,7 @@ const svgRouter = express.Router();
 svgRouter.get("/public-map", getPublicSvgMap);
 svgRouter.get("/types", userAuth, listSvgTypes);
 svgRouter.get("/", userAuth, listSvgs);
+svgRouter.patch("/:id", userAuth, patchSvg);
 svgRouter.post(
 	"/bulk",
 	userAuth,
