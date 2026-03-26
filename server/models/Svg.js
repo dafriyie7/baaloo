@@ -23,6 +23,8 @@ const svgSchema = new mongoose.Schema(
 		/** Public path served by Express static, e.g. /uploads/svgs/fruit/a.svg */
 		urlPath: { type: String, required: true },
 		originalFileName: { type: String, default: "" },
+		/** Prize if this symbol wins (price tag mechanic). Use 0 for decoy-only symbols. */
+		prizeAmount: { type: Number, default: 0, min: 0 },
 	},
 	{ timestamps: true }
 );

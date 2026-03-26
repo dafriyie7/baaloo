@@ -80,6 +80,7 @@ const Scanner = () => {
 	const [scannerInstance, setScannerInstance] = useState(null);
 	const [isWinner, setIsWinner] = useState(false);
 	const [isCashback, setIsCashback] = useState(false);
+	const [cashbackAmount, setCashbackAmount] = useState(null);
 	const [openFaq, setOpenFaq] = useState(0);
 	const entryRef = useRef(null);
 	const heroRef = useRef(null);
@@ -211,6 +212,10 @@ const Scanner = () => {
 				
 				setIsWinner(isWinner);
 				setIsCashback(isCashbackFlag);
+				const cbAmt = Number(data.data?.code?.prizeAmount);
+				setCashbackAmount(
+					isCashbackFlag && Number.isFinite(cbAmt) ? cbAmt : null
+				);
 				
 				toast.success("Your entry has been recorded!");
 
@@ -259,6 +264,8 @@ const Scanner = () => {
 		setStep("details");
 		setMessage("");
 		setIsWinner(false);
+		setIsCashback(false);
+		setCashbackAmount(null);
 		setIsLoading(false);
 		setScannerInstance(null);
 	};
@@ -612,7 +619,18 @@ const Scanner = () => {
 
 		if (step === "end") {
 			if (isCashback) {
-				return <Cashback message={message} onRetry={resetFlow} amount="3.00" onClaim={() => toast.success("Cashback claimed!")} />;
+				return (
+					<Cashback
+						message={message}
+						onRetry={resetFlow}
+						amount={
+							cashbackAmount != null && Number.isFinite(cashbackAmount)
+								? String(cashbackAmount)
+								: "0"
+						}
+						onClaim={() => toast.success("Cashback claimed!")}
+					/>
+				);
 			}
 			if (isWinner) {
 				const winnerData = sessionStorage.getItem("winner") ? JSON.parse(sessionStorage.getItem("winner")) : null;

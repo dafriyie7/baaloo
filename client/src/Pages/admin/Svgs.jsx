@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "../../../lib/api";
-import { Images, LayoutGrid, List, Trash2, Upload } from "lucide-react";
+import { Images, LayoutGrid, List, Save, Trash2, Upload } from "lucide-react";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 import SvgUploadModal from "../../Components/admin/SvgUploadModal";
+import { useAppcontext } from "../../context/AppContext";
 
 const selectClass =
 	"w-full min-w-[10rem] px-3 py-2 border border-amber-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/35 focus:border-amber-300 bg-white text-stone-900 text-sm";
@@ -11,12 +12,72 @@ const selectClass =
 const layoutToggleBtn =
 	"inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50";
 
+const prizeInputClass =
+	"w-24 min-w-0 rounded-md border border-amber-100 px-2 py-1 text-sm text-stone-900 tabular-nums focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-400/30";
+
+function SvgPrizeEditor({ row, onSaved }) {
+	const [v, setV] = useState(String(row.prizeAmount ?? 0));
+	const [saving, setSaving] = useState(false);
+
+	useEffect(() => {
+		setV(String(row.prizeAmount ?? 0));
+	}, [row._id, row.prizeAmount]);
+
+	const save = async () => {
+		const n = Number(v);
+		if (!Number.isFinite(n) || n < 0) {
+			toast.error("Prize must be a non-negative number.");
+			return;
+		}
+		setSaving(true);
+		try {
+			const { data } = await axios.patch(`/svgs/${row._id}`, {
+				prizeAmount: n,
+			});
+			if (data.success) {
+				toast.success("Prize saved.");
+				onSaved?.(data.data);
+			} else {
+				toast.error(data.message || "Save failed.");
+			}
+		} catch (e) {
+			toast.error(e.response?.data?.message || "Save failed.");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	return (
+		<div className="flex flex-wrap items-center gap-1.5">
+			<input
+				type="number"
+				min={0}
+				step="0.01"
+				value={v}
+				onChange={(e) => setV(e.target.value)}
+				className={prizeInputClass}
+				aria-label={`Prize for ${row.name}`}
+			/>
+			<button
+				type="button"
+				onClick={save}
+				disabled={saving}
+				className="inline-flex items-center gap-0.5 rounded-md border border-amber-200 bg-white px-2 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-50 disabled:opacity-45"
+			>
+				<Save className="h-3 w-3" strokeWidth={2} />
+				Save
+			</button>
+		</div>
+	);
+}
+
 function staticOrigin() {
 	const api = axios.defaults.baseURL || "";
 	return api.replace(/\/api\/?$/i, "") || "";
 }
 
 const Svgs = () => {
+	const { currency } = useAppcontext();
 	const [types, setTypes] = useState([]);
 	const [filterType, setFilterType] = useState("");
 	const [items, setItems] = useState([]);
@@ -106,6 +167,15 @@ const Svgs = () => {
 		}
 	};
 
+	const mergeSvgRow = useCallback((updated) => {
+		if (!updated?._id) return;
+		setItems((prev) =>
+			prev.map((x) =>
+				String(x._id) === String(updated._id) ? { ...x, ...updated } : x
+			)
+		);
+	}, []);
+
 	const deleteTheme = async () => {
 		const t = filterType.trim().toLowerCase();
 		if (!t) {
@@ -147,8 +217,9 @@ const Svgs = () => {
 						Upload SVGs in bulk per theme (<code className="text-xs">type</code>
 						). File names become asset names (e.g.{" "}
 						<code className="text-xs">A.svg</code> →{" "}
-						<code className="text-xs">a</code>). Pick the same theme when
-						generating a batch.
+						<code className="text-xs">a</code>). Set each asset&apos;s{" "}
+						<strong>prize</strong> for the price tag scratch mechanic (use{" "}
+						<code className="text-xs">0</code> for decoys).
 					</p>
 				</div>
 
@@ -248,12 +319,13 @@ const Svgs = () => {
 						</p>
 					) : layout === "list" ? (
 						<div className="overflow-x-auto">
-							<table className="w-full min-w-[520px] text-left text-sm">
+							<table className="w-full min-w-[640px] text-left text-sm">
 								<thead>
 									<tr className="border-b border-amber-100 bg-stone-50/90 text-xs font-semibold uppercase tracking-wide text-stone-500">
 										<th className="px-4 py-3">Preview</th>
 										<th className="px-4 py-3">Theme</th>
 										<th className="px-4 py-3">Name</th>
+										<th className="px-4 py-3">Prize ({currency})</th>
 										<th className="px-4 py-3">File</th>
 										<th className="px-4 py-3 text-right">Actions</th>
 									</tr>
@@ -276,6 +348,12 @@ const Svgs = () => {
 											</td>
 											<td className="px-4 py-2 font-mono text-sm font-semibold">
 												{row.name}
+											</td>
+											<td className="px-4 py-2">
+												<SvgPrizeEditor
+													row={row}
+													onSaved={mergeSvgRow}
+												/>
 											</td>
 											<td className="px-4 py-2 text-xs text-stone-500">
 												{row.originalFileName || "—"}
@@ -312,6 +390,9 @@ const Svgs = () => {
 									<p className="font-mono text-sm font-semibold text-stone-900">
 										{row.name}
 									</p>
+									<div className="mt-2">
+										<SvgPrizeEditor row={row} onSaved={mergeSvgRow} />
+									</div>
 									{!filterType ? (
 										<p className="mt-0.5 font-mono text-[11px] text-stone-500">
 											{row.type}

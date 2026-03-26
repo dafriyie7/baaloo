@@ -23,7 +23,8 @@ function normalizeSymbolChars(code) {
 	return [];
 }
 
-function formatTierLabel(tier) {
+function formatTierLabel(tier, code) {
+	if (code?.isCashback) return "Cashback";
 	if (!tier || tier === "loser") return "Loser";
 	if (tier === "jackpot") return "Jackpot";
 	if (tier === "r1") return "R1";
@@ -37,12 +38,17 @@ function formatTierLabel(tier) {
 function tierPeakCaption(code) {
 	const t = code.tier;
 	const m = Number(code.maxMatchCount);
+	if (code.isCashback) {
+		return "Loser-style panel · stake back";
+	}
 	if (!t || t === "loser") {
 		return "At most 2 of any symbol";
 	}
 	if (t === "jackpot") {
-		const n = Number.isFinite(m) && m > 0 ? m : JACKPOT_MAX_MATCH_COUNT;
-		return `${n} of a symbol (top prize)`;
+		const n = Number.isFinite(m) && m > 0 ? m : 1;
+		return n <= 1
+			? "Special symbol once (jackpot)"
+			: `${n} of a symbol (top prize)`;
 	}
 	if (t === "r1") {
 		return "Money back";
@@ -63,7 +69,10 @@ function symbolImageSrc(ch, symbolSvgMap, svgStaticOrigin) {
 	return path ? `${svgStaticOrigin}${path}` : null;
 }
 
-function tierBadgeClass(tier) {
+function tierBadgeClass(tier, code) {
+	if (code?.isCashback) {
+		return "border-emerald-200/90 bg-emerald-50/90 text-emerald-900";
+	}
 	if (tier === "jackpot") {
 		return "border-amber-300/70 bg-amber-50 text-amber-950";
 	}
@@ -88,12 +97,20 @@ function SvgCellPlaceholder() {
 	);
 }
 
-const CodeCard = ({ code, symbolSvgMap = null, svgStaticOrigin = "" }) => {
+const CodeCard = ({
+	code,
+	symbolSvgMap = null,
+	svgStaticOrigin = "",
+	symbolPrizeMap = null,
+}) => {
 	const { currency } = useAppcontext();
 
 	const symbolChars = useMemo(() => normalizeSymbolChars(code), [code]);
 	const panelGrid = symbolChars.length === SCRATCH_SYMBOL_COUNT;
 	const svgPanelOnly = Boolean(symbolSvgMap && svgStaticOrigin);
+	const showCellPrizes = Boolean(
+		symbolPrizeMap && typeof symbolPrizeMap === "object"
+	);
 	const peakCaption = tierPeakCaption(code);
 
 	const fmtMoney = (n) =>
@@ -101,6 +118,18 @@ const CodeCard = ({ code, symbolSvgMap = null, svgStaticOrigin = "" }) => {
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 2,
 		})}`;
+
+	const cellPrizeText = (token) => {
+		if (!showCellPrizes) return null;
+		const key = String(token ?? "")
+			.trim()
+			.toLowerCase();
+		if (!key) return "—";
+		const v =
+			symbolPrizeMap[key] !== undefined ? Number(symbolPrizeMap[key]) : NaN;
+		if (!Number.isFinite(v)) return "—";
+		return fmtMoney(v);
+	};
 
 	return (
 		<article
@@ -134,14 +163,21 @@ const CodeCard = ({ code, symbolSvgMap = null, svgStaticOrigin = "" }) => {
 						<p className="text-[0.65rem] font-semibold uppercase tracking-wide text-stone-400">
 							Symbol panel
 						</p>
+						{showCellPrizes ? (
+							<p className="-mt-0.5 mb-1 text-[0.58rem] leading-snug text-stone-500">
+								Footer = SVG tag prize (0 = decoy).
+							</p>
+						) : null}
 						{panelGrid ? (
 							<div
 								className="mt-1 grid grid-cols-4 gap-1 rounded-sm border border-stone-200 bg-white p-1.5"
 								role="img"
 								aria-label={
-									svgPanelOnly
-										? "Scratch SVG symbols in four by four grid"
-										: "Scratch symbols in four by four grid"
+									showCellPrizes
+										? "Scratch symbols with price tag amounts per cell"
+										: svgPanelOnly
+											? "Scratch SVG symbols in four by four grid"
+											: "Scratch symbols in four by four grid"
 								}
 							>
 								{symbolChars.map((ch, i) => {
@@ -153,23 +189,35 @@ const CodeCard = ({ code, symbolSvgMap = null, svgStaticOrigin = "" }) => {
 									return (
 										<div
 											key={`cell-${i}-${ch}`}
-											className="flex aspect-square items-center justify-center overflow-hidden rounded-sm border border-stone-100 bg-stone-50/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+											className={`flex aspect-square flex-col overflow-hidden rounded-sm border border-stone-100 bg-stone-50/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ${
+												showCellPrizes ? "min-h-0" : ""
+											}`}
 										>
-											{svgPanelOnly ? (
-												src ? (
-													<img
-														src={src}
-														alt=""
-														className="max-h-[90%] max-w-[90%] object-contain"
-													/>
+											<div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-0.5">
+												{svgPanelOnly ? (
+													src ? (
+														<img
+															src={src}
+															alt=""
+															className="max-h-full max-w-full object-contain"
+														/>
+													) : (
+														<SvgCellPlaceholder />
+													)
 												) : (
-													<SvgCellPlaceholder />
-												)
-											) : (
-												<span className="font-mono text-sm font-semibold text-stone-800 sm:text-base">
-													{ch}
-												</span>
-											)}
+													<span className="font-mono text-sm font-semibold text-stone-800 sm:text-base">
+														{ch}
+													</span>
+												)}
+											</div>
+											{showCellPrizes ? (
+												<p
+													className="shrink-0 border-t border-stone-200/80 bg-white/90 px-0.5 py-0.5 text-center text-[0.5rem] font-bold tabular-nums leading-tight text-stone-800 sm:text-[0.55rem]"
+													title="Tag prize on SVG asset"
+												>
+													{cellPrizeText(ch)}
+												</p>
+											) : null}
 										</div>
 									);
 								})}
@@ -223,7 +271,7 @@ const CodeCard = ({ code, symbolSvgMap = null, svgStaticOrigin = "" }) => {
 					<p className="text-[0.65rem] font-semibold uppercase tracking-wide text-stone-400">
 						Prize
 					</p>
-					{code.isWinner ? (
+					{code.isWinner || code.isCashback ? (
 						<p className="mt-0.5 text-center text-base font-bold tabular-nums tracking-tight text-amber-950">
 							{fmtMoney(code.prizeAmount)}
 						</p>
@@ -238,10 +286,11 @@ const CodeCard = ({ code, symbolSvgMap = null, svgStaticOrigin = "" }) => {
 					<div className="min-w-0">
 						<span
 							className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${tierBadgeClass(
-								code.tier
+								code.tier,
+								code
 							)}`}
 						>
-							{formatTierLabel(code.tier)}
+							{formatTierLabel(code.tier, code)}
 						</span>
 						{peakCaption ? (
 							<p className="mt-1 text-[0.62rem] leading-snug text-stone-500">

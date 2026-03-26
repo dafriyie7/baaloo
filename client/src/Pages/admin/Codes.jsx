@@ -16,6 +16,7 @@ import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 const TIER_OPTIONS = [
 	{ value: "all", label: "All tiers" },
 	{ value: "loser", label: "Loser" },
+	{ value: "cashback", label: "Cashback (stake back)" },
 	{ value: "jackpot", label: "Jackpot" },
 	{ value: "r1", label: "R1 (stake back)" },
 	{ value: "r3", label: "R3" },
@@ -63,6 +64,7 @@ const Codes = () => {
 	const [tierFilter, setTierFilter] = useState("all");
 	const [sortBy, setSortBy] = useState("newest");
 	const [svgSymbolMap, setSvgSymbolMap] = useState(null);
+	const [symbolPrizeMap, setSymbolPrizeMap] = useState(null);
 
 	const { setIsLoading, currency } = useAppcontext();
 
@@ -82,6 +84,14 @@ const Codes = () => {
 						? Math.round((count / batchUsage.totalCodes) * 1000) / 10
 						: 0,
 			}));
+	}, [batchUsage]);
+
+	const tierFilterOptions = useMemo(() => {
+		const keys = Object.keys(batchUsage?.tierBreakdown || {}).filter(Boolean);
+		const extras = keys
+			.filter((k) => !TIER_OPTIONS.some((o) => o.value === k))
+			.map((k) => ({ value: k, label: k }));
+		return [...TIER_OPTIONS, ...extras];
 	}, [batchUsage]);
 
 	const fmt = useCallback(
@@ -120,6 +130,7 @@ const Codes = () => {
 					setTotalFiltered(data.data.totalFiltered ?? 0);
 					setBatchUsage(data.data.batchUsage ?? null);
 					setSvgSymbolMap(data.data.svgSymbolMap ?? null);
+					setSymbolPrizeMap(data.data.symbolPrizeMap ?? null);
 					const fetchedBatches = data.data.batches;
 					setBatches(fetchedBatches);
 
@@ -336,6 +347,7 @@ const Codes = () => {
 									<option value="all">All</option>
 									<option value="winner">Winner</option>
 									<option value="loser">Loser</option>
+									<option value="cashback">Cashback</option>
 								</select>
 							</div>
 							<div>
@@ -354,7 +366,7 @@ const Codes = () => {
 									}}
 									className={selectClass}
 								>
-									{TIER_OPTIONS.map((o) => (
+									{tierFilterOptions.map((o) => (
 										<option key={o.value} value={o.value}>
 											{o.label}
 										</option>
@@ -643,6 +655,7 @@ const Codes = () => {
 											code={code}
 											symbolSvgMap={svgSymbolMap}
 											svgStaticOrigin={svgOrigin}
+											symbolPrizeMap={symbolPrizeMap}
 										/>
 									))}
 								</div>
