@@ -4,6 +4,12 @@ const batchSchema = new mongoose.Schema(
 	{
 		batchNumber: { type: String, required: true, unique: true },
 		mechanicVersion: { type: Number, default: 2 },
+		/** structured_v2 = R-tier + jackpot; price_tag_v1 = per-SVG prize + 3× / special jackpot */
+		gameMode: {
+			type: String,
+			enum: ["structured_v2", "price_tag_v1"],
+			default: "structured_v2",
+		},
 
 		costPerCode: { type: Number, required: true },
 		totalCodes: { type: Number, required: true },

@@ -3,13 +3,14 @@ import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import { httpLogger, logger } from "./lib/logger.js";
 import connectDB from "./lib/connectDB.js";
 import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
 import authRouter from "./routes/adminRoutes.js";
 import svgRouter from "./routes/svgRoutes.js";
+import { handleShikaWebhook } from "./controllers/scController.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -17,9 +18,19 @@ const PORT = process.env.PORT;
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:5173", "https://baaloo.vercel.app"];
+const defaultAllowedOrigins = [
+	"http://localhost:3000",
+	"http://localhost:4173",
+	"http://localhost:5173",
+	"https://baaloo.vercel.app",
+];
+const envAllowedOrigins = String(process.env.CORS_ORIGINS || "")
+	.split(",")
+	.map((v) => v.trim())
+	.filter(Boolean);
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
 app.use(express.json())
-	.use(morgan("combined"))
+	.use(httpLogger)
 	.use(
 		cors({
 			origin: allowedOrigins,
@@ -32,6 +43,16 @@ app.use(express.json())
 app.use(cookieParser());
 
 app.get("/", (req, res) => res.send("server running"));
+
+// Shika webhook: must use raw body for signature verification; handle here so body is not parsed by express.json()
+app.get('/api/shika-webhook', (req, res) => {
+	res.status(200).json({ ok: true, message: 'Shika webhook endpoint is reachable; use POST for events.' });
+});
+app.post(
+	'/api/shika-webhook',
+	express.raw({ type: 'application/json' }),
+	handleShikaWebhook,
+);
 
 app.use(
 	"/uploads",
@@ -51,10 +72,13 @@ const startServer = async () => {
 		await connectDB();
 
 		app.listen(PORT, () =>
-			console.log(`Server running on http://localhost:${PORT}`)
+			logger.info(`Server listening on http://localhost:${PORT}`)
 		);
 	} catch (error) {
-		console.error("Failed to start server:", error.message);
+		const msg = `Failed to start server: ${error?.message ?? error}`;
+		logger.error(
+			error?.stack ? `${msg}\n${error.stack}` : msg
+		);
 		process.exit(1);
 	}
 };

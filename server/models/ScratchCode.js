@@ -31,6 +31,8 @@ const scratchCodeSchema = new mongoose.Schema(
 		maxMatchCount: { type: Number, default: 0 },
 		prizeAmount: { type: Number, default: 0 },
 		isWinner: { type: Boolean, default: false },
+		/** price_tag_v1: stake-back ticket that looks like a loser panel */
+		isCashback: { type: Boolean, default: false },
 		isUsed: { type: Boolean, default: false },
 		isPrinted: { type: Boolean, default: false },
 		redeemedBy: {

@@ -1,8 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import GenerateCodeForm from "./GenerateCodeForm";
+import GeneratePriceTagForm from "./GeneratePriceTagForm";
 
 const GenerateBatchModal = ({ isOpen, onClose, onGenerationSuccess }) => {
+	const [mechanic, setMechanic] = useState("structured");
 	useEffect(() => {
 		if (!isOpen) return;
 		const prev = document.body.style.overflow;
@@ -45,8 +47,42 @@ const GenerateBatchModal = ({ isOpen, onClose, onGenerationSuccess }) => {
 							Generate scratch batch
 						</h2>
 						<p className="mt-0.5 text-sm text-stone-600">
-							Configure tiers, pool split, and optional symbols.
+							{mechanic === "structured"
+								? "R-tier + jackpot (classic) or price tag (3× + special jackpot)."
+								: "Prize on each SVG asset; 3× wins, one jackpot cell, cashback as loser."}
 						</p>
+						<div
+							className="mt-3 inline-flex rounded-lg border border-amber-200/90 bg-stone-50 p-0.5"
+							role="tablist"
+							aria-label="Batch mechanic"
+						>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={mechanic === "structured"}
+								onClick={() => setMechanic("structured")}
+								className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+									mechanic === "structured"
+										? "bg-white text-amber-950 shadow-sm ring-1 ring-amber-100"
+										: "text-stone-600 hover:text-stone-900"
+								}`}
+							>
+								Classic (R-tiers)
+							</button>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={mechanic === "priceTag"}
+								onClick={() => setMechanic("priceTag")}
+								className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+									mechanic === "priceTag"
+										? "bg-white text-amber-950 shadow-sm ring-1 ring-amber-100"
+										: "text-stone-600 hover:text-stone-900"
+								}`}
+							>
+								Price tag
+							</button>
+						</div>
 					</div>
 					<button
 						type="button"
@@ -58,10 +94,17 @@ const GenerateBatchModal = ({ isOpen, onClose, onGenerationSuccess }) => {
 					</button>
 				</div>
 				<div className="max-h-[min(78vh,56rem)] overflow-y-auto px-5 py-5 sm:px-6 sm:pb-6">
-					<GenerateCodeForm
-						embeddedInModal
-						onGenerationSuccess={onGenerationSuccess}
-					/>
+					{mechanic === "structured" ? (
+						<GenerateCodeForm
+							embeddedInModal
+							onGenerationSuccess={onGenerationSuccess}
+						/>
+					) : (
+						<GeneratePriceTagForm
+							embeddedInModal
+							onGenerationSuccess={onGenerationSuccess}
+						/>
+					)}
 				</div>
 			</div>
 		</div>

@@ -442,6 +442,7 @@ export const generateBatchStructured = async (req, res) => {
 		const batch = await Batch.create({
 			batchNumber: resolvedBatchNumber,
 			mechanicVersion: 2,
+			gameMode: "structured_v2",
 			costPerCode,
 			totalCodes,
 			giveawayPercentage,
@@ -750,6 +751,7 @@ export const getAllScratchCodes = async (req, res) => {
 					batchUsage: null,
 					svgThemeType: "",
 					svgSymbolMap: null,
+					symbolPrizeMap: null,
 				},
 			});
 		}
@@ -773,6 +775,7 @@ export const getAllScratchCodes = async (req, res) => {
 					batchUsage: null,
 					svgThemeType: "",
 					svgSymbolMap: null,
+					symbolPrizeMap: null,
 				},
 			});
 		}
@@ -784,8 +787,10 @@ export const getAllScratchCodes = async (req, res) => {
 		else if (status === "redeemed") filter.isUsed = true;
 		if (outcome === "winner") filter.isWinner = true;
 		else if (outcome === "loser") filter.isWinner = false;
-		if (tier && tier !== "all" && ALLOWED_TIERS.has(tier)) {
-			filter.tier = tier;
+		else if (outcome === "cashback") filter.isCashback = true;
+		if (tier && tier !== "all") {
+			if (tier === "cashback") filter.isCashback = true;
+			else filter.tier = String(tier);
 		}
 
 		let sortSpec = { createdAt: -1 };
@@ -876,10 +881,21 @@ export const getAllScratchCodes = async (req, res) => {
 			activeBatch?.svgThemeType ?? ""
 		).trim();
 		let svgSymbolMap = null;
+		let symbolPrizeMap = null;
 		if (svgThemeTypeForBatch) {
 			const svgRows = await Svg.find({ type: svgThemeTypeForBatch }).lean();
 			if (svgRows.length > 0) {
 				svgSymbolMap = buildSymbolToUrlMap(svgRows);
+				if (activeBatch?.gameMode === "price_tag_v1") {
+					symbolPrizeMap = Object.fromEntries(
+						svgRows.map((r) => [
+							String(r.name ?? "")
+								.trim()
+								.toLowerCase(),
+							Number(r.prizeAmount) || 0,
+						])
+					);
+				}
 			}
 		}
 
@@ -920,6 +936,7 @@ export const getAllScratchCodes = async (req, res) => {
 				batchUsage,
 				svgThemeType: svgThemeTypeForBatch,
 				svgSymbolMap,
+				symbolPrizeMap,
 			},
 		});
 	} catch (error) {

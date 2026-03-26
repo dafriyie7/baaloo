@@ -7,15 +7,21 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.13",
     "@tailwindcss/vite": "^4.1.13",
     "autoprefixer": "^10.4.21",
     "axios": "^1.12.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.545.0",
+    "morgan": "^1.10.1",
     "react": "^19.1.1",
     "react-confetti": "^6.1.0",
     "react-dom": "^19.1.1",

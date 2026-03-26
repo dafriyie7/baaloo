@@ -1,7 +1,7 @@
 import React from 'react';
 import { Gift, ArrowRight, Sparkles } from 'lucide-react';
 
-const Won = ({ winner, onClaim, onHome }) => {
+const Won = ({ winner, onClaim, onHome, claimDisabled }) => {
 	// Fallback if no winner data
 	if (!winner) {
 		return (
@@ -68,10 +68,12 @@ const Won = ({ winner, onClaim, onHome }) => {
 					<div className="mt-8 flex flex-col gap-3">
 						{onClaim && (
 							<button 
+								type="button"
+								disabled={claimDisabled}
 								onClick={onClaim}
-								className="group relative flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+								className="group relative flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
 							>
-								Claim Prize Now
+								{claimDisabled ? "Processing…" : "Claim Prize Now"}
 								<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
 							</button>
 						)}
