@@ -35,7 +35,11 @@ export const AppContextProvider = ({ children }) => {
 			}
 		} catch (error) {
 			console.log(error);
-			toast.error(error.response.data.message || "something went wrong");
+			toast.error(
+				error?.response?.data?.message ||
+					error?.message ||
+					"something went wrong"
+			);
 		} finally {
 			setAuthChecked(true);
 		}
