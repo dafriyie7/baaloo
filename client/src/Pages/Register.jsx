@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../../lib/api";
 import { useAppcontext } from "../context/AppContext";
+import { ArrowLeft } from "lucide-react";
 
 const Register = () => {
 	const [name, setName] = useState("");
@@ -40,19 +41,33 @@ const Register = () => {
 	};
 
 	return (
-		<div className="w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-4 py-8">
-			<div className="w-full max-w-md bg-slate-200/10 backdrop-blur-lg border border-slate-400/20 p-8 rounded-2xl text-center shadow-2xl">
-				<h1 className="text-3xl font-bold text-slate-200 mb-6">
-					Admin Registration
+		<div className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-zinc-50 px-4 py-12 relative overflow-hidden">
+			{/* Ambient glows */}
+			<div className="absolute top-1/2 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-300/20 blur-[100px]" aria-hidden />
+			<div className="absolute top-0 right-0 -z-10 h-[400px] w-[400px] translate-x-1/3 -translate-y-1/3 rounded-full bg-amber-200/40 blur-[80px]" aria-hidden />
+
+			<div className="w-full max-w-md relative z-10 text-center">
+				<div className="mb-8 flex justify-center">
+					<div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-600 shadow-sm mb-4">
+						Setup Operator
+					</div>
+				</div>
+
+				<h1 className="text-[clamp(2rem,5vw,2.5rem)] font-black text-zinc-900 leading-tight mb-2">
+					Register Admin
 				</h1>
+				<p className="text-base font-medium text-zinc-500 mb-8 max-w-sm mx-auto">
+					Set up your operator account.
+				</p>
+
 				<form
 					onSubmit={handleRegister}
-					className="w-full space-y-4 text-left"
+					className="w-full space-y-4 text-left p-8 rounded-[2rem] border border-amber-200/40 bg-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl"
 				>
 					<div>
 						<label
 							htmlFor="name"
-							className="block text-sm font-medium text-slate-300 mb-1"
+							className="block text-sm font-bold text-zinc-700 mb-1.5"
 						>
 							Full Name
 						</label>
@@ -63,13 +78,13 @@ const Register = () => {
 							onChange={(e) => setName(e.target.value)}
 							required
 							placeholder="Enter your full name"
-							className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
 						/>
 					</div>
 					<div>
 						<label
 							htmlFor="email"
-							className="block text-sm font-medium text-slate-300 mb-1"
+							className="block text-sm font-bold text-zinc-700 mb-1.5"
 						>
 							Email
 						</label>
@@ -80,13 +95,13 @@ const Register = () => {
 							onChange={(e) => setEmail(e.target.value)}
 							required
 							placeholder="Enter your email"
-							className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
 						/>
 					</div>
 					<div>
 						<label
 							htmlFor="phone"
-							className="block text-sm font-medium text-slate-300 mb-1"
+							className="block text-sm font-bold text-zinc-700 mb-1.5"
 						>
 							Phone
 						</label>
@@ -97,13 +112,13 @@ const Register = () => {
 							onChange={(e) => setPhone(e.target.value)}
 							required
 							placeholder="Enter your phone number"
-							className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
 						/>
 					</div>
 					<div>
 						<label
 							htmlFor="password"
-							className="block text-sm font-medium text-slate-300 mb-1"
+							className="block text-sm font-bold text-zinc-700 mb-1.5"
 						>
 							Password
 						</label>
@@ -114,21 +129,37 @@ const Register = () => {
 							onChange={(e) => setPassword(e.target.value)}
 							required
 							placeholder="Enter your password"
-							className="block w-full px-4 py-3 bg-slate-800/50 border border-slate-500 text-slate-200 rounded-full shadow-sm focus:outline-none focus:ring-slate-400 focus:border-slate-400"
+							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
 						/>
 					</div>
-					<div className="pt-4 w-full flex justify-center">
+					<div className="pt-4">
 						<button
 							type="submit"
-							className="w-full py-3 px-12 border border-transparent rounded-full shadow-sm text-md font-medium text-white bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform duration-300 hover:scale-105"
+							className="mt-2 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
 						>
 							Register
 						</button>
 					</div>
-					<p onClick={() => navigate("/login")} className="flex justify-end text-slate-200 cursor-pointer hover:scale-101 duration-100">
-						Already have an account?
-					</p>
+
+					<div className="mt-4 text-center">
+						<button
+							type="button"
+							onClick={() => navigate("/login")}
+							className="text-sm font-bold text-zinc-500 hover:text-orange-600 transition-colors"
+						>
+							Already have an account? Sign in
+						</button>
+					</div>
 				</form>
+
+				<button
+					type="button"
+					onClick={() => navigate("/")}
+					className="mt-8 mx-auto inline-flex items-center gap-2 text-sm font-bold text-zinc-400 transition-colors hover:text-zinc-600"
+				>
+					<ArrowLeft className="h-4 w-4" />
+					Back to public game
+				</button>
 			</div>
 		</div>
 	);

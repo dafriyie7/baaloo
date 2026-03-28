@@ -353,7 +353,7 @@ const Scanner = () => {
 					<p className="text-center text-sm font-bold uppercase tracking-widest text-orange-600">
 						Baaloo scratch &amp; win
 					</p>
-					<h2 className="mt-3 text-center text-3xl font-black text-zinc-900 md:text-4xl">
+					<h2 className="mt-3 text-center text-[clamp(1.75rem,4vw,2.5rem)] leading-tight font-black text-zinc-900">
 						Enter details to begin
 					</h2>
 					<p className="mt-3 text-center text-base text-zinc-600">
@@ -414,7 +414,7 @@ const Scanner = () => {
 				<div className="mx-auto max-w-6xl">
 					<div className="text-center">
 						<p className="text-sm font-bold uppercase tracking-widest text-orange-600 mb-3">How it works</p>
-						<h2 className="text-3xl font-black text-zinc-900 md:text-5xl">
+						<h2 className="text-[clamp(2rem,5vw,3rem)] leading-tight font-black text-zinc-900">
 							Win in 4 easy steps
 						</h2>
 					</div>
@@ -454,7 +454,7 @@ const Scanner = () => {
 			<section className="px-4 py-20 md:py-28 bg-white relative">
 				<div className="mx-auto max-w-3xl">
 					<div className="text-center mb-16">
-						<h2 className="text-3xl font-black text-zinc-900 md:text-5xl">
+						<h2 className="text-[clamp(2rem,5vw,3rem)] leading-tight font-black text-zinc-900">
 							Frequently asked questions
 						</h2>
 						<p className="mt-4 text-lg font-medium text-zinc-500">
@@ -519,7 +519,7 @@ const Scanner = () => {
 				<div className="absolute left-1/2 top-1/2 -z-10 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-600/20 blur-[120px]" aria-hidden />
 				
 				<div className="relative z-10 mx-auto max-w-2xl">
-					<h2 className="text-4xl font-black text-white md:text-6xl">
+					<h2 className="text-[clamp(2.5rem,6vw,4rem)] leading-tight font-black text-white">
 						Ready when you are.
 					</h2>
 					<p className="mx-auto mt-6 max-w-lg text-lg font-medium text-zinc-400 md:text-xl">
