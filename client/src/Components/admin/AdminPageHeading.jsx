@@ -3,7 +3,7 @@
  * Use {@link ADMIN_MAIN_TITLE_CLASS} on h2 when an h1 already exists (e.g. modal).
  */
 export const ADMIN_MAIN_TITLE_CLASS =
-	"text-3xl font-extrabold tracking-tight text-stone-950 sm:text-4xl sm:leading-[1.06] text-balance antialiased";
+	"text-[clamp(1.75rem,4vw,2.25rem)] font-extrabold tracking-tight text-stone-950 leading-[1.1] text-balance antialiased";
 
 const alignClass = {
 	start: "justify-center text-center sm:justify-start sm:text-left",

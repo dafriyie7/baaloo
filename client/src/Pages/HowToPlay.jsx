@@ -55,7 +55,7 @@ const HowToPlay = () => {
 					<p className="inline-block rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-orange-600 shadow-sm">
 						Tutorial
 					</p>
-					<h1 className="mt-6 text-4xl font-black text-zinc-900 md:text-6xl">
+					<h1 className="mt-6 text-[clamp(2.5rem,6vw,4rem)] leading-tight font-black text-zinc-900">
 						How to play
 					</h1>
 					<p className="mx-auto mt-6 max-w-xl text-lg font-medium text-zinc-500">
