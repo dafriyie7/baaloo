@@ -2,6 +2,7 @@ import express from "express";
 import { generatePriceTagBatch } from "../controllers/priceTagBatchController.js";
 import {
 	deleteBatch,
+	exportBatchCodes,
 	generateBatchStructured,
 	getAllScratchCodes,
 	listBatches,
@@ -18,6 +19,8 @@ scratchCodeRouter
 	.get("/batches", userAuth, listBatches)
 	.delete("/batches/:id", userAuth, deleteBatch)
 	.get("/get", userAuth, getAllScratchCodes)
+	.get("/export/:id", userAuth, exportBatchCodes);
 
 export default scratchCodeRouter;
+
  
