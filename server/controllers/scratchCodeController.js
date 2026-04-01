@@ -244,6 +244,7 @@ export const generateBatchStructured = async (req, res) => {
 		}
 
 		const totalRevenue = roundMoney(totalCodes * costPerCode);
+		// Target pool is based on the giveawayPercentage
 		const totalPrizePool = roundMoney(
 			totalRevenue * (giveawayPercentage / 100)
 		);
@@ -314,18 +315,22 @@ export const generateBatchStructured = async (req, res) => {
 			}
 		}
 
-		if (sumRTierShare > 100.0001) {
+		if (sumRTierShare > giveawayPercentage + 0.0001) {
 			return structuredGenFail(
 				res,
 				400,
-				`Sum of R-tier giveaway shares is ${roundMoney(sumRTierShare)}%; it cannot exceed 100%.`
+				`Sum of R-tier revenue shares is ${roundMoney(sumRTierShare)}%; it cannot exceed the allowed giveaway of ${giveawayPercentage}%.`
 			);
 		}
 
-		const jackpotGiveawayPercentage = roundMoney(100 - sumRTierShare);
-		const jackpotPool = roundMoney(
-			totalPrizePool * (jackpotGiveawayPercentage / 100)
-		);
+		const jackpotRevenueShare = roundMoney(giveawayPercentage - sumRTierShare);
+		const jackpotPool = roundMoney(totalRevenue * (jackpotRevenueShare / 100));
+
+		// For backward compatibility in Batch model (if it expects a % of pool), 
+		// we calculate what % of the TOTAL target prize pool the jackpot is.
+		const jackpotGiveawayPercentage = totalPrizePool > 0 
+			? roundMoney((jackpotPool / totalPrizePool) * 100) 
+			: 0;
 
 		const counts = { loser: 0, jackpot: jackpotCount, r1: 0 };
 		const tierPrizes = {};
@@ -336,8 +341,9 @@ export const generateBatchStructured = async (req, res) => {
 		let marginRetainedFromPrizePool = 0;
 
 		for (const row of payoutRows) {
+			// giveawaySharePct is now interpreted as % of total revenue
 			const budget = roundMoney(
-				totalPrizePool * (row.giveawaySharePct / 100)
+				totalRevenue * (row.giveawaySharePct / 100)
 			);
 			const price = roundMoney(row.prizePerWinner);
 			const cnt = Math.floor(budget / price);
@@ -985,6 +991,8 @@ export const exportBatchCodes = async (req, res) => {
 		// Generate CSV
 		const headers = [
 			"Link",
+			"Outcome",
+			"Tier",
 			"Prize Amount",
 		];
 		const rows = codes.map((c) => {
@@ -996,8 +1004,12 @@ export const exportBatchCodes = async (req, res) => {
 			}
 			const scanUrl = `${origin}/scratch/${plainCode}`;
 
+			const outcome = c.isWinner ? (c.isCashback ? "Cashback" : "Winner") : "Loser";
+
 			return [
 				scanUrl,
+				outcome,
+				c.tier || "loser",
 				c.prizeAmount,
 			].join(",");
 		});
