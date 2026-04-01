@@ -1,6 +1,7 @@
 import { Route, Routes, Navigate, Outlet } from "react-router-dom";
 import Codes from "./Pages/admin/Codes";
 import Scan from "./Pages/Scan";
+import Landing from "./Pages/Landing";
 import Layout from "./Components/Layout";
 import { Toaster } from "react-hot-toast";
 
@@ -34,7 +35,8 @@ const App = () => {
 				<Route path="/register" element={<Register />} />
 
 				<Route path="/" element={<Layout />}>
-					<Route index element={<Scan />} />
+					<Route index element={<Landing />} />
+					<Route path="play" element={<Scan />} />
 					<Route path="claim" element={<ClaimWin />} />
 					<Route path="how-to-play" element={<HowToPlay />} />
 					<Route path="scratch/:code" element={<Scan />} />
@@ -57,3 +59,4 @@ const App = () => {
 };
 
 export default App;
+
