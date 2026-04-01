@@ -107,9 +107,9 @@ const GenerateCodeForm = ({
 		}
 
 		const revenue = round2(n * cost);
-		const prizePool = round2(revenue * (g / 100));
+		const targetPool = round2(revenue * (g / 100));
 
-		let sumRTierShare = 0;
+		let sumRTierRevenuePct = 0;
 		const tierPreview = [];
 		let marginRetained = 0;
 		let rTierTickets = 0;
@@ -136,13 +136,13 @@ const GenerateCodeForm = ({
 			} else if (!Number.isFinite(prize) || prize <= 0) {
 				return {
 					revenue,
-					prizePool,
+					prizePool: targetPool,
 					rTierError: `${key.toUpperCase()}: set prize per winner when % > 0`,
 				};
 			}
 
-			sumRTierShare += pct;
-			const budget = round2(prizePool * (pct / 100));
+			sumRTierRevenuePct += pct;
+			const budget = round2(revenue * (pct / 100));
 			const cnt = Math.floor(budget / prize);
 			const spent = round2(cnt * prize);
 			const leftover = round2(budget - spent);
@@ -157,16 +157,16 @@ const GenerateCodeForm = ({
 			});
 		}
 
-		if (sumRTierShare > 100.0001) {
+		if (sumRTierRevenuePct > g + 0.0001) {
 			return {
 				revenue,
-				prizePool,
-				rTierError: "R-tier giveaway % sum exceeds 100%.",
+				prizePool: targetPool,
+				rTierError: `Sum of R-tier % (${sumRTierRevenuePct}%) exceeds allowed giveaway of ${g}%.`,
 			};
 		}
 
-		const jackpotGiveawayPct = round2(100 - sumRTierShare);
-		const jackpotPool = round2(prizePool * (jackpotGiveawayPct / 100));
+		const jackpotRevenueShare = round2(g - sumRTierRevenuePct);
+		const jackpotPool = round2(revenue * (jackpotRevenueShare / 100));
 
 		const jCount = parseInt(String(jackpotCount), 10);
 		const jackpotReady = Number.isFinite(jCount) && jCount >= 1;
@@ -193,9 +193,9 @@ const GenerateCodeForm = ({
 
 		return {
 			revenue,
-			prizePool,
-			sumRTierShare,
-			jackpotGiveawayPct,
+			prizePool: targetPool,
+			sumRTierShare: sumRTierRevenuePct,
+			jackpotRevenueShare,
 			jackpotPool,
 			jackpotEach,
 			jackpotEachRaw,
@@ -206,8 +206,6 @@ const GenerateCodeForm = ({
 			marginRetained: round2(marginRetained),
 			rTierTickets,
 			loserCount,
-			ok,
-			rTierError: null,
 		};
 	}, [totalCodes, costPerCode, giveawayPercentage, jackpotCount, rTierRows]);
 
@@ -378,13 +376,14 @@ const GenerateCodeForm = ({
 			{embeddedInModal ? (
 				<div className="mb-5 space-y-2">
 					<p className="text-sm text-gray-600 max-w-3xl">
-						<strong>Prize pool</strong> = revenue × giveaway %. Each{" "}
+						<strong>Prize pool target</strong> = revenue × target payout %. Each{" "}
 						<strong>R1</strong> = stake back (same symbols as losers; % of
-						pool ÷ price/code). 						<strong>R3, R5, R7</strong> = repetition tiers (3 / 5 / 7 of one
-						symbol); % + fixed prize per ticket; count ={" "}
+						revenue ÷ price/code).{" "}
+						<strong>R3, R5, R7</strong> = repetition tiers (3 / 5 / 7 of one
+						symbol); % of revenue + fixed prize per ticket; count ={" "}
 						<code>floor(budget ÷ prize)</code>. Leftovers stay with the
-						house. <strong>Jackpot</strong> gets the remaining pool %;
-						you set winner count.
+						house. <strong>Jackpot</strong> gets a % of the remaining target payout;
+						you set winner count. <strong>Giveaway %</strong> is a safety guard.
 					</p>
 					<p className="text-xs text-gray-500 max-w-3xl font-mono bg-gray-50 border border-gray-100 rounded-md px-3 py-2">
 						Batch IDs: <strong>CC-YYMM-PPP</strong> (e.g.{" "}
@@ -445,20 +444,13 @@ const GenerateCodeForm = ({
 									</p>
 								</div>
 								<div>
-									<p className="text-gray-500">Giveaway %</p>
+									<p className="text-gray-500">Giveaway % target</p>
 									<p className="font-semibold text-gray-900 tabular-nums">
 										{formatDecimal(Number(giveawayPercentage))}%
 									</p>
 								</div>
 								<div>
-									<p className="text-gray-500">Total revenue</p>
-									<p className="font-semibold text-gray-900 tabular-nums">
-										{currency}{" "}
-										{formatMoney(batchPreview.revenue)}
-									</p>
-								</div>
-								<div>
-									<p className="text-gray-500">Prize pool</p>
+									<p className="text-gray-500">Prize pool target</p>
 									<p className="font-semibold text-gray-900 tabular-nums">
 										{currency}{" "}
 										{formatMoney(batchPreview.prizePool)}
@@ -513,7 +505,7 @@ const GenerateCodeForm = ({
 								htmlFor="giveawayPercentage"
 								className="block text-sm font-medium text-gray-700"
 							>
-								Giveaway % of revenue
+								Giveaway % of Revenue
 							</label>
 							<input
 								id="giveawayPercentage"
@@ -525,6 +517,9 @@ const GenerateCodeForm = ({
 								step="0.1"
 								className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-amber-700/25 focus:border-amber-700"
 							/>
+							<p className="mt-1 text-xs text-gray-500">
+								The total share for tiers + jackpot.
+							</p>
 						</div>
 					</div>
 				</div>
@@ -540,9 +535,9 @@ const GenerateCodeForm = ({
 							</div>
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 								<div>
-									<p className="text-gray-500">Jackpot % of pool (auto)</p>
+									<p className="text-gray-500">Jackpot % of remainder</p>
 									<p className="font-semibold text-gray-900 tabular-nums">
-										{formatDecimal(batchPreview.jackpotGiveawayPct)}%
+										{formatDecimal(batchPreview.jackpotRevenueShare)}% of revenue
 									</p>
 								</div>
 								<div>
@@ -618,8 +613,8 @@ const GenerateCodeForm = ({
 						<p className="text-xs text-gray-500 mt-1">
 							<strong>R1</strong>: stake back — prize is always price/code;
 							card looks like a loser (≤2 of any symbol).{" "}
-							<strong>R3, R5, R7</strong>: max 3 / 5 / 7 of one symbol; set %
-							and prize per winner. Sum ≤ 100%; remainder → jackpot.
+							<strong>R3, R5, R7</strong>: max 3 / 5 / 7 of one symbol; set % of revenue
+							and prize per winner. Sum ≤ Target payout; remainder → jackpot.
 						</p>
 					</div>
 					{batchPreview && !batchPreview.rTierError && (
@@ -637,9 +632,9 @@ const GenerateCodeForm = ({
 										</span>
 									</p>
 									<p>
-										Giveaway to R tiers:{" "}
+										Giveaway Target:{" "}
 										<span className="font-medium text-gray-800">
-											{formatDecimal(batchPreview.sumRTierShare)}%
+											{formatDecimal(batchPreview.sumRTierShare + batchPreview.jackpotRevenueShare)}% of revenue
 										</span>
 									</p>
 								</div>
@@ -682,7 +677,7 @@ const GenerateCodeForm = ({
 							<thead>
 								<tr className="border-b border-gray-200 text-left text-gray-600">
 									<th className="py-2 px-3">Tier</th>
-									<th className="py-2 pr-3">% of giveaway</th>
+									<th className="py-2 pr-3">% of revenue</th>
 									<th className="py-2 pr-3">
 										Prize / winner ({currency})
 									</th>
