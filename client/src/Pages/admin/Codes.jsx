@@ -8,8 +8,10 @@ import {
 	ChevronsRight,
 	PlusCircle,
 	QrCode,
+	Download,
 } from "lucide-react";
 import GenerateBatchModal from "../../Components/admin/GenerateBatchModal";
+import ExportTicketsModal from "../../Components/admin/ExportTicketsModal";
 import { useAppcontext } from "../../context/AppContext";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 
@@ -50,6 +52,7 @@ function formatDecimal(n, maxFractionDigits = 2) {
 const Codes = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [generateModalOpen, setGenerateModalOpen] = useState(false);
+	const [exportModalOpen, setExportModalOpen] = useState(false);
 	const [codes, setCodes] = useState([]);
 	const [batches, setBatches] = useState([]);
 	const [selectedBatchId, setSelectedBatchId] = useState("");
@@ -255,6 +258,12 @@ const Codes = () => {
 				onClose={() => setGenerateModalOpen(false)}
 				onGenerationSuccess={handleGenerationSuccess}
 			/>
+			<ExportTicketsModal
+				isOpen={exportModalOpen}
+				onClose={() => setExportModalOpen(false)}
+				batchId={selectedBatchId}
+				batchNumber={selectedBatchDetails?.batchNumber}
+			/>
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col items-stretch">
 				{batches && batches.length > 0 ? (
 					<div className="w-full">
@@ -268,14 +277,25 @@ const Codes = () => {
 									codes.
 								</p>
 							</div>
-							<button
-								type="button"
-								onClick={() => setGenerateModalOpen(true)}
-								className="inline-flex shrink-0 items-center justify-center gap-2 self-center rounded-md bg-amber-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700 sm:self-auto"
-							>
-								<PlusCircle className="h-5 w-5" strokeWidth={2} />
-								Generate batch
-							</button>
+							<div className="flex flex-wrap justify-center gap-2 sm:justify-end">
+								<button
+									type="button"
+									onClick={() => setExportModalOpen(true)}
+									disabled={!selectedBatchId}
+									className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-amber-200 bg-white px-5 py-3 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									<Download className="h-5 w-5" strokeWidth={2} />
+									Export
+								</button>
+								<button
+									type="button"
+									onClick={() => setGenerateModalOpen(true)}
+									className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+								>
+									<PlusCircle className="h-5 w-5" strokeWidth={2} />
+									Generate batch
+								</button>
+							</div>
 						</div>
 
 						<div className="mb-4 flex flex-wrap items-end justify-center gap-3 sm:justify-start">

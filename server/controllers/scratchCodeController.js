@@ -944,3 +944,75 @@ export const getAllScratchCodes = async (req, res) => {
 		return res.status(500).json({ success: false, message: error.message });
 	}
 };
+
+/**
+ * Export all scratch codes for a batch as CSV.
+ * Query: order (shuffled|grouped).
+ */
+export const exportBatchCodes = async (req, res) => {
+	try {
+		const { id: batchId } = req.params;
+		const { order } = req.query; // 'shuffled' or 'grouped'
+		const { origin } = req.headers;
+
+		if (!mongoose.Types.ObjectId.isValid(batchId)) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Invalid batch ID." });
+		}
+
+		const batch = await Batch.findById(new mongoose.Types.ObjectId(batchId)).lean();
+		if (!batch) {
+			return res
+				.status(404)
+				.json({ success: false, message: "Batch not found." });
+		}
+
+		const codes = await ScratchCode.find({ batchNumber: batch._id }).lean();
+
+		if (order === "shuffled") {
+			shuffleInPlace(codes);
+		} else if (order === "grouped") {
+			codes.sort((a, b) => {
+				// Group by outcome (winner first), then by tier
+				if (a.isWinner !== b.isWinner) {
+					return b.isWinner ? -1 : 1;
+				}
+				return (a.tier || "").localeCompare(b.tier || "");
+			});
+		}
+
+		// Generate CSV
+		const headers = [
+			"Link",
+			"Prize Amount",
+		];
+		const rows = codes.map((c) => {
+			let plainCode;
+			try {
+				plainCode = decrypt(c.code);
+			} catch {
+				plainCode = "[DECRYPTION_FAILED]";
+			}
+			const scanUrl = `${origin}/scratch/${plainCode}`;
+
+			return [
+				scanUrl,
+				c.prizeAmount,
+			].join(",");
+		});
+
+		const csvContent = [headers.join(","), ...rows].join("\n");
+
+		res.setHeader("Content-Type", "text/csv");
+		res.setHeader(
+			"Content-Disposition",
+			`attachment; filename=baaloo_batch_${batch.batchNumber}_${order}.csv`
+		);
+		return res.status(200).send(csvContent);
+	} catch (error) {
+		console.error("[scratch export codes]", error);
+		return res.status(500).json({ success: false, message: error.message });
+	}
+};
+
