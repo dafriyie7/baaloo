@@ -66,16 +66,30 @@ const Won = ({ winner, onClaim, onHome, claimDisabled }) => {
 					</div>
 
 					<div className="mt-8 flex flex-col gap-3">
-						{onClaim && (
-							<button 
-								type="button"
-								disabled={claimDisabled}
-								onClick={onClaim}
-								className="group relative flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
-							>
-								{claimDisabled ? "Processing…" : "Claim Prize Now"}
-								<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-							</button>
+						{winner.code?.tier === "jackpot" ? (
+							<div className="p-6 rounded-2xl bg-amber-100 border-2 border-amber-300 text-center shadow-inner">
+								<p className="text-amber-900 font-bold mb-2 uppercase tracking-tighter">Big Win — Jackpot!</p>
+								<p className="text-amber-800 text-sm leading-relaxed font-medium">
+									Congratulations! Please contact <b>Baaloo Management</b> directly to claim your high-value prize. 
+									Kindly visit our office with your phone and a valid ID.
+								</p>
+								<div className="mt-4 pt-4 border-t border-amber-200/50">
+									<p className="text-[10px] font-black text-amber-600/70 uppercase tracking-widest mb-1">Office Hours</p>
+									<p className="text-sm font-bold text-amber-950">Mon – Fri, 9am – 5pm</p>
+								</div>
+							</div>
+						) : (
+							onClaim && (
+								<button 
+									type="button"
+									disabled={claimDisabled}
+									onClick={onClaim}
+									className="group relative flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+								>
+									{claimDisabled ? "Processing…" : "Claim Prize Now"}
+									<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+								</button>
+							)
 						)}
 						{onHome && (
 							<button 

@@ -284,9 +284,20 @@ const Scanner = () => {
 						<h1 className="text-center text-2xl font-bold text-gray-900">
 							Scan to Win!
 						</h1>
-						<p className="mt-2 text-center text-gray-600">
-							Welcome, {name}!
-						</p>
+						<div className="mt-4 p-4 rounded-xl bg-orange-50 border border-orange-100 flex flex-col gap-1 items-center justify-center">
+							<p className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Redeeming as</p>
+							<div className="flex flex-col items-center">
+								<span className="font-bold text-zinc-900 text-lg">{name}</span>
+								<span className="font-medium text-zinc-500">{phone}</span>
+							</div>
+							<button 
+								onClick={() => setStep("details")}
+								className="mt-2 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
+							>
+								Edit Details
+							</button>
+						</div>
+
 						<div
 							id="reader"
 							className="mt-6 w-full overflow-hidden rounded-xl border-2 border-amber-100 shadow-inner"
