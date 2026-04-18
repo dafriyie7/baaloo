@@ -62,13 +62,15 @@ const Codes = () => {
 	const [selectedBatchDetails, setSelectedBatchDetails] = useState(null);
 	const [batchUsage, setBatchUsage] = useState(null);
 	const [totalFiltered, setTotalFiltered] = useState(0);
+	const [sortBy, setSortBy] = useState("newest");
+	const [showDetails, setShowDetails] = useState(false);
+	const [showSymbols, setShowSymbols] = useState(false);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
 	const [limit, setLimit] = useState(20);
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [outcomeFilter, setOutcomeFilter] = useState("all");
 	const [tierFilter, setTierFilter] = useState("all");
-	const [sortBy, setSortBy] = useState("newest");
 	const [svgSymbolMap, setSvgSymbolMap] = useState(null);
 	const [symbolPrizeMap, setSymbolPrizeMap] = useState(null);
 
@@ -457,6 +459,35 @@ const Codes = () => {
 							</div>
 						</div>
 
+						{/* Unified Security Settings Row - Always Visible below filters */}
+						<div className="flex flex-wrap items-center gap-x-8 gap-y-4 mt-6 pb-6 border-t border-stone-100">
+							<div className="flex items-center gap-3">
+								<p className="text-[10px] font-black uppercase tracking-widest text-stone-600">Prizes & Outcomes:</p>
+								<button 
+									onClick={() => setShowDetails(!showDetails)}
+									className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showDetails ? 'bg-amber-800' : 'bg-stone-300'}`}
+								>
+									<span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${showDetails ? 'translate-x-4' : 'translate-x-0'}`} />
+								</button>
+								<span className={`text-[10px] font-bold uppercase ${showDetails ? 'text-amber-800' : 'text-stone-400'}`}>
+									{showDetails ? 'Shown' : 'Hidden'}
+								</span>
+							</div>
+
+							<div className="flex items-center gap-3">
+								<p className="text-[10px] font-black uppercase tracking-widest text-stone-600">Symbol Panel:</p>
+								<button 
+									onClick={() => setShowSymbols(!showSymbols)}
+									className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showSymbols ? 'bg-amber-800' : 'bg-stone-300'}`}
+								>
+									<span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${showSymbols ? 'translate-x-4' : 'translate-x-0'}`} />
+								</button>
+								<span className={`text-[10px] font-bold uppercase ${showSymbols ? 'text-amber-800' : 'text-stone-400'}`}>
+									{showSymbols ? 'Shown' : 'Hidden'}
+								</span>
+							</div>
+						</div>
+
 						{selectedBatchDetails && batchUsage && (
 							<div className="mb-8 overflow-hidden rounded-md border border-amber-100 bg-white shadow-sm">
 								<div className="border-b border-amber-100 bg-stone-50/80 px-4 py-3">
@@ -666,7 +697,8 @@ const Codes = () => {
 													</ul>
 												)}
 											</div>
-										</div>
+											
+											</div>
 									</div>
 								</div>
 							</div>
@@ -693,6 +725,8 @@ const Codes = () => {
 											symbolSvgMap={svgSymbolMap}
 											svgStaticOrigin={svgOrigin}
 											symbolPrizeMap={symbolPrizeMap}
+											showDetails={showDetails}
+											showSymbols={showSymbols}
 										/>
 									))}
 								</div>
