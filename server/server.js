@@ -5,7 +5,6 @@ import cors from "cors";
 import "dotenv/config";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import mongoSanitize from "express-mongo-sanitize";
 import { rateLimit } from "express-rate-limit";
 import { httpLogger, logger } from "./lib/logger.js";
 import connectDB from "./lib/connectDB.js";
@@ -33,9 +32,7 @@ const envAllowedOrigins = String(process.env.CORS_ORIGINS || "")
 	.filter(Boolean);
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
 
-// --- Security Middleware ---
 app.use(helmet()); // Sets various security-related HTTP headers
-app.use(mongoSanitize()); // Prevents NoSQL injection
 
 // Rate Limiting
 const globalLimiter = rateLimit({
@@ -57,6 +54,25 @@ const authLimiter = rateLimit({
 // ---------------------------
 
 app.use(express.json())
+	.use((req, res, next) => {
+		// Custom stable NoSQL Sanitizer
+		const sanitize = (obj) => {
+			if (obj instanceof Object) {
+				for (const key in obj) {
+					if (key.startsWith('$')) {
+						delete obj[key];
+					} else {
+						sanitize(obj[key]);
+					}
+				}
+			}
+			return obj;
+		};
+		if (req.body) sanitize(req.body);
+		if (req.params) sanitize(req.params);
+		// Note: We skip req.query here as it's often read-only in this environment
+		next();
+	})
 	.use(httpLogger)
 	.use(globalLimiter)
 	.use(

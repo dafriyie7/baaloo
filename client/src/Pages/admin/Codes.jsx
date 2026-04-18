@@ -14,6 +14,7 @@ import {
 import GenerateBatchModal from "../../Components/admin/GenerateBatchModal";
 import ExportTicketsModal from "../../Components/admin/ExportTicketsModal";
 import AuditCodesModal from "../../Components/admin/AuditCodesModal";
+import SecurityRevealModal from "../../Components/admin/SecurityRevealModal";
 import { useAppcontext } from "../../context/AppContext";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 
@@ -65,6 +66,17 @@ const Codes = () => {
 	const [sortBy, setSortBy] = useState("newest");
 	const [showDetails, setShowDetails] = useState(false);
 	const [showSymbols, setShowSymbols] = useState(false);
+	const [securityModalOpen, setSecurityModalOpen] = useState(false);
+	const [pendingAction, setPendingAction] = useState(null); // 'REVEAL_OUTCOMES', 'REVEAL_SYMBOLS', or 'FILTER_BY_TIER'
+	const [pendingTier, setPendingTier] = useState(null);
+
+	const logSecurityEvent = async (action, details = {}) => {
+		try {
+			await axios.post("/auth/log-ui-event", { action, details });
+		} catch (err) {
+			console.error("Failed to log security event:", err);
+		}
+	};
 	const [currentPage, setCurrentPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
 	const [limit, setLimit] = useState(20);
@@ -203,6 +215,52 @@ const Codes = () => {
 		}
 	}, [selectedBatchId, batches.length, fetchCodesAndBatches]);
 
+	// Automatic Privacy Timeout (5 minutes)
+	useEffect(() => {
+		let timer;
+		if (showDetails || showSymbols) {
+			const resetTimer = () => {
+				if (timer) clearTimeout(timer);
+				timer = setTimeout(() => {
+					setShowDetails(false);
+					setShowSymbols(false);
+					toast("Privacy mode automatically enabled due to inactivity.", {
+						icon: "🔒",
+						style: { borderRadius: "12px", background: "#292524", color: "#fff" },
+					});
+				}, 5 * 60 * 1000); // 5 minutes
+			};
+
+			resetTimer();
+			window.addEventListener("mousemove", resetTimer);
+			window.addEventListener("keydown", resetTimer);
+			window.addEventListener("click", resetTimer);
+
+			return () => {
+				if (timer) clearTimeout(timer);
+				window.removeEventListener("mousemove", resetTimer);
+				window.removeEventListener("keydown", resetTimer);
+				window.removeEventListener("click", resetTimer);
+			};
+		}
+	}, [showDetails, showSymbols]);
+
+	const handleSecurityVerify = (reason) => {
+		if (pendingAction === "REVEAL_OUTCOMES") {
+			setShowDetails(true);
+			logSecurityEvent("REVEAL_OUTCOMES", { reason });
+		} else if (pendingAction === "REVEAL_SYMBOLS") {
+			setShowSymbols(true);
+			logSecurityEvent("REVEAL_SYMBOLS", { reason });
+		} else if (pendingAction === "FILTER_BY_TIER") {
+			setTierFilter(pendingTier);
+			setCurrentPage(1);
+			logSecurityEvent("FILTER_BY_TIER", { tier: pendingTier, reason });
+			setPendingTier(null);
+		}
+		setPendingAction(null);
+	};
+
 	const handleGenerationSuccess = () => {
 		fetchCodesAndBatches(true);
 		setGenerateModalOpen(false);
@@ -262,6 +320,12 @@ const Codes = () => {
 				isOpen={generateModalOpen}
 				onClose={() => setGenerateModalOpen(false)}
 				onGenerationSuccess={handleGenerationSuccess}
+			/>
+			<SecurityRevealModal
+				isOpen={securityModalOpen}
+				onClose={() => { setSecurityModalOpen(false); setPendingAction(null); }}
+				onVerified={handleSecurityVerify}
+				actionType={pendingAction}
 			/>
 			<ExportTicketsModal
 				isOpen={exportModalOpen}
@@ -400,8 +464,15 @@ const Codes = () => {
 									id="tier-filter"
 									value={tierFilter}
 									onChange={(e) => {
-										setTierFilter(e.target.value);
-										setCurrentPage(1);
+										const val = e.target.value;
+										if (val && val !== "all") {
+											setPendingTier(val);
+											setPendingAction("FILTER_BY_TIER");
+											setSecurityModalOpen(true);
+										} else {
+											setTierFilter(val);
+											setCurrentPage(1);
+										}
 									}}
 									className={selectClass}
 								>
@@ -464,7 +535,14 @@ const Codes = () => {
 							<div className="flex items-center gap-3">
 								<p className="text-[10px] font-black uppercase tracking-widest text-stone-600">Prizes & Outcomes:</p>
 								<button 
-									onClick={() => setShowDetails(!showDetails)}
+									onClick={() => {
+										if (!showDetails) {
+											setPendingAction("REVEAL_OUTCOMES");
+											setSecurityModalOpen(true);
+										} else {
+											setShowDetails(false);
+										}
+									}}
 									className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showDetails ? 'bg-amber-800' : 'bg-stone-300'}`}
 								>
 									<span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${showDetails ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -477,7 +555,14 @@ const Codes = () => {
 							<div className="flex items-center gap-3">
 								<p className="text-[10px] font-black uppercase tracking-widest text-stone-600">Symbol Panel:</p>
 								<button 
-									onClick={() => setShowSymbols(!showSymbols)}
+									onClick={() => {
+										if (!showSymbols) {
+											setPendingAction("REVEAL_SYMBOLS");
+											setSecurityModalOpen(true);
+										} else {
+											setShowSymbols(false);
+										}
+									}}
 									className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showSymbols ? 'bg-amber-800' : 'bg-stone-300'}`}
 								>
 									<span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${showSymbols ? 'translate-x-4' : 'translate-x-0'}`} />

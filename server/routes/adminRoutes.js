@@ -8,11 +8,12 @@ import {
 	updateAdminById,
 	updateAdminPasswordById,
 	deleteAdminById,
+	verifyStepUp,
 	getAllAdmins,
 	logoutUser,
 	checkAuth,
 } from "../controllers/adminController.js";
-import { getAuditLogs } from "../controllers/auditLogController.js";
+import { getAuditLogs, logUiEvent } from "../controllers/auditLogController.js";
 import userAuth from "../middleware/userAuth.js";
 import adminAuth from "../middleware/adminAuth.js";
 
@@ -30,6 +31,8 @@ authRouter
 	.patch("/admins/:id/password", adminAuth, updateAdminPasswordById)
 	.delete("/admins/:id", adminAuth, deleteAdminById)
 	.get("/check-auth", userAuth, checkAuth)
-	.get("/audit-logs", adminAuth, getAuditLogs);
+	.get("/audit-logs", adminAuth, getAuditLogs)
+	.post("/log-ui-event", adminAuth, logUiEvent)
+	.post("/verify-step-up", adminAuth, verifyStepUp);
 
 export default authRouter;
