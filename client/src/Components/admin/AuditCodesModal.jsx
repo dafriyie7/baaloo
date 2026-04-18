@@ -82,7 +82,18 @@ const AuditCodesModal = ({ isOpen, onClose, batchId, batchNumber }) => {
 			];
 		});
 
-		const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+		const csvContent = [
+			headers.join(","), 
+			...rows.map(row => row.join(",")),
+			"",
+			"SUMMARY",
+			`Total Analyzed,${results.totalAnalyzed}`,
+			`Total Found,${results.totalFound}`,
+			`Winners,${results.winnersCount}`,
+			`Cashback,${results.cashbackCount}`,
+			`Losers,${results.losersCount}`,
+			`Missing,${results.missingCount}`
+		].join("\n");
 		const blob = new Blob([csvContent], { type: "text/csv" });
 		const url = window.URL.createObjectURL(blob);
 		const link = document.createElement("a");
@@ -199,15 +210,25 @@ const AuditCodesModal = ({ isOpen, onClose, batchId, batchNumber }) => {
 					) : (
 						<div className="space-y-6">
 							<div className="flex flex-col sm:flex-row gap-4 items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-100">
-								<div className="flex items-center gap-4">
+								<div className="flex flex-wrap items-center gap-x-6 gap-y-3">
 									<div className="text-center sm:text-left">
-										<p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Analyzed</p>
-										<p className="text-2xl font-black text-stone-900">{results.totalAnalyzed}</p>
+										<p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Analyzed</p>
+										<p className="text-xl font-black text-stone-900">{results.totalAnalyzed}</p>
 									</div>
-									<div className="h-8 w-px bg-stone-200" />
+									<div className="h-6 w-px bg-stone-200 hidden sm:block" />
 									<div className="text-center sm:text-left">
-										<p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Found in DB</p>
-										<p className="text-2xl font-black text-stone-900">{results.totalFound}</p>
+										<p className="text-[9px] font-black uppercase tracking-widest text-emerald-500/60">Winners</p>
+										<p className="text-xl font-black text-emerald-600">{results.winnersCount}</p>
+									</div>
+									<div className="h-6 w-px bg-stone-200 hidden sm:block" />
+									<div className="text-center sm:text-left">
+										<p className="text-[9px] font-black uppercase tracking-widest text-amber-500/60">Cashback</p>
+										<p className="text-xl font-black text-amber-600">{results.cashbackCount}</p>
+									</div>
+									<div className="h-6 w-px bg-stone-200 hidden sm:block" />
+									<div className="text-center sm:text-left">
+										<p className="text-[9px] font-black uppercase tracking-widest text-rose-500/60">Missing</p>
+										<p className="text-xl font-black text-rose-600">{results.missingCount}</p>
 									</div>
 								</div>
 								<button 

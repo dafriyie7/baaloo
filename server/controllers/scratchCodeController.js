@@ -1122,6 +1122,10 @@ export const auditBatchCodes = async (req, res) => {
 			success: true,
 			totalAnalyzed: extractedCodes.length,
 			totalFound: dbCodes.length,
+			winnersCount: results.filter(r => r.isWinner).length,
+			cashbackCount: results.filter(r => r.isCashback).length,
+			losersCount: results.filter(r => r.found && !r.isWinner && !r.isCashback).length,
+			missingCount: results.filter(r => !r.found).length,
 			results,
 		});
 	} catch (error) {
