@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import Batch from "../models/Batch.js";
 import ScratchCode from "../models/ScratchCode.js";
 import Player from "../models/Player.js";
+import AuditLog from "../models/AuditLog.js";
+import { logAudit } from "../lib/auditLogger.js";
 
 // register a new user
 export const registerUser = async (req, res) => {
@@ -36,6 +38,12 @@ export const registerUser = async (req, res) => {
 		});
 
 		await newUser.save();
+
+		await logAudit(req, "REGISTER_ADMIN", {
+			resource: "User",
+			resourceId: newUser._id,
+			details: { name: newUser.name, email: newUser.email },
+		});
 
 		return res.status(201).json({
 			success: true,
@@ -93,6 +101,11 @@ export const loginUser = async (req, res) => {
 		const sanitizedUser = user.toObject();
 		delete sanitizedUser.password;
 
+		await logAudit(req, "LOGIN", {
+			userId: user._id,
+			details: { email: user.email },
+		});
+
 		res.status(200).json({
 			success: true,
 			message: "User logged in successfully",
@@ -113,6 +126,8 @@ export const logoutUser = async (req, res) => {
 			secure: process.env.NODE_ENV === "production",
 			sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
 		});
+
+		await logAudit(req, "LOGOUT");
 
 		// Respond with success
 		return res
@@ -179,6 +194,11 @@ export const updatePassword = async (req, res) => {
 		user.password = hashedPassword;
 
 		await user.save();
+
+		await logAudit(req, "UPDATE_PASSWORD", {
+			resource: "User",
+			resourceId: user._id,
+		});
 
 		return res.status(200).json({
 			success: true,
@@ -295,6 +315,12 @@ export const deleteAdminById = async (req, res) => {
 	try {
 		const { id } = req.params;
 		await User.findByIdAndDelete(id);
+
+		await logAudit(req, "DELETE_ADMIN", {
+			resource: "User",
+			resourceId: id,
+		});
+
 		res.json({ success: true, message: "Admin removed successfully" });
 	} catch (err) {
 		console.error("Delete admin error: ", err);
@@ -314,6 +340,7 @@ export const getManagementData = async (req, res) => {
 			totalCodes,
 			totalPlayers,
 			admins,
+			recentLogs,
 			batchRollup,
 			realizedRevAgg,
 			revenueLast7dAgg,
@@ -323,6 +350,10 @@ export const getManagementData = async (req, res) => {
 			ScratchCode.countDocuments(),
 			Player.countDocuments(),
 			User.find().select("-password"),
+			AuditLog.find()
+				.populate("user", "name email")
+				.sort({ createdAt: -1 })
+				.limit(5),
 			Batch.aggregate([
 				{
 					$group: {
@@ -435,6 +466,7 @@ export const getManagementData = async (req, res) => {
 			data: {
 				stats,
 				admins,
+				recentLogs,
 			},
 		});
 	} catch (error) {

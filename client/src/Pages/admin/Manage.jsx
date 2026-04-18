@@ -13,6 +13,10 @@ import {
 	TrendingUp,
 	Users,
 	UserPlus,
+	Clock,
+	History,
+	User,
+	Globe,
 } from "lucide-react";
 import axios from "../../../lib/api";
 import AdminEditModal from "../../Components/admin/AdminEditModal";
@@ -39,6 +43,7 @@ const Manage = () => {
 		stickerShareOfBookedPct: 0,
 	});
 	const [admins, setAdmins] = useState([]);
+	const [recentLogs, setRecentLogs] = useState([]);
 	const [newName, setNewName] = useState("");
 	const [newEmail, setNewEmail] = useState("");
 	const [newPhone, setNewPhone] = useState("");
@@ -54,6 +59,7 @@ const Manage = () => {
 			if (data.success) {
 				setStats(data.data.stats);
 				setAdmins(data.data.admins);
+				setRecentLogs(data.data.recentLogs || []);
 			} else {
 				toast.error(data.message || "Failed to fetch data.");
 			}
@@ -488,6 +494,60 @@ const Manage = () => {
 						</form>
 					</div>
 				</div>
+
+
+				{/* Recent Activity Card */}
+				<section className="mb-10 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">
+					<div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/50 px-5 py-4">
+						<div className="flex items-center gap-2.5">
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-900 shadow-sm">
+								<History size={18} strokeWidth={2.5} />
+							</div>
+							<h2 className="text-base font-bold text-stone-900">Recent System Activity</h2>
+						</div>
+						<button 
+							onClick={() => navigate("/admin/logs")}
+							className="text-xs font-bold text-amber-800 hover:text-amber-900 transition-colors uppercase tracking-tight"
+						>
+							View All Logs
+						</button>
+					</div>
+					<div className="divide-y divide-stone-100">
+						{recentLogs.length > 0 ? (
+							recentLogs.map((log) => (
+								<div key={log._id} className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-stone-50/50">
+									<div className="flex items-center gap-4 min-w-0">
+										<div className="flex flex-col">
+											<span className="text-xs font-bold text-stone-900 truncate">
+												{log.action.replace(/_/g, " ")}
+											</span>
+											<span className="text-[10px] text-stone-500 flex items-center gap-1">
+												<User size={10} /> {log.user?.name || "System"}
+											</span>
+										</div>
+									</div>
+									<div className="flex flex-col items-end shrink-0">
+										<span className="text-[10px] font-bold text-stone-800 flex items-center gap-1">
+											<Clock size={10} className="text-stone-400" />
+											{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+										</span>
+										<span className="text-[9px] font-bold text-amber-800/80 flex items-center gap-1">
+											<Globe size={9} />
+											{log.location || "Unknown"}
+										</span>
+										<span className="text-[9px] text-stone-400 uppercase tracking-tighter tabular-nums mt-0.5">
+											{new Date(log.createdAt).toLocaleDateString()}
+										</span>
+									</div>
+								</div>
+							))
+						) : (
+							<div className="py-12 text-center text-stone-400">
+								<p className="text-sm">No recent activity to show.</p>
+							</div>
+						)}
+					</div>
+				</section>
 
 				<AdminEditModal
 					isOpen={isModalOpen}

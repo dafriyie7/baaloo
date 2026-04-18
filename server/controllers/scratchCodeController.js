@@ -31,6 +31,7 @@ import {
 	isValidManualBatchNumber,
 } from "../lib/generateBatchNumber.js";
 import { buildSymbolToUrlMap } from "../lib/svgSymbolMap.js";
+import { logAudit } from "../lib/auditLogger.js";
 
 const ALLOWED_TIERS = new Set([
 	"loser",
@@ -496,6 +497,16 @@ export const generateBatchStructured = async (req, res) => {
 
 		await ScratchCode.insertMany(docs);
 
+		await logAudit(req, "GENERATE_BATCH", {
+			resource: "Batch",
+			resourceId: batch._id,
+			details: {
+				batchNumber: batch.batchNumber,
+				totalCodes: batch.totalCodes,
+				tierBreakdown: batch.tierCountsSnapshot,
+			},
+		});
+
 		console.log(LOG_GEN_STRUCTURED, "done", {
 			batchNumber: resolvedBatchNumber,
 			codesInserted: docs.length,
@@ -679,6 +690,12 @@ export const deleteBatch = async (req, res) => {
 		} finally {
 			session.endSession();
 		}
+
+		await logAudit(req, "DELETE_BATCH", {
+			resource: "Batch",
+			resourceId: id,
+			details: { batchNumber: batch.batchNumber, codesDeleted: codeIdList.length },
+		});
 
 		return res.json({
 			success: true,
@@ -1018,6 +1035,12 @@ export const exportBatchCodes = async (req, res) => {
 
 		const csvContent = [headers.join(","), ...rows].join("\n");
 
+		await logAudit(req, "EXPORT_CODES", {
+			resource: "Batch",
+			resourceId: batchId,
+			details: { batchNumber: batch.batchNumber, totalCodes: codes.length },
+		});
+
 		res.setHeader("Content-Type", "text/csv");
 		res.setHeader(
 			"Content-Disposition",
@@ -1116,6 +1139,11 @@ export const auditBatchCodes = async (req, res) => {
 				isUsed: dbCode?.isUsed || false,
 				batchName: dbCode?.batchNumber?.batchNumber || "N/A",
 			};
+		});
+
+		await logAudit(req, "AUDIT_BATCH", {
+			resource: "Batch",
+			details: { codesAudited: extractedCodes.length },
 		});
 
 		return res.status(200).json({

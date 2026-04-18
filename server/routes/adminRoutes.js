@@ -12,6 +12,7 @@ import {
 	logoutUser,
 	checkAuth,
 } from "../controllers/adminController.js";
+import { getAuditLogs } from "../controllers/auditLogController.js";
 import userAuth from "../middleware/userAuth.js";
 
 const authRouter = express.Router();
@@ -27,6 +28,7 @@ authRouter
 	.patch("/admins/:id", userAuth, updateAdminById)
 	.patch("/admins/:id/password", userAuth, updateAdminPasswordById)
 	.delete("/admins/:id", userAuth, deleteAdminById)
-	.get("/check-auth", userAuth, checkAuth);
+	.get("/check-auth", userAuth, checkAuth)
+	.get("/audit-logs", userAuth, getAuditLogs);
 
 export default authRouter;

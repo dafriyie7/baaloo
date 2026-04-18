@@ -16,6 +16,7 @@ import Profile from "./Pages/admin/Profile";
 import Manage from "./Pages/admin/Manage";
 import Batches from "./Pages/admin/Batches";
 import Svgs from "./Pages/admin/Svgs";
+import AuditLogs from "./Pages/admin/AuditLogs";
 import NotFound from "./Pages/NotFound";
 import HowToPlay from "./Pages/HowToPlay";
 
@@ -50,6 +51,7 @@ const App = () => {
 					<Route path="codes" element={<Codes />} />
 					<Route path="svgs" element={<Svgs />} />
 					<Route path="profile" element={<Profile />} />
+					<Route path="logs" element={<AuditLogs />} />
 				</Route>
 
 				<Route path="*" element={<NotFound />} />
