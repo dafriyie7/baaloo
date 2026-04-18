@@ -9,9 +9,11 @@ import {
 	PlusCircle,
 	QrCode,
 	Download,
+	Search,
 } from "lucide-react";
 import GenerateBatchModal from "../../Components/admin/GenerateBatchModal";
 import ExportTicketsModal from "../../Components/admin/ExportTicketsModal";
+import AuditCodesModal from "../../Components/admin/AuditCodesModal";
 import { useAppcontext } from "../../context/AppContext";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 
@@ -53,6 +55,7 @@ const Codes = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [generateModalOpen, setGenerateModalOpen] = useState(false);
 	const [exportModalOpen, setExportModalOpen] = useState(false);
+	const [auditModalOpen, setAuditModalOpen] = useState(false);
 	const [codes, setCodes] = useState([]);
 	const [batches, setBatches] = useState([]);
 	const [selectedBatchId, setSelectedBatchId] = useState("");
@@ -264,6 +267,10 @@ const Codes = () => {
 				batchId={selectedBatchId}
 				batchNumber={selectedBatchDetails?.batchNumber}
 			/>
+			<AuditCodesModal 
+				isOpen={auditModalOpen}
+				onClose={() => setAuditModalOpen(false)}
+			/>
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col items-stretch">
 				{batches && batches.length > 0 ? (
 					<div className="w-full">
@@ -286,6 +293,14 @@ const Codes = () => {
 								>
 									<Download className="h-5 w-5" strokeWidth={2} />
 									Export
+								</button>
+								<button
+									type="button"
+									onClick={() => setAuditModalOpen(true)}
+									className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-amber-200 bg-white px-5 py-3 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-50"
+								>
+									<Search className="h-5 w-5" strokeWidth={2} />
+									Audit Batch
 								</button>
 								<button
 									type="button"

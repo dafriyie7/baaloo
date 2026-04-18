@@ -1,4 +1,6 @@
 import crypto from "crypto";
+import XLSX from "xlsx";
+
 import mongoose from "mongoose";
 import ScratchCode from "../models/ScratchCode.js";
 import Batch from "../models/Batch.js";
@@ -1026,5 +1028,97 @@ export const exportBatchCodes = async (req, res) => {
 		console.error("[scratch export codes]", error);
 		return res.status(500).json({ success: false, message: error.message });
 	}
-};
+}
 
+export const auditBatchCodes = async (req, res) => {
+	try {
+		const { column: colIndicator, range: rangeRaw } = req.body;
+		if (!req.file) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Excel file is required." });
+		}
+
+		const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+		const sheetName = workbook.SheetNames[0];
+		const sheet = workbook.Sheets[sheetName];
+
+		// Convert to JSON (array of arrays)
+		const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+		// Parse column indicator (e.g. "A" -> 0)
+		const getColIndex = (ind) => {
+			if (!ind) return 0;
+			const s = String(ind).trim();
+			if (/^[A-Z]+$/i.test(s)) {
+				let res = 0;
+				const upper = s.toUpperCase();
+				for (let i = 0; i < upper.length; i++) {
+					res = res * 26 + (upper.charCodeAt(i) - 64);
+				}
+				return res - 1;
+			}
+			const n = parseInt(s, 10);
+			return isNaN(n) ? 0 : n;
+		};
+
+		const colIndex = getColIndex(colIndicator);
+		const limit = parseInt(rangeRaw, 10) || 100;
+
+		const extractedCodes = [];
+		// We skip the first row assuming it's a header
+		for (let i = 1; i < Math.min(data.length, limit + 1); i++) {
+			const cellValue = String(data[i][colIndex] || "").trim();
+			if (!cellValue) continue;
+
+			// Extract from URL: https://baalooscratch.com/scratch/CODE
+			const match = cellValue.match(/\/scratch\/([A-F0-9]+)$/i);
+			const code = match ? match[1] : cellValue;
+
+			if (code) extractedCodes.push(code);
+		}
+
+		if (extractedCodes.length === 0) {
+			return res.status(400).json({
+				success: false,
+				message: "No codes found in the specified column and range.",
+			});
+		}
+
+		// Batch lookup
+		const lookupHashes = extractedCodes.map((c) =>
+			hashForLookup(normalizeScratchCodeForLookup(c))
+		);
+		const dbCodes = await ScratchCode.find({
+			lookupHash: { $in: lookupHashes },
+		}).lean();
+
+		const lookupMap = new Map(dbCodes.map((c) => [c.lookupHash, c]));
+
+		const results = extractedCodes.map((code) => {
+			const norm = normalizeScratchCodeForLookup(code);
+			const hash = hashForLookup(norm);
+			const dbCode = lookupMap.get(hash);
+
+			return {
+				code,
+				found: !!dbCode,
+				tier: dbCode?.tier || "N/A",
+				prizeAmount: dbCode?.prizeAmount || 0,
+				isWinner: dbCode?.isWinner || false,
+				isCashback: dbCode?.isCashback || false,
+				isUsed: dbCode?.isUsed || false,
+			};
+		});
+
+		return res.status(200).json({
+			success: true,
+			totalAnalyzed: extractedCodes.length,
+			totalFound: dbCodes.length,
+			results,
+		});
+	} catch (error) {
+		console.error("[scratch audit codes]", error);
+		return res.status(500).json({ success: false, message: error.message });
+	}
+}
