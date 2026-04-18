@@ -11,19 +11,20 @@ import {
 	redeemScratchCode,
 } from "../controllers/scratchCodeController.js";
 import userAuth from "../middleware/userAuth.js";
+import adminAuth from "../middleware/adminAuth.js";
 
 const scratchCodeRouter = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 scratchCodeRouter
-	.post("/generate-structured", userAuth, generateBatchStructured)
-	.post("/generate-price-tag", userAuth, generatePriceTagBatch)
+	.post("/generate-structured", adminAuth, generateBatchStructured)
+	.post("/generate-price-tag", adminAuth, generatePriceTagBatch)
 	.post("/redeem", userAuth, redeemScratchCode)
-	.get("/batches", userAuth, listBatches)
-	.delete("/batches/:id", userAuth, deleteBatch)
-	.get("/get", userAuth, getAllScratchCodes)
-	.get("/export/:id", userAuth, exportBatchCodes)
-	.post("/audit", userAuth, upload.single("file"), auditBatchCodes);
+	.get("/batches", adminAuth, listBatches)
+	.delete("/batches/:id", adminAuth, deleteBatch)
+	.get("/get", adminAuth, getAllScratchCodes)
+	.get("/export/:id", adminAuth, exportBatchCodes)
+	.post("/audit", adminAuth, upload.single("file"), auditBatchCodes);
 
 export default scratchCodeRouter;
 

@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import userAuth from "../middleware/userAuth.js";
+import adminAuth from "../middleware/adminAuth.js";
 import {
 	bulkUploadSvgs,
 	deleteSvg,
@@ -51,12 +52,12 @@ const upload = multer({
 const svgRouter = express.Router();
 
 svgRouter.get("/public-map", getPublicSvgMap);
-svgRouter.get("/types", userAuth, listSvgTypes);
-svgRouter.get("/", userAuth, listSvgs);
-svgRouter.patch("/:id", userAuth, patchSvg);
+svgRouter.get("/types", adminAuth, listSvgTypes);
+svgRouter.get("/", adminAuth, listSvgs);
+svgRouter.patch("/:id", adminAuth, patchSvg);
 svgRouter.post(
 	"/bulk",
-	userAuth,
+	adminAuth,
 	(req, res, next) => {
 		upload.array("files", 80)(req, res, (err) => {
 			if (!err) return next();
@@ -68,7 +69,7 @@ svgRouter.post(
 	},
 	bulkUploadSvgs
 );
-svgRouter.delete("/by-type", userAuth, deleteSvgsByType);
-svgRouter.delete("/:id", userAuth, deleteSvg);
+svgRouter.delete("/by-type", adminAuth, deleteSvgsByType);
+svgRouter.delete("/:id", adminAuth, deleteSvg);
 
 export default svgRouter;

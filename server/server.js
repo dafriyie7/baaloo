@@ -4,6 +4,9 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import mongoSanitize from "express-mongo-sanitize";
+import { rateLimit } from "express-rate-limit";
 import { httpLogger, logger } from "./lib/logger.js";
 import connectDB from "./lib/connectDB.js";
 import playerRouter from "./routes/playersRoutes.js";
@@ -29,8 +32,33 @@ const envAllowedOrigins = String(process.env.CORS_ORIGINS || "")
 	.map((v) => v.trim())
 	.filter(Boolean);
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+
+// --- Security Middleware ---
+app.use(helmet()); // Sets various security-related HTTP headers
+app.use(mongoSanitize()); // Prevents NoSQL injection
+
+// Rate Limiting
+const globalLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	limit: 100, // Limit each IP to 100 requests per window
+	standardHeaders: 'draft-7',
+	legacyHeaders: false,
+	message: { success: false, message: "Too many requests from this IP, please try again later." }
+});
+
+const authLimiter = rateLimit({
+	windowMs: 60 * 60 * 1000, // 1 hour
+	limit: 10, // Limit each IP to 10 login attempts per hour
+	standardHeaders: 'draft-7',
+	legacyHeaders: false,
+	message: { success: false, message: "Too many login attempts. Please try again in an hour." }
+});
+
+// ---------------------------
+
 app.use(express.json())
 	.use(httpLogger)
+	.use(globalLimiter)
 	.use(
 		cors({
 			origin: allowedOrigins,
@@ -41,6 +69,15 @@ app.use(express.json())
 );
 	
 app.use(cookieParser());
+
+// Apply stricter limit to sensitive routes
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/scratch-codes/redeem", rateLimit({
+	windowMs: 15 * 60 * 1000,
+	limit: 30, // 30 redemption attempts per 15 mins
+	message: { success: false, message: "Too many redemption attempts. Slow down." }
+}));
 
 app.get("/", (req, res) => res.send("server running"));
 

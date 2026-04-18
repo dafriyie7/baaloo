@@ -14,21 +14,22 @@ import {
 } from "../controllers/adminController.js";
 import { getAuditLogs } from "../controllers/auditLogController.js";
 import userAuth from "../middleware/userAuth.js";
+import adminAuth from "../middleware/adminAuth.js";
 
 const authRouter = express.Router();
 
 authRouter
 	.post("/register", registerUser)
 	.post("/login", loginUser)
-	.patch("/update-user", userAuth, updateUser)
-	.patch("/update-password", userAuth, updatePassword)
-	.get("/stats", userAuth, getManagementData)
-	.get("/admins", userAuth, getAllAdmins)
+	.patch("/update-user", adminAuth, updateUser)
+	.patch("/update-password", adminAuth, updatePassword)
+	.get("/stats", adminAuth, getManagementData)
+	.get("/admins", adminAuth, getAllAdmins)
 	.post("/logout", userAuth, logoutUser)
-	.patch("/admins/:id", userAuth, updateAdminById)
-	.patch("/admins/:id/password", userAuth, updateAdminPasswordById)
-	.delete("/admins/:id", userAuth, deleteAdminById)
+	.patch("/admins/:id", adminAuth, updateAdminById)
+	.patch("/admins/:id/password", adminAuth, updateAdminPasswordById)
+	.delete("/admins/:id", adminAuth, deleteAdminById)
 	.get("/check-auth", userAuth, checkAuth)
-	.get("/audit-logs", userAuth, getAuditLogs);
+	.get("/audit-logs", adminAuth, getAuditLogs);
 
 export default authRouter;
