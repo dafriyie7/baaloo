@@ -270,6 +270,8 @@ const Codes = () => {
 			<AuditCodesModal 
 				isOpen={auditModalOpen}
 				onClose={() => setAuditModalOpen(false)}
+				batchId={selectedBatchId}
+				batchNumber={selectedBatchDetails?.batchNumber}
 			/>
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col items-stretch">
 				{batches && batches.length > 0 ? (

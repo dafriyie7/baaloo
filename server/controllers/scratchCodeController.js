@@ -1032,7 +1032,7 @@ export const exportBatchCodes = async (req, res) => {
 
 export const auditBatchCodes = async (req, res) => {
 	try {
-		const { column: colIndicator, range: rangeRaw } = req.body;
+		const { column: colIndicator, range: rangeRaw, batchId } = req.body;
 		if (!req.file) {
 			return res
 				.status(400)
@@ -1089,9 +1089,15 @@ export const auditBatchCodes = async (req, res) => {
 		const lookupHashes = extractedCodes.map((c) =>
 			hashForLookup(normalizeScratchCodeForLookup(c))
 		);
-		const dbCodes = await ScratchCode.find({
-			lookupHash: { $in: lookupHashes },
-		}).lean();
+
+		const query = { lookupHash: { $in: lookupHashes } };
+		if (batchId && mongoose.Types.ObjectId.isValid(batchId)) {
+			query.batchNumber = new mongoose.Types.ObjectId(batchId);
+		}
+
+		const dbCodes = await ScratchCode.find(query)
+			.populate("batchNumber", "batchNumber")
+			.lean();
 
 		const lookupMap = new Map(dbCodes.map((c) => [c.lookupHash, c]));
 
@@ -1108,6 +1114,7 @@ export const auditBatchCodes = async (req, res) => {
 				isWinner: dbCode?.isWinner || false,
 				isCashback: dbCode?.isCashback || false,
 				isUsed: dbCode?.isUsed || false,
+				batchName: dbCode?.batchNumber?.batchNumber || "N/A",
 			};
 		});
 

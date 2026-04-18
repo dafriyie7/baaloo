@@ -3,7 +3,7 @@ import { X, Search, FileSpreadsheet, Download, AlertCircle, CheckCircle2 } from 
 import toast from "react-hot-toast";
 import axios from "../../../lib/api";
 
-const AuditCodesModal = ({ isOpen, onClose }) => {
+const AuditCodesModal = ({ isOpen, onClose, batchId, batchNumber }) => {
 	const [file, setFile] = useState(null);
 	const [column, setColumn] = useState("A");
 	const [range, setRange] = useState("100");
@@ -46,6 +46,7 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 		formData.append("file", file);
 		formData.append("column", column);
 		formData.append("range", range);
+		if (batchId) formData.append("batchId", batchId);
 
 		try {
 			const { data } = await axios.post("/scratch-codes/audit", formData, {
@@ -68,15 +69,18 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 	const downloadResults = () => {
 		if (!results?.results) return;
 		
-		const headers = ["Code", "Found", "Tier", "Prize Amount", "Winner", "Redeemed"];
-		const rows = results.results.map(r => [
-			r.code,
-			r.found ? "Yes" : "No",
-			r.tier,
-			r.prizeAmount,
-			r.isWinner ? "Yes" : "No",
-			r.isUsed ? "Yes" : "No"
-		]);
+		const headers = ["Code", "Outcome", "Prize Amount", "Redeemed", "Tier", "Batch"];
+		const rows = results.results.map(r => {
+			const outcome = r.isWinner ? "Winner" : (r.isCashback ? "Cashback" : (r.found ? "Loser" : "Missing"));
+			return [
+				r.code,
+				outcome,
+				r.prizeAmount,
+				r.isUsed ? "Yes" : "No",
+				r.tier,
+				r.batchName
+			];
+		});
 
 		const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
 		const blob = new Blob([csvContent], { type: "text/csv" });
@@ -108,6 +112,11 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 							<Search size={24} />
 						</div>
 						<h2 className="text-xl font-bold text-stone-900">Batch Audit</h2>
+						{batchNumber && (
+							<span className="ml-2 px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-900/60 rounded text-[10px] font-black uppercase tracking-widest">
+								{batchNumber}
+							</span>
+						)}
 					</div>
 					<button 
 						onClick={onClose} 
@@ -216,9 +225,11 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 										<tr>
 											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Status</th>
 											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Code</th>
-											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Tier</th>
-											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Prize</th>
 											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">Outcome</th>
+											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Prize</th>
+											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">Redeemed</th>
+											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Tier</th>
+											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Batch</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-stone-100">
@@ -234,20 +245,32 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 												<td className="px-4 py-3 font-mono text-xs font-bold text-stone-900">
 													{r.code}
 												</td>
-												<td className="px-4 py-3 text-xs font-bold text-stone-600 uppercase">
-													{r.tier}
-												</td>
-												<td className="px-4 py-3 text-right font-black text-stone-900 tabular-nums">
-													{r.prizeAmount > 0 ? `GH₵ ${r.prizeAmount}` : '—'}
-												</td>
 												<td className="px-4 py-3 text-center">
 													{r.isWinner ? (
 														<span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-black uppercase tracking-tighter">Winner</span>
+													) : r.isCashback ? (
+														<span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-black uppercase tracking-tighter">Cashback</span>
 													) : r.found ? (
 														<span className="inline-block px-2 py-0.5 bg-stone-100 text-stone-500 rounded text-[10px] font-black uppercase tracking-tighter">Loser</span>
 													) : (
 														<span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-600 rounded text-[10px] font-black uppercase tracking-tighter">Missing</span>
 													)}
+												</td>
+												<td className="px-4 py-3 text-right font-black text-stone-900 tabular-nums">
+													{r.prizeAmount > 0 ? `GH₵ ${r.prizeAmount}` : '—'}
+												</td>
+												<td className="px-4 py-3 text-center">
+													{r.isUsed ? (
+														<span className="text-[10px] font-black text-stone-900 bg-stone-100 px-1.5 py-0.5 rounded uppercase">Yes</span>
+													) : (
+														<span className="text-[10px] font-bold text-stone-300 uppercase">No</span>
+													)}
+												</td>
+												<td className="px-4 py-3 text-xs font-bold text-stone-600 uppercase">
+													{r.tier}
+												</td>
+												<td className="px-4 py-3 text-[10px] font-black text-amber-900/60 uppercase">
+													{r.batchName}
 												</td>
 											</tr>
 										))}
