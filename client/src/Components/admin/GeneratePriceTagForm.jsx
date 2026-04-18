@@ -113,22 +113,21 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 		) {
 			return null;
 		}
-		let sumTier = 0;
+		let sumTierRevenuePct = 0;
 		for (const row of tierRows) {
 			const p = Number(row.giveawaySharePct) || 0;
-			if (p > 0) sumTier += p;
+			if (p > 0) sumTierRevenuePct += p;
 		}
-		const sumAll = round2(sumTier + cb);
-		const leftover = round2(100 - sumAll);
+		const sumAllRevenuePct = round2(sumTierRevenuePct + cb);
 		const revenue = round2(n * cost);
-		const pool = round2(revenue * (g / 100));
+		const targetPool = round2(revenue * (g / 100));
+
 		return {
 			revenue,
-			pool,
-			sumTier,
-			sumAll,
-			leftover,
-			okSplit: sumAll <= 100.0001 && leftover >= 0,
+			pool: targetPool,
+			sumTierRevenuePct,
+			sumAllRevenuePct,
+			okSplit: sumAllRevenuePct <= g + 0.0001,
 		};
 	}, [totalCodes, costPerCode, giveawayPercentage, cashbackGiveawayPct, tierRows]);
 
@@ -137,7 +136,8 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 		if (!economicsPreview?.okSplit) return null;
 		const n = parseInt(totalCodes, 10);
 		const cost = Number(costPerCode);
-		const pool = economicsPreview.pool;
+		const targetPool = economicsPreview.pool;
+		const revenue = economicsPreview.revenue;
 		if (!Number.isFinite(n) || n < 1 || !Number.isFinite(cost) || cost <= 0) {
 			return null;
 		}
@@ -173,7 +173,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 					error: `Symbol "${sym}" needs prize > 0 on its SVG.`,
 				};
 			}
-			const budget = round2(pool * (pct / 100));
+			const budget = round2(revenue * (pct / 100));
 			const count = Math.floor(budget / price);
 			const spent = round2(count * price);
 			const leftover = round2(budget - spent);
@@ -187,18 +187,14 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 		}
 
 		const cbPct = Number(cashbackGiveawayPct) || 0;
-		const cbBudget = round2(pool * (cbPct / 100));
+		const cbBudget = round2(revenue * (cbPct / 100));
 		const cbCount = Math.floor(cbBudget / cost);
 		const cbSpent = round2(cbCount * cost);
 		margin += round2(cbBudget - cbSpent);
 
 		const sumAll = round2(sumTierPct + cbPct);
-		if (sumAll > 100.0001) {
-			return { error: "Tier % + cashback % exceed 100%." };
-		}
-
-		const leftoverPct = round2(100 - sumAll);
-		const jpBudget = round2(pool * (leftoverPct / 100));
+		const jackpotRevenueShare = round2(Number(giveawayPercentage) - sumAll);
+		const jpBudget = round2(revenue * (jackpotRevenueShare / 100));
 		const jpCount = Math.floor(jpBudget / jpPrize);
 		const jpSpent = round2(jpCount * jpPrize);
 		margin += round2(jpBudget - jpSpent);
@@ -216,7 +212,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 				leftover: round2(cbBudget - cbSpent),
 			},
 			jackpot: {
-				giveawayPct: leftoverPct,
+				revenuePct: round2(jpBudget / revenue * 100),
 				budget: jpBudget,
 				prizeEach: jpPrize,
 				count: jpCount,
@@ -236,6 +232,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 		cashbackGiveawayPct,
 		jackpotSymbolName,
 		prizeByName,
+		giveawayPercentage,
 		currency,
 	]);
 
@@ -322,6 +319,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 						(data.batchNumber ? ` (${data.batchNumber})` : "")
 				);
 				setTotalCodes("");
+				setGiveawayPercentage("55");
 				setTierRows([{ symbolName: "", giveawaySharePct: "" }]);
 				onGenerationSuccess?.();
 			} else {
@@ -365,34 +363,28 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 								</p>
 							</div>
 							<div>
-								<p className="text-gray-500">Giveaway %</p>
+								<p className="text-gray-500">Giveaway % target</p>
 								<p className="font-semibold text-gray-900 tabular-nums">
 									{formatMoney(Number(giveawayPercentage))}%
 								</p>
 							</div>
 							<div>
-								<p className="text-gray-500">Total revenue</p>
-								<p className="font-semibold text-gray-900 tabular-nums">
-									{currency} {formatMoney(economicsPreview.revenue)}
-								</p>
-							</div>
-							<div>
-								<p className="text-gray-500">Prize pool</p>
+								<p className="text-gray-500">Prize pool target</p>
 								<p className="font-semibold text-gray-900 tabular-nums">
 									{currency} {formatMoney(economicsPreview.pool)}
 								</p>
 							</div>
 						</div>
 						<p className="mt-3 text-xs text-gray-600 tabular-nums">
-							Jackpot slice of giveaway:{" "}
+							Jackpot share of giveaway:{" "}
 							<span className="font-medium text-gray-800">
-								{formatMoney(economicsPreview.leftover)}%
+								{formatMoney(Number(giveawayPercentage) - economicsPreview.sumAllRevenuePct)}%
 							</span>{" "}
 							(remainder after tier + cashback %)
 							{!economicsPreview.okSplit ? (
 								<span className="text-red-700 font-semibold">
 									{" "}
-									— split exceeds 100%
+									— tiers exceed giveaway %
 								</span>
 							) : null}
 						</p>
@@ -473,7 +465,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 					</div>
 					<div>
 						<label className="block text-sm font-medium text-gray-700">
-							Giveaway % of revenue
+							Giveaway % of Revenue
 						</label>
 						<input
 							type="number"
@@ -485,29 +477,34 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 							className={inputClass}
 							required
 						/>
+						<p className="text-[10px] text-gray-500 mt-0.5">
+							Total jackpot + Tier target.
+						</p>
 					</div>
 				</div>
 
-				<div>
-					<label className="block text-sm font-medium text-gray-700">
-						Cashback % of giveaway (stake back, loser look)
-					</label>
-					<input
-						type="number"
-						min={0}
-						max={100}
-						step="0.1"
-						value={cashbackGiveawayPct}
-						onChange={(e) => setCashbackGiveawayPct(e.target.value)}
-						className={inputClass}
-					/>
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<div>
+						<label className="block text-sm font-medium text-gray-700">
+							Cashback % of revenue (stake back, loser look)
+						</label>
+						<input
+							type="number"
+							min={0}
+							max={100}
+							step="0.1"
+							value={cashbackGiveawayPct}
+							onChange={(e) => setCashbackGiveawayPct(e.target.value)}
+							className={inputClass}
+						/>
+					</div>
 				</div>
 			</div>
 
 			<div className="rounded-md border border-gray-200 bg-white p-4 md:p-5 space-y-3">
 				<div className="flex items-center justify-between gap-2">
 					<h3 className="text-sm font-semibold text-gray-900">
-						3× prize tiers (% of giveaway each)
+						3× prize tiers (% of revenue each)
 					</h3>
 					<button
 						type="button"
@@ -548,7 +545,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 						</div>
 						<div className="w-28">
 							<label className="block text-xs font-medium text-gray-600">
-								% of giveaway
+								% of revenue
 							</label>
 							<input
 								type="number"
@@ -640,7 +637,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 								{detailPreview.tiers.map((row) => (
 									<li key={row.sym} className="tabular-nums">
 										<span className="font-mono font-medium">{row.sym}</span>{" "}
-										({formatMoney(row.pct)}% of pool):{" "}
+										({formatMoney(row.pct)}% of revenue):{" "}
 										{formatCount(row.count)} tickets @ {currency}{" "}
 										{formatMoney(row.price)} · budget {currency}{" "}
 										{formatMoney(row.budget)}
@@ -651,7 +648,7 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 								))}
 								<li className="tabular-nums">
 									<span className="font-medium">Cashback</span> (
-									{formatMoney(detailPreview.cashback.pct)}%):{" "}
+									{formatMoney(detailPreview.cashback.pct)}% of revenue):{" "}
 									{formatCount(detailPreview.cashback.count)} tickets · budget{" "}
 									{currency} {formatMoney(detailPreview.cashback.budget)}
 									{detailPreview.cashback.leftover > 0
@@ -660,8 +657,8 @@ const GeneratePriceTagForm = ({ onGenerationSuccess, embeddedInModal }) => {
 								</li>
 								<li className="tabular-nums">
 									<span className="font-medium">Jackpot</span> (
-									{formatMoney(detailPreview.jackpot.giveawayPct)}% leftover):{" "}
-									{formatCount(detailPreview.jackpot.count)} tickets · pool{" "}
+									{formatMoney(detailPreview.jackpot.revenuePct)}% of revenue):{" "}
+									{formatCount(detailPreview.jackpot.count)} tickets · budget{" "}
 									{currency} {formatMoney(detailPreview.jackpot.budget)}
 									{detailPreview.jackpot.leftover > 0
 										? ` · ${currency} ${formatMoney(detailPreview.jackpot.leftover)} → house`

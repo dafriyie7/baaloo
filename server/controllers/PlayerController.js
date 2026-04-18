@@ -78,7 +78,12 @@ export const addPlayer = async (req, res) => {
 			}
 		}
 
-		return res.status(200).json({ success: true, data: payload });
+		let message = "Your entry has been recorded!";
+		if (payload.code?.tier === "jackpot") {
+			message = "Congratulations! You've won the JACKPOT! Please contact management to claim your prize.";
+		}
+
+		return res.status(200).json({ success: true, data: payload, message });
 	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ success: false, message: error.message });
@@ -137,6 +142,13 @@ export const claimWin = async (req, res) => {
 			return res.status(403).json({
 				success: false,
 				message: "Phone number does not match this ticket.",
+			});
+		}
+
+		if (scratchCode.tier === "jackpot") {
+			return res.status(400).json({
+				success: false,
+				message: "Jackpot prizes must be claimed manually at our office. Please contact support.",
 			});
 		}
 

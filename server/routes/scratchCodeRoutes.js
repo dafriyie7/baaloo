@@ -1,6 +1,8 @@
 import express from "express";
+import multer from "multer";
 import { generatePriceTagBatch } from "../controllers/priceTagBatchController.js";
 import {
+	auditBatchCodes,
 	deleteBatch,
 	exportBatchCodes,
 	generateBatchStructured,
@@ -11,6 +13,7 @@ import {
 import userAuth from "../middleware/userAuth.js";
 
 const scratchCodeRouter = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 scratchCodeRouter
 	.post("/generate-structured", userAuth, generateBatchStructured)
@@ -19,8 +22,10 @@ scratchCodeRouter
 	.get("/batches", userAuth, listBatches)
 	.delete("/batches/:id", userAuth, deleteBatch)
 	.get("/get", userAuth, getAllScratchCodes)
-	.get("/export/:id", userAuth, exportBatchCodes);
+	.get("/export/:id", userAuth, exportBatchCodes)
+	.post("/audit", userAuth, upload.single("file"), auditBatchCodes);
 
 export default scratchCodeRouter;
+
 
  

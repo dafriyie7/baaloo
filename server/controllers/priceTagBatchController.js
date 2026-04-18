@@ -108,7 +108,7 @@ export async function generatePriceTagBatch(req, res) {
 		const totalCodes = parseInt(totalCodesRaw, 10);
 		const costPerCode = Number(costRaw);
 		const giveawayPercentage = Number(gRaw);
-		const cashbackGiveawayPct = Number(cbRaw);
+		const cashbackGiveawayPct = Number(cbRaw ?? 0);
 
 		if (!Number.isFinite(totalCodes) || totalCodes < 1) {
 			return fail(res, 400, "totalCodes must be a positive integer.");
@@ -184,16 +184,29 @@ export async function generatePriceTagBatch(req, res) {
 			tierRows.push({ symbolName, giveawaySharePct: pct });
 		}
 
+		const totalRevenue = roundMoney(totalCodes * costPerCode);
+		// Target pool is based on the giveawayPercentage
+		const totalPrizePool = roundMoney(
+			totalRevenue * (giveawayPercentage / 100)
+		);
+
 		const sumAll = roundMoney(sumTierPct + cashbackGiveawayPct);
-		if (sumAll > 100.0001) {
+		if (sumAll > giveawayPercentage + 0.0001) {
 			return fail(
 				res,
 				400,
-				`Sum of tier % (${roundMoney(sumTierPct)}) + cashback % (${roundMoney(cashbackGiveawayPct)}) cannot exceed 100%.`
+				`Sum of tiers (${roundMoney(sumTierPct)}%) and cashback (${roundMoney(cashbackGiveawayPct)}%) is ${sumAll}%; it cannot exceed the allowed giveaway of ${giveawayPercentage}%.`
 			);
 		}
 
-		const leftoverGiveawayPct = roundMoney(100 - sumAll);
+		const jackpotRevenueShare = roundMoney(giveawayPercentage - sumAll);
+		const jackpotPool = roundMoney(totalRevenue * (jackpotRevenueShare / 100));
+
+		// For backward compatibility in Batch model (if it expects a % of pool), 
+		// we calculate what % of the TOTAL giveaway pool the jackpot is.
+		const leftoverGiveawayPct = totalPrizePool > 0 
+			? roundMoney((jackpotPool / totalPrizePool) * 100) 
+			: 0;
 		if (leftoverGiveawayPct < 0) {
 			return fail(res, 400, "Invalid giveaway split.");
 		}
@@ -273,18 +286,15 @@ export async function generatePriceTagBatch(req, res) {
 			tr._prizeEach = pa;
 		}
 
-		const totalRevenue = roundMoney(totalCodes * costPerCode);
-		const totalPrizePool = roundMoney(
-			totalRevenue * (giveawayPercentage / 100)
-		);
-
+		// totalRevenue and totalPrizePool moved up to handle jackpot remainder calc early
 		let marginRetainedFromPrizePool = 0;
 		const tierCounts = {};
 		const tierPrizeEach = {};
 
 		for (const tr of tierRows) {
+			// giveawaySharePct is now interpreted as % of total revenue
 			const budget = roundMoney(
-				totalPrizePool * (tr.giveawaySharePct / 100)
+				totalRevenue * (tr.giveawaySharePct / 100)
 			);
 			const price = tr._prizeEach;
 			const cnt = Math.floor(budget / price);
@@ -298,7 +308,7 @@ export async function generatePriceTagBatch(req, res) {
 		}
 
 		const cashbackBudget = roundMoney(
-			totalPrizePool * (cashbackGiveawayPct / 100)
+			totalRevenue * (cashbackGiveawayPct / 100)
 		);
 		const cashbackCount = Math.floor(cashbackBudget / costPerCode);
 		const cashbackSpent = roundMoney(cashbackCount * costPerCode);
@@ -307,9 +317,8 @@ export async function generatePriceTagBatch(req, res) {
 				roundMoney(cashbackBudget - cashbackSpent)
 		);
 
-		const jackpotPool = roundMoney(
-			totalPrizePool * (leftoverGiveawayPct / 100)
-		);
+		// jackpotPool is now calculated above relative to revenue/remainder
+		// (line moved earlier to simplify logic)
 		const jackpotCount = Math.floor(jackpotPool / jackpotPrizeEach);
 		const jackpotSpent = roundMoney(jackpotCount * jackpotPrizeEach);
 		marginRetainedFromPrizePool = roundMoney(
@@ -337,12 +346,13 @@ export async function generatePriceTagBatch(req, res) {
 		/** @type {{ tier: string, prizeAmount: number, isWinner: boolean, isCashback: boolean, build: () => string[] }[]} */
 		const plans = [];
 
-		for (const tr of tierRows) {
+		tierRows.forEach((tr, index) => {
+			const tName = `t${index + 2}`;
 			const n = tierCounts[tr.symbolName] || 0;
 			const prize = tierPrizeEach[tr.symbolName];
 			for (let i = 0; i < n; i++) {
 				plans.push({
-					tier: tr.symbolName,
+					tier: tName,
 					prizeAmount: prize,
 					isWinner: true,
 					isCashback: false,
@@ -353,7 +363,7 @@ export async function generatePriceTagBatch(req, res) {
 						}),
 				});
 			}
-		}
+		});
 
 		for (let i = 0; i < jackpotCount; i++) {
 			plans.push({
@@ -368,7 +378,7 @@ export async function generatePriceTagBatch(req, res) {
 
 		for (let i = 0; i < cashbackCount; i++) {
 			plans.push({
-				tier: "loser",
+				tier: "t1",
 				prizeAmount: roundMoney(costPerCode),
 				isWinner: false,
 				isCashback: true,
@@ -412,6 +422,21 @@ export async function generatePriceTagBatch(req, res) {
 			});
 		}
 
+		const mappedTierCounts = {
+			loser: loserCount,
+			jackpot: jackpotCount,
+			t1: cashbackCount,
+		};
+		const mappedPrizeWeights = {
+			jackpot: jackpotPrizeEach,
+			t1: roundMoney(costPerCode),
+		};
+		tierRows.forEach((tr, index) => {
+			const tName = `t${index + 2}`;
+			mappedTierCounts[tName] = tierCounts[tr.symbolName] || 0;
+			mappedPrizeWeights[tName] = tierPrizeEach[tr.symbolName] || 0;
+		});
+
 		const batch = await Batch.create({
 			batchNumber: resolvedBatchNumber,
 			mechanicVersion: 3,
@@ -426,21 +451,17 @@ export async function generatePriceTagBatch(req, res) {
 			otherPrizePool: roundMoney(totalPrizePool - jackpotPool),
 			tierDistributionSnapshot: {
 				priceTag: true,
-				tierPayouts: tierRows.map(({ symbolName, giveawaySharePct }) => ({
+				tierPayouts: tierRows.map(({ symbolName, giveawaySharePct }, index) => ({
 					symbolName,
 					giveawaySharePct,
+					tier: `t${index + 2}`,
 				})),
-				cashbackGiveawayPct,
-				jackpotSymbol,
+				cashback: { tier: "t1", giveawaySharePct: cashbackGiveawayPct },
+				jackpot: { tier: "jackpot", symbol: jackpotSymbol },
 				leftoverGiveawayPct,
 			},
-			prizeTierWeightsSnapshot: { ...tierPrizeEach, jackpot: jackpotPrizeEach },
-			tierCountsSnapshot: {
-				...tierCounts,
-				jackpot: jackpotCount,
-				cashback: cashbackCount,
-				loser: loserCount,
-			},
+			prizeTierWeightsSnapshot: mappedPrizeWeights,
+			tierCountsSnapshot: mappedTierCounts,
 			jackpotPrizeEach,
 			winningPrize: jackpotPrizeEach,
 			marginRetainedFromPrizePool,
