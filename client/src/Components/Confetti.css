@@ -1,0 +1,64 @@
+@keyframes confetti-fall {
+  0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  z-index: 5;
+  animation: confetti-fall linear forwards;
+}
+
+@keyframes sunburst {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.sunburst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200vmax;
+  height: 200vmax;
+  margin-top: -100vmax;
+  margin-left: -100vmax;
+  background-image: repeating-conic-gradient(
+    from 0deg,
+    rgba(251, 191, 36, 0.1) 0deg 15deg,
+    rgba(251, 191, 36, 0) 15deg 30deg
+  );
+  animation: sunburst 30s linear infinite;
+  z-index: -1;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.text-shine {
+  background: linear-gradient(
+    to right,
+    #f59e0b 20%,
+    #fbbf24 40%,
+    #fbbf24 60%,
+    #f59e0b 80%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shine 3s linear infinite;
+}

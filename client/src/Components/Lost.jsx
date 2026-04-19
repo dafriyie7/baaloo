@@ -3,11 +3,11 @@ import { XCircle, RefreshCw } from 'lucide-react';
 
 const Lost = ({ message, onRetry, onHome }) => {
 	return (
-		<div className="w-full min-h-[100dvh] flex flex-col items-center justify-center bg-zinc-50 px-4 py-12 relative overflow-hidden">
+		<div className="w-full min-h-[100dvh] flex flex-col items-center justify-center bg-zinc-50 px-4 pt-32 pb-20 relative overflow-hidden">
 			{/* Background shapes */}
 			<div className="absolute top-1/2 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-200/50 blur-[100px]" aria-hidden />
 			
-			<div className="w-full max-w-md relative z-10 text-center">
+			<div className="w-full max-w-md relative z-10 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
 				<div className="mb-8 flex justify-center">
 					<div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-zinc-100 border-4 border-white shadow-md">
 						<XCircle className="h-12 w-12 text-zinc-400" strokeWidth={2.5} />

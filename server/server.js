@@ -12,6 +12,7 @@ import playerRouter from "./routes/playersRoutes.js";
 import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
 import authRouter from "./routes/adminRoutes.js";
 import svgRouter from "./routes/svgRoutes.js";
+import systemRouter from "./routes/systemRoutes.js";
 import { handleShikaWebhook } from "./controllers/scController.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -118,7 +119,8 @@ app.use(
 app.use("/api/players", playerRouter)
 	.use("/api/scratch-codes", scratchCodeRouter)
 	.use("/api/auth", authRouter)
-	.use("/api/svgs", svgRouter);
+	.use("/api/svgs", svgRouter)
+	.use("/api/system", systemRouter);
 
 const startServer = async () => {
 	try {

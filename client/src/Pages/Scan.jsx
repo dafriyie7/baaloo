@@ -5,6 +5,7 @@ import axiosInstance from "../../lib/api";
 import {
 	QrCode,
 	Sparkles,
+	AlertTriangle,
 } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAppcontext } from "../context/AppContext";
@@ -23,7 +24,7 @@ const Scanner = () => {
 	const [isCashback, setIsCashback] = useState(false);
 	const [cashbackAmount, setCashbackAmount] = useState(null);
 
-	const { setWinner, isLoading, setIsLoading } = useAppcontext();
+	const { setWinner, isLoading, setIsLoading, systemSettings } = useAppcontext();
 	const { code } = useParams();
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -220,7 +221,7 @@ const Scanner = () => {
 	};
 
 	const renderDetailsForm = () => (
-		<div className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-zinc-50 px-4 py-20 relative overflow-hidden">
+		<div className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-zinc-50 px-4 pt-32 pb-20 relative overflow-hidden">
 			{/* Background soft blob */}
 			<div className="absolute top-1/2 left-1/2 -z-10 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-200/40 blur-[80px]" aria-hidden />
 
@@ -232,55 +233,75 @@ const Scanner = () => {
 					Confirm your details
 				</h2>
 				<p className="mt-2 text-center text-base text-zinc-600">
-					Enter your information to proceed with validation.
+					{systemSettings.allowNewRedemptions 
+						? "Enter your information to proceed with validation." 
+						: "New ticket validations are temporarily paused for routine system maintenance."}
 				</p>
 				
-				<form
-					onSubmit={handleDetailsSubmit}
-					className="mt-10 w-full space-y-5 text-left"
-				>
-					<div>
-						<label
-							htmlFor="name"
-							className="mb-1.5 block text-sm font-bold text-zinc-700"
-						>
-							Name
-						</label>
-						<input
-							type="text"
-							id="name"
-							value={name}
-							onChange={(e) => setname(e.target.value)}
-							required
-							placeholder="Enter your full name"
-							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
-						/>
-					</div>
-					<div>
-						<label
-							htmlFor="phone"
-							className="mb-1.5 block text-sm font-bold text-zinc-700"
-						>
-							Phone Number
-						</label>
-						<input
-							type="tel"
-							id="phone"
-							value={phone}
-							onChange={(e) => setPhone(e.target.value)}
-							required
-							pattern="\d{10}"
-							placeholder="e.g. 0240000000"
-							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
-						/>
-					</div>
-					<button
-						type="submit"
-						className="mt-4 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+				{systemSettings.allowNewRedemptions ? (
+					<form
+						onSubmit={handleDetailsSubmit}
+						className="mt-10 w-full space-y-5 text-left"
 					>
-						{code ? "Validate code" : "Continue to scan"}
-					</button>
-				</form>
+						<div>
+							<label
+								htmlFor="name"
+								className="mb-1.5 block text-sm font-bold text-zinc-700"
+							>
+								Name
+							</label>
+							<input
+								type="text"
+								id="name"
+								value={name}
+								onChange={(e) => setname(e.target.value)}
+								required
+								placeholder="Enter your full name"
+								className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+							/>
+						</div>
+						<div>
+							<label
+								htmlFor="phone"
+								className="mb-1.5 block text-sm font-bold text-zinc-700"
+							>
+								Phone Number
+							</label>
+							<input
+								type="tel"
+								id="phone"
+								value={phone}
+								onChange={(e) => setPhone(e.target.value)}
+								required
+								pattern="\d{10}"
+								placeholder="e.g. 0240000000"
+								className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+							/>
+						</div>
+						<button
+							type="submit"
+							className="mt-4 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+						>
+							Continue to scan
+						</button>
+					</form>
+				) : (
+					<div className="mt-10 flex flex-col items-center gap-6 text-center">
+						<div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+							<AlertTriangle size={40} />
+						</div>
+						<div className="space-y-2">
+							<p className="font-bold text-zinc-900">Validations Paused</p>
+							<p className="text-sm text-zinc-500">We are currently performing routine maintenance on our scanning system. Please keep your ticket and try again in a few hours.</p>
+						</div>
+						<button 
+							onClick={() => navigate("/")}
+							className="w-full rounded-full bg-zinc-900 py-4 text-sm font-bold text-white transition-all hover:bg-zinc-800"
+						>
+							Return Home
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);

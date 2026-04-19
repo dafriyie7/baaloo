@@ -51,6 +51,22 @@ const Manage = () => {
 	const [newPassword, setNewPassword] = useState("");
 	const [selectedAdmin, setSelectedAdmin] = useState(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [systemSettings, setSystemSettings] = useState({
+		payoutsEnabled: true,
+		maintenanceMode: false,
+		allowNewRedemptions: true
+	});
+
+	const fetchSystemSettings = async () => {
+		try {
+			const { data } = await axios.get("/system/settings");
+			if (data.success) {
+				setSystemSettings(data.settings);
+			}
+		} catch (error) {
+			console.error("Failed to fetch system settings", error);
+		}
+	};
 
 	const fetchManagementData = async () => {
 		setIsLoading(true);
@@ -73,7 +89,20 @@ const Manage = () => {
 
 	useEffect(() => {
 		fetchManagementData();
+		fetchSystemSettings();
 	}, []);
+
+	const toggleSetting = async (key, value) => {
+		try {
+			const { data } = await axios.put("/system/settings", { [key]: value });
+			if (data.success) {
+				setSystemSettings(data.settings);
+				toast.success(`${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} updated successfully`);
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Failed to update setting");
+		}
+	};
 
 	const handleOpenModal = (admin) => {
 		setSelectedAdmin(admin);
@@ -496,6 +525,86 @@ const Manage = () => {
 					</div>
 				</div>
 
+
+				{/* System Controls Section */}
+				<section className="mb-8 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">
+					<div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/50 px-6 py-5">
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-white shadow-md">
+								<Shield size={20} strokeWidth={2.5} />
+							</div>
+							<div>
+								<h2 className="text-lg font-bold text-stone-900">System Controls</h2>
+								<p className="text-xs font-medium text-stone-500 mt-0.5">Global overrides for application features.</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-widest border border-amber-200">
+							<Globe size={12} /> Live Status
+						</div>
+					</div>
+					
+					<div className="p-6 grid gap-6 md:grid-cols-3">
+						{/* Payout Toggle */}
+						<div className={`group relative overflow-hidden rounded-2xl border-2 p-5 transition-all duration-300 ${systemSettings.payoutsEnabled ? 'border-emerald-100 bg-emerald-50/30' : 'border-rose-100 bg-rose-50/30'}`}>
+							<div className="flex items-center justify-between mb-4">
+								<div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-sm ${systemSettings.payoutsEnabled ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+									<Banknote size={20} />
+								</div>
+								<button 
+									onClick={() => toggleSetting('payoutsEnabled', !systemSettings.payoutsEnabled)}
+									className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${systemSettings.payoutsEnabled ? 'bg-emerald-500' : 'bg-rose-500'}`}
+								>
+									<span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 ${systemSettings.payoutsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+								</button>
+							</div>
+							<h3 className="font-bold text-stone-900">Payout Processing</h3>
+							<p className="text-xs text-stone-500 mt-1">Enable or block all automatic prize disbursements.</p>
+							<div className={`mt-4 inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${systemSettings.payoutsEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+								{systemSettings.payoutsEnabled ? 'Allowing Payouts' : 'Payouts Blocked'}
+							</div>
+						</div>
+
+						{/* Redemption Toggle */}
+						<div className={`group relative overflow-hidden rounded-2xl border-2 p-5 transition-all duration-300 ${systemSettings.allowNewRedemptions ? 'border-amber-100 bg-amber-50/30' : 'border-stone-100 bg-stone-50/30'}`}>
+							<div className="flex items-center justify-between mb-4">
+								<div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-sm ${systemSettings.allowNewRedemptions ? 'bg-amber-500 text-white' : 'bg-stone-400 text-white'}`}>
+									<Hash size={20} />
+								</div>
+								<button 
+									onClick={() => toggleSetting('allowNewRedemptions', !systemSettings.allowNewRedemptions)}
+									className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${systemSettings.allowNewRedemptions ? 'bg-amber-500' : 'bg-stone-300'}`}
+								>
+									<span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 ${systemSettings.allowNewRedemptions ? 'translate-x-6' : 'translate-x-1'}`} />
+								</button>
+							</div>
+							<h3 className="font-bold text-stone-900">New Scans</h3>
+							<p className="text-xs text-stone-500 mt-1">Allow users to scan and validate new tickets.</p>
+							<div className={`mt-4 inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${systemSettings.allowNewRedemptions ? 'bg-amber-100 text-amber-700' : 'bg-stone-200 text-stone-600'}`}>
+								{systemSettings.allowNewRedemptions ? 'Active' : 'Paused'}
+							</div>
+						</div>
+
+						{/* Maintenance Toggle */}
+						<div className={`group relative overflow-hidden rounded-2xl border-2 p-5 transition-all duration-300 ${systemSettings.maintenanceMode ? 'border-orange-200 bg-orange-50' : 'border-stone-100 bg-stone-50/30'}`}>
+							<div className="flex items-center justify-between mb-4">
+								<div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-sm ${systemSettings.maintenanceMode ? 'bg-orange-600 text-white' : 'bg-stone-400 text-white'}`}>
+									<Shield size={20} />
+								</div>
+								<button 
+									onClick={() => toggleSetting('maintenanceMode', !systemSettings.maintenanceMode)}
+									className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none ${systemSettings.maintenanceMode ? 'bg-orange-600' : 'bg-stone-300'}`}
+								>
+									<span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 ${systemSettings.maintenanceMode ? 'translate-x-6' : 'translate-x-1'}`} />
+								</button>
+							</div>
+							<h3 className="font-bold text-stone-900">Maintenance Mode</h3>
+							<p className="text-xs text-stone-500 mt-1">Locks the entire site for non-admin users.</p>
+							<div className={`mt-4 inline-block px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${systemSettings.maintenanceMode ? 'bg-orange-200 text-orange-800' : 'bg-stone-200 text-stone-600'}`}>
+								{systemSettings.maintenanceMode ? 'Under Maintenance' : 'Public Access'}
+							</div>
+						</div>
+					</div>
+				</section>
 
 				{/* Recent Activity Card */}
 				<section className="mb-10 overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">

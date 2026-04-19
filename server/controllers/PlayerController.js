@@ -14,6 +14,7 @@ import {
 } from "../lib/phoneNormalize.js";
 import shikaCreators from "../services/scPayment.js";
 import { logger } from "../lib/logger.js";
+import SystemSetting from "../models/SystemSetting.js";
 
 // add a player
 export const addPlayer = async (req, res) => {
@@ -97,8 +98,16 @@ export const addPlayer = async (req, res) => {
  */
 export const claimWin = async (req, res) => {
 	try {
-		const ticket = req.body.ticket ?? req.body.code;
-		const { phone } = req.body;
+		const { phone, ticket } = req.body;
+
+		// 1. Check Global Payout Status
+		const settings = await SystemSetting.getSettings();
+		if (!settings.payoutsEnabled) {
+			return res.status(403).json({
+				success: false,
+				message: "Automatic payouts are temporarily paused for maintenance. Please try again later or contact support."
+			});
+		}
 
 		if (!phone || !ticket) {
 			return res.status(400).json({

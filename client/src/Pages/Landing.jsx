@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useAppcontext } from "../context/AppContext";
+import { AlertTriangle } from "lucide-react";
 
 const PLAYER_STEPS = [
 	{
@@ -63,6 +65,7 @@ const Landing = () => {
 	const heroRef = useRef(null);
 	const heroWheelCooldownRef = useRef(false);
 	const navigate = useNavigate();
+	const { systemSettings } = useAppcontext();
 
 	useEffect(() => {
 		const onWheel = (e) => {
@@ -113,7 +116,7 @@ const Landing = () => {
 		<div className="w-full bg-zinc-50 text-gray-800 pt-28 pb-12 px-4 md:pt-36 md:px-6 lg:pt-40 lg:px-8">
 			<section
 				ref={heroRef}
-				className="relative flex min-h-[calc(100dvh-10rem)] w-full flex-col overflow-hidden rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(234,88,12,0.3)] md:rounded-[3rem] lg:min-h-[calc(100dvh-14rem)] lg:rounded-[4rem]"
+				className="relative flex min-h-[calc(100dvh-6rem)] w-full flex-col overflow-hidden rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(234,88,12,0.3)] md:min-h-[calc(100dvh-10rem)] md:rounded-[3rem] lg:min-h-[calc(100dvh-14rem)] lg:rounded-[4rem]"
 				aria-label="Baaloo hero"
 			>
 				<div className="pointer-events-none absolute inset-0 isolate">
@@ -127,7 +130,7 @@ const Landing = () => {
 					/>
 				</div>
 
-				<div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-40 text-center md:px-8 md:pb-44 pt-10">
+				<div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-48 text-center md:px-8 md:pb-52 pt-14 md:pt-10">
 					<div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-5 py-2 text-white shadow-xl backdrop-blur-md">
 						<Sparkles className="h-4 w-4 text-amber-300" />
 						<span className="text-xs font-bold tracking-widest uppercase md:text-sm">
@@ -137,10 +140,10 @@ const Landing = () => {
 					</div>
 
 					<h1 className="mt-8 max-w-5xl font-black leading-[0.9] tracking-tight">
-						<span className="block text-[clamp(4rem,12vw,8rem)] text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+						<span className="block text-[clamp(3.5rem,12vw,8rem)] text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
 							SCRATCH
 						</span>
-						<span className="block bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 bg-clip-text text-transparent text-[clamp(3.5rem,11vw,7.5rem)] drop-shadow-sm">
+						<span className="block bg-gradient-to-br from-amber-200 via-yellow-400 to-orange-500 bg-clip-text text-transparent text-[clamp(3rem,11vw,7.5rem)] drop-shadow-sm">
 							&amp; WIN
 						</span>
 					</h1>
@@ -184,57 +187,78 @@ const Landing = () => {
 						Baaloo scratch &amp; win
 					</p>
 					<h2 className="mt-3 text-center text-[clamp(1.75rem,4vw,2.5rem)] leading-tight font-black text-zinc-900">
-						Enter details to begin
+						{systemSettings.allowNewRedemptions ? "Enter details to begin" : "Validation Paused"}
 					</h2>
 					<p className="mt-3 text-center text-base text-zinc-600">
-						Next, you&apos;ll scan your QR code or upload a photo of it.
+						{systemSettings.allowNewRedemptions 
+							? "Next, you'll scan your QR code or upload a photo of it." 
+							: "New ticket validations are temporarily paused for routine system maintenance. Please check back soon!"}
 					</p>
-					<form
-						onSubmit={handleDetailsSubmit}
-						className="mt-10 w-full space-y-5 text-left"
-					>
-						<div>
-							<label
-								htmlFor="name"
-								className="mb-1.5 block text-sm font-bold text-zinc-700"
-							>
-								Name
-							</label>
-							<input
-								type="text"
-								id="name"
-								value={name}
-								onChange={(e) => setname(e.target.value)}
-								required
-								placeholder="Enter your full name"
-								className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
-							/>
-						</div>
-						<div>
-							<label
-								htmlFor="phone"
-								className="mb-1.5 block text-sm font-bold text-zinc-700"
-							>
-								Phone Number
-							</label>
-							<input
-								type="tel"
-								id="phone"
-								value={phone}
-								onChange={(e) => setPhone(e.target.value)}
-								required
-								pattern="\d{10}"
-								placeholder="e.g. 0240000000"
-								className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
-							/>
-						</div>
-						<button
-							type="submit"
-							className="mt-4 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+					
+					{systemSettings.allowNewRedemptions ? (
+						<form
+							onSubmit={handleDetailsSubmit}
+							className="mt-10 w-full space-y-5 text-left"
 						>
-							Continue to scan
-						</button>
-					</form>
+							<div>
+								<label
+									htmlFor="name"
+									className="mb-1.5 block text-sm font-bold text-zinc-700"
+								>
+									Name
+								</label>
+								<input
+									type="text"
+									id="name"
+									value={name}
+									onChange={(e) => setname(e.target.value)}
+									required
+									placeholder="Enter your full name"
+									className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+							<div>
+								<label
+									htmlFor="phone"
+									className="mb-1.5 block text-sm font-bold text-zinc-700"
+								>
+									Phone Number
+								</label>
+								<input
+									type="tel"
+									id="phone"
+									value={phone}
+									onChange={(e) => setPhone(e.target.value)}
+									required
+									pattern="\d{10}"
+									placeholder="e.g. 0240000000"
+									className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+								/>
+							</div>
+							<button
+								type="submit"
+								className="mt-4 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+							>
+								Continue to scan
+							</button>
+						</form>
+					) : (
+						<div className="mt-10 flex flex-col items-center gap-6 text-center">
+							<div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+								<AlertTriangle size={40} />
+							</div>
+							<div className="space-y-1">
+								<p className="font-black text-zinc-900">Services Paused</p>
+								<p className="text-sm font-medium text-zinc-500 leading-relaxed">
+									We are optimizing our validation engine. Your Baaloo tickets are safe—kindly hold onto them and try scanning again in a few hours.
+								</p>
+							</div>
+							<div className="w-full h-px bg-zinc-100" />
+							<p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">
+								Secure System Maintenance
+							</p>
+						</div>
+					)}
 				</div>
 			</section>
 
