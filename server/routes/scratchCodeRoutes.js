@@ -19,7 +19,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 scratchCodeRouter
 	.post("/generate-structured", adminAuth, generateBatchStructured)
 	.post("/generate-price-tag", adminAuth, generatePriceTagBatch)
-	.post("/redeem", userAuth, redeemScratchCode)
+	.post("/redeem", redeemScratchCode)
 	.get("/batches", adminAuth, listBatches)
 	.delete("/batches/:id", adminAuth, deleteBatch)
 	.get("/get", adminAuth, getAllScratchCodes)

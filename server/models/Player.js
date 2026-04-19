@@ -6,8 +6,10 @@ const playerSchema = new mongoose.Schema({
 		required: true,
 	},
 	phone: {
-		type: Number,
+		type: String,
 		required: true,
+		unique: true,
+		index: true,
 	},
 	code: { type: mongoose.Schema.Types.ObjectId, ref: "ScratchCode" },
 });

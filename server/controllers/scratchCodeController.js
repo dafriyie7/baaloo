@@ -7,6 +7,7 @@ import Batch from "../models/Batch.js";
 import Player from "../models/Player.js";
 import Svg from "../models/Svg.js";
 import QRCode from "qrcode";
+import { logger } from "../lib/logger.js";
 import {
 	encrypt,
 	decrypt,
@@ -592,27 +593,30 @@ export const listBatches = async (req, res) => {
 		const search = String(req.query.search ?? "").trim();
 		const period = String(req.query.period ?? "all").toLowerCase();
 		const sort = String(req.query.sort ?? "newest").toLowerCase();
+		const page = parseInt(req.query.page ?? 1);
+		const limit = parseInt(req.query.limit ?? 20);
+		const skip = (page - 1) * limit;
 
-		const [totalAll, batches] = await Promise.all([
-			Batch.countDocuments(),
-			(async () => {
-				const match = {};
-				if (search) {
-					match.batchNumber = {
-						$regex: escapeRegex(search),
-						$options: "i",
-					};
-				}
-				if (period === "7d" || period === "30d" || period === "90d") {
-					const days =
-						period === "7d" ? 7 : period === "30d" ? 30 : 90;
-					match.createdAt = {
-						$gte: new Date(Date.now() - days * 86400000),
-					};
-				}
-				return Batch.find(match).lean();
-			})(),
-		]);
+		const match = {};
+		if (search) {
+			match.batchNumber = {
+				$regex: escapeRegex(search),
+				$options: "i",
+			};
+		}
+		if (period === "7d" || period === "30d" || period === "90d") {
+			const days =
+				period === "7d" ? 7 : period === "30d" ? 30 : 90;
+			match.createdAt = {
+				$gte: new Date(Date.now() - days * 86400000),
+			};
+		}
+
+		const totalAll = await Batch.countDocuments();
+		const totalMatching = await Batch.countDocuments(match);
+		const totalPages = Math.ceil(totalMatching / limit);
+
+		const batches = await Batch.find(match).lean();
 
 		if (batches.length === 0) {
 			return res.status(200).json({
@@ -620,8 +624,11 @@ export const listBatches = async (req, res) => {
 				data: [],
 				totalAll,
 				totalMatching: 0,
+				totalPages: 0,
 			});
 		}
+
+		// Sort all first
 		const ids = batches.map((b) => b._id);
 		const counts = await ScratchCode.aggregate([
 			{ $match: { batchNumber: { $in: ids } } },
@@ -634,12 +641,18 @@ export const listBatches = async (req, res) => {
 			...b,
 			codesInserted: byId.get(b._id.toString()) ?? 0,
 		}));
+
 		sortBatchesList(data, sort);
+
+		// Now paginate
+		const paginatedData = data.slice(skip, skip + limit);
+
 		return res.status(200).json({
 			success: true,
-			data,
+			data: paginatedData,
 			totalAll,
-			totalMatching: data.length,
+			totalMatching,
+			totalPages,
 		});
 	} catch (error) {
 		console.error("[scratch batches list]", error);
@@ -710,47 +723,108 @@ export const deleteBatch = async (req, res) => {
 
 export const redeemScratchCode = async (req, res) => {
 	try {
-		const { scratchCode } = req.body;
+		const { scratchCode, phone: rawPhone, name } = req.body;
+		const { formatPhoneForGhanaMoMo } = await import("../lib/phoneNormalize.js");
+		const phone = formatPhoneForGhanaMoMo(rawPhone);
 
-		const normalized = normalizeScratchCodeForLookup(scratchCode);
-		if (!normalized) {
-			return res
-				.status(400)
-				.json({ success: false, message: "Enter a valid redemption code." });
-		}
-		const lookupHash = hashForLookup(normalized);
-
-		const code = await ScratchCode.findOne({ lookupHash });
-
-		if (!code) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Invalid scratch code." });
-		}
-
-		if (code.isUsed) {
-			return res.status(400).json({
-				success: false,
-				message: "This scratch code has already been used.",
+		if (!phone || !scratchCode) {
+			return res.status(400).json({ 
+				success: false, 
+				message: "Valid phone number and ticket code are required." 
 			});
 		}
 
+		const normalized = normalizeScratchCodeForLookup(scratchCode);
+		if (!normalized) {
+			return res.status(400).json({ 
+				success: false, 
+				message: "Enter a valid ticket code." 
+			});
+		}
+		const lookupHash = hashForLookup(normalized);
+
+		const code = await ScratchCode.findOne({ lookupHash })
+			.populate("batchNumber")
+			.populate("redeemedBy");
+
+		if (!code) {
+			return res.status(404).json({ 
+				success: false, 
+				message: "Invalid ticket code." 
+			});
+		}
+
+		// IDENTITY CHECK: If already used, check if it's the same user
+		if (code.isUsed && code.redeemedBy) {
+			const { phonesMatch } = await import("../lib/phoneNormalize.js");
+			if (!phonesMatch(phone, code.redeemedBy.phone)) {
+				return res.status(403).json({
+					success: false,
+					message: "This ticket has already been used by another player.",
+				});
+			}
+			// Same user - allow them to see the results again
+		}
+
+		// FIRST TIME SCAN: Mark as used and link to player
+		if (!code.isUsed) {
+			const Player = (await import("../models/Player.js")).default;
+			
+			// Find or create player by phone
+			let player = await Player.findOne({ phone });
+			if (!player) {
+				player = await Player.create({ name: name || "Guest", phone });
+			}
+
+			code.isUsed = true;
+			code.redeemedBy = player._id;
+			code.redeemedAt = new Date();
+			code.payoutStatus = "pending";
+			await code.save();
+			
+			// Link the latest code back to the player record for admin tracking
+			player.code = code._id;
+			await player.save();
+
+			// Refresh the populated field
+			await code.populate("redeemedBy");
+		}
+
 		const won = code.isWinner === true;
+		const isCashback = code.isCashback === true;
+		
+		// Log the audit event
+		const { logAudit } = await import("../lib/auditLogger.js");
+		await logAudit(req, "REDEMPTION", {
+			resource: "ScratchCode",
+			resourceId: code._id,
+			details: {
+				outcome: won ? (isCashback ? "CASHBACK" : "WINNER") : "LOSER",
+				tier: code.tier,
+				phone: phone,
+				isRevisit: code.isUsed && code.redeemedAt < new Date(Date.now() - 1000)
+			}
+		});
+
 		let message = "Sorry, not a winner this time.";
 		if (won) {
-			message =
-				code.tier === R_STAKE_TIER
-					? "You won your stake back."
-					: "Congratulations! You've won!";
+			message = isCashback ? "You won your stake back!" : "Congratulations! You've won!";
 		}
+
 		return res.status(200).json({
 			success: true,
 			prize: won,
+			cashback: isCashback,
+			amount: code.prizeAmount,
+			tier: code.tier,
 			message,
+			batchNumber: code.batchNumber?.batchNumber,
+			player: code.redeemedBy,
+			scratchCode: scratchCode // The original plain text code
 		});
 	} catch (error) {
-		console.error(error);
-		return res.status(500).json({ success: false, message: error.message });
+		console.error("Redemption Error:", error);
+		return res.status(500).json({ success: false, message: "Server error during redemption." });
 	}
 };
 

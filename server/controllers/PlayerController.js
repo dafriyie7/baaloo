@@ -18,12 +18,13 @@ import { logger } from "../lib/logger.js";
 // add a player
 export const addPlayer = async (req, res) => {
 	try {
-		const { name, phone, code } = req.body;
+		const { name, phone: rawPhone, code } = req.body;
+		const phone = formatPhoneForGhanaMoMo(rawPhone);
 
 		if (!name || !phone || !code) {
 			return res
 				.status(400)
-				.json({ success: false, message: "all fields are required" });
+				.json({ success: false, message: "Valid name, Ghana phone, and ticket code are required." });
 		}
 
 		const normalized = normalizeScratchCodeForLookup(code);
@@ -313,22 +314,43 @@ export const claimWin = async (req, res) => {
 	}
 };
 
+/**
+ * Administrative action: manually mark a winner as paid.
+ * Param: id is the ScratchCode ID.
+ */
+export const markAsPaid = async (req, res) => {
+	try {
+		const { id } = req.params;
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			return res.status(400).json({ success: false, message: "Invalid ID" });
+		}
+
+		const code = await ScratchCode.findById(id);
+		if (!code) {
+			return res.status(404).json({ success: false, message: "Ticket not found" });
+		}
+
+		if (!code.isWinner && !code.isCashback) {
+			return res.status(400).json({ success: false, message: "This ticket is not a winner." });
+		}
+
+		code.payoutStatus = "paid";
+		await code.save();
+
+		return res.status(200).json({ success: true, message: "Marked as paid" });
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ success: false, message: error.message });
+	}
+};
+
 async function playerBatchOptionsForFilter() {
-	const rows = await Player.aggregate([
-		{ $match: { code: { $exists: true, $ne: null } } },
-		{
-			$lookup: {
-				from: "scratchcodes",
-				localField: "code",
-				foreignField: "_id",
-				as: "sc",
-			},
-		},
-		{ $unwind: "$sc" },
+	const rows = await ScratchCode.aggregate([
+		{ $match: { isUsed: true } },
 		{
 			$lookup: {
 				from: "batches",
-				localField: "sc.batchNumber",
+				localField: "batchNumber",
 				foreignField: "_id",
 				as: "b",
 			},
@@ -352,129 +374,112 @@ async function playerBatchOptionsForFilter() {
 	return rows;
 }
 
-// get all players (optional search / outcome / batch — query params)
 export const getAllPlayers = async (req, res) => {
 	try {
 		const search = String(req.query.search ?? "").trim();
 		const outcome = String(req.query.outcome ?? "all").toLowerCase();
 		const batchId = String(req.query.batch ?? "all");
+		const page = parseInt(req.query.page ?? 1);
+		const limit = parseInt(req.query.limit ?? 20);
+		const skip = (page - 1) * limit;
 
-		const [globalAgg, totalPlayers] = await Promise.all([
-			Player.aggregate([
-				{ $match: { code: { $exists: true, $ne: null } } },
-				{
-					$lookup: {
-						from: "scratchcodes",
-						localField: "code",
-						foreignField: "_id",
-						as: "sc",
-					},
-				},
-				{ $unwind: { path: "$sc", preserveNullAndEmptyArrays: true } },
+		// Global stats for the header
+		const [stats, totalScanned] = await Promise.all([
+			ScratchCode.aggregate([
+				{ $match: { isUsed: true } },
 				{
 					$group: {
 						_id: null,
-						winners: {
-							$sum: {
-								$cond: [{ $eq: ["$sc.isWinner", true] }, 1, 0],
-							},
-						},
-						losers: {
-							$sum: {
-								$cond: [{ $eq: ["$sc.isWinner", false] }, 1, 0],
-							},
-						},
+						winners: { $sum: { $cond: [{ $or: ["$isWinner", "$isCashback"] }, 1, 0] } },
+						losers: { $sum: { $cond: [{ $or: ["$isWinner", "$isCashback"] }, 0, 1] } },
 					},
 				},
 			]),
-			Player.countDocuments({ code: { $exists: true, $ne: null } }),
+			ScratchCode.countDocuments({ isUsed: true }),
 		]);
-		const winnersCount = globalAgg[0]?.winners ?? 0;
-		const losersCount = globalAgg[0]?.losers ?? 0;
+		
+		const winnersCount = stats[0]?.winners ?? 0;
+		const losersCount = stats[0]?.losers ?? 0;
 
-		const codeFilter = {};
-		if (outcome === "winner") codeFilter.isWinner = true;
-		else if (outcome === "loser") codeFilter.isWinner = false;
+		const query = { isUsed: true };
+		if (outcome === "winner") query.$or = [{ isWinner: true }, { isCashback: true }];
+		else if (outcome === "loser") query.isWinner = false, query.isCashback = false;
 
 		if (batchId !== "all") {
 			if (!mongoose.Types.ObjectId.isValid(batchId)) {
-				return res.status(400).json({
-					success: false,
-					message: "Invalid batch id",
-				});
+				return res.status(400).json({ success: false, message: "Invalid batch id" });
 			}
-			codeFilter.batchNumber = new mongoose.Types.ObjectId(batchId);
+			query.batchNumber = new mongoose.Types.ObjectId(batchId);
 		}
 
-		let codeIds = null;
-		if (Object.keys(codeFilter).length > 0) {
-			codeIds = await ScratchCode.find(codeFilter).distinct("_id");
-			if (codeIds.length === 0) {
-				const batchOptions = await playerBatchOptionsForFilter();
-				return res.status(200).json({
-					success: true,
-					data: {
-						players: [],
-						totalPlayers,
-						winnersCount,
-						losersCount,
-						filteredTotal: 0,
-						filteredWinners: 0,
-						filteredLosers: 0,
-						batchOptions,
-					},
-				});
-			}
-		}
-
-		const andParts = [];
-		if (codeIds) andParts.push({ code: { $in: codeIds } });
 		if (search) {
 			const esc = escapeRegex(search);
-			andParts.push({
-				$or: [
-					{ name: { $regex: esc, $options: "i" } },
-					{
-						$expr: {
-							$regexMatch: {
-								input: { $toString: "$phone" },
-								regex: esc,
-								options: "i",
-							},
-						},
-					},
-				],
-			});
+			const regex = { $regex: esc, $options: "i" };
+			
+			// Find players matching search to filter codes by user
+			const playerIds = await Player.find({
+				$or: [{ name: regex }, { phone: { $regex: esc } }]
+			}).distinct("_id");
+
+			query.$or = [
+				{ redeemedBy: { $in: playerIds } },
+				{ lookupHash: regex } // Maybe they searched for the code?
+			];
 		}
 
-		const query =
-			andParts.length === 0
-				? {}
-				: andParts.length === 1
-					? andParts[0]
-					: { $and: andParts };
-
-		const [players, batchOptions] = await Promise.all([
-			Player.find(query).populate({
-				path: "code",
-				populate: { path: "batchNumber" },
-			}),
-			playerBatchOptionsForFilter(),
+		const [filteredTotal, filteredWinners] = await Promise.all([
+			ScratchCode.countDocuments(query),
+			ScratchCode.countDocuments({ ...query, $or: [{ isWinner: true }, { isCashback: true }] })
 		]);
 
-		const filteredWinners = players.filter((p) => p.code?.isWinner).length;
-		const filteredLosers = players.length - filteredWinners;
+		const totalPages = Math.ceil(filteredTotal / limit);
+
+		const codes = await ScratchCode.find(query)
+			.populate("redeemedBy")
+			.populate("batchNumber")
+			.sort({ redeemedAt: -1 })
+			.skip(skip)
+			.limit(limit);
+
+		const batchOptions = await playerBatchOptionsForFilter();
+
+		// Decrypt codes and format for frontend
+		const data = codes.map(c => {
+			let plainCode = "-";
+			try {
+				if (c.code) plainCode = decrypt(c.code);
+			} catch (e) {}
+
+			return {
+				_id: c._id,
+				code: plainCode,
+				tier: c.tier,
+				isWinner: c.isWinner,
+				isCashback: c.isCashback,
+				prizeAmount: c.prizeAmount,
+				payoutStatus: c.payoutStatus,
+				redeemedAt: c.redeemedAt,
+				createdAt: c.redeemedAt || c.updatedAt,
+				batch: c.batchNumber?.batchNumber || "Unknown",
+				player: c.redeemedBy ? {
+					_id: c.redeemedBy._id,
+					name: c.redeemedBy.name,
+					phone: c.redeemedBy.phone
+				} : null
+			};
+		});
 
 		return res.status(200).json({
 			success: true,
 			data: {
-				players,
-				totalPlayers,
+				players: data,
+				totalPlayers: totalScanned,
 				winnersCount,
 				losersCount,
-				filteredTotal: players.length,
+				filteredTotal,
 				filteredWinners,
-				filteredLosers,
+				filteredLosers: filteredTotal - filteredWinners,
+				totalPages,
 				batchOptions,
 			},
 		});

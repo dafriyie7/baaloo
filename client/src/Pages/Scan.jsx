@@ -120,36 +120,34 @@ const Scanner = () => {
 		setIsLoading(true);
 
 		try {
-			const { data } = await axiosInstance.post("/players/add", {
+			const { data } = await axiosInstance.post("/scratch-codes/redeem", {
 				name,
 				phone,
-				code: getCodeFromUrl(scratchCode),
+				scratchCode: getCodeFromUrl(scratchCode),
 			});
 
 			if (data.success) {
-				const isWinner = data.data.code.isWinner;
-				const isCashbackFlag = data.data.code.isCashback || false;
+				const isWinner = data.prize;
+				const isCashbackFlag = data.cashback || false;
 				
 				setIsWinner(isWinner);
 				setIsCashback(isCashbackFlag);
-				const cbAmt = Number(data.data?.code?.prizeAmount);
+				const cbAmt = Number(data.amount);
 				setCashbackAmount(
 					isCashbackFlag && Number.isFinite(cbAmt) ? cbAmt : null
 				);
 				
-				toast.success("Your entry has been recorded!");
+				toast.success(isWinner ? "Congratulations! You won!" : "Ticket validated.");
 
-				sessionStorage.setItem("winner", JSON.stringify(data.data));
-				setWinner(data.data);
+				sessionStorage.setItem("winner", JSON.stringify(data));
+				setWinner(data);
 
-				if (isWinner) {
-					navigate("/claim");
+				if (isWinner || isCashbackFlag) {
+					// Stay on this page to show the Won/Cashback component 
+					// which will then have its own "Claim" button
+					setStep("end");
 				} else {
-					if (isCashbackFlag) {
-						setMessage("You got your cashback!");
-					} else {
-						setMessage("Sorry, not a winner this time.");
-					}
+					setMessage("Sorry, not a winner this time.");
 					setStep("end");
 				}
 			}
@@ -178,12 +176,36 @@ const Scanner = () => {
 		}
 	};
 
-	// Effectively auto-submit if we arrive with details and a code
-	useEffect(() => {
-		if (step === "details" && name && phone && code) {
-			handleDetailsSubmit();
+	// No auto-submit - user must click manually
+
+	const handleClaimPayout = async () => {
+		const resultData = sessionStorage.getItem("winner") ? JSON.parse(sessionStorage.getItem("winner")) : null;
+		const phoneNum = resultData?.player?.phone || phone;
+		const ticketCode = resultData?.scratchCode;
+
+		if (!phoneNum || !ticketCode) {
+			toast.error("Missing claim details. Please scan again.");
+			return;
 		}
-	}, [step, name, phone, code]);
+
+		setIsLoading(true);
+		try {
+			const { data } = await axiosInstance.post("/players/claim-win", {
+				phone: String(phoneNum),
+				ticket: String(ticketCode),
+			});
+
+			if (data.success) {
+				toast.success(data.message || "Payout started!");
+			} else {
+				toast.error(data.message || "Payout failed.");
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Could not start payout.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const resetFlow = () => {
 		setname("");
@@ -359,7 +381,8 @@ const Scanner = () => {
 								? String(cashbackAmount)
 								: "0"
 						}
-						onClaim={() => toast.success("Cashback claimed!")}
+						onClaim={handleClaimPayout}
+						claimDisabled={isLoading}
 					/>
 				);
 			}

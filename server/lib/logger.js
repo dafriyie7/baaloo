@@ -9,10 +9,18 @@ const logsDir = path.resolve(__dirname, "..", "logs");
 fs.mkdirSync(logsDir, { recursive: true });
 
 const lineFormat = winston.format.printf(
-	({ level, message, timestamp, stack }) => {
+	({ level, message, timestamp, stack, ...metadata }) => {
 		const lvl = level.toUpperCase().padEnd(5);
-		if (stack) return `${timestamp} [${lvl}] ${message}\n${stack}`;
-		return `${timestamp} [${lvl}] ${message}`;
+		let meta = "";
+		if (Object.keys(metadata).length > 0) {
+			const cleanMeta = { ...metadata };
+			delete cleanMeta.service;
+			if (Object.keys(cleanMeta).length > 0) {
+				meta = ` ${JSON.stringify(cleanMeta)}`;
+			}
+		}
+		if (stack) return `${timestamp} [${lvl}] ${message}${meta}\n${stack}`;
+		return `${timestamp} [${lvl}] ${message}${meta}`;
 	}
 );
 
@@ -47,8 +55,18 @@ if (process.env.LOG_CONSOLE !== "false") {
 				winston.format.colorize(),
 				winston.format.timestamp({ format: "HH:mm:ss.SSS" }),
 				winston.format.printf(
-					({ level, message, timestamp }) =>
-						`${timestamp} ${level}: ${message}`
+					({ level, message, timestamp, ...metadata }) => {
+						let meta = "";
+						if (Object.keys(metadata).length > 0) {
+							// Exclude winston-internal keys
+							const cleanMeta = { ...metadata };
+							delete cleanMeta.service;
+							if (Object.keys(cleanMeta).length > 0) {
+								meta = ` ${JSON.stringify(cleanMeta)}`;
+							}
+						}
+						return `${timestamp} ${level}: ${message}${meta}`;
+					}
 				)
 			),
 		})

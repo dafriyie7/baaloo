@@ -475,6 +475,18 @@ export async function generatePriceTagBatch(req, res) {
 
 		await ScratchCode.insertMany(docs);
 
+		const { logAudit } = await import("../lib/auditLogger.js");
+		await logAudit(req, "GENERATE_BATCH", {
+			resource: "Batch",
+			resourceId: batch._id,
+			details: {
+				batchNumber: batch.batchNumber,
+				totalCodes: batch.totalCodes,
+				tierBreakdown: batch.tierCountsSnapshot,
+				gameMode: batch.gameMode,
+			},
+		});
+
 		console.log(LOG, "done", {
 			batchNumber: resolvedBatchNumber,
 			codesInserted: docs.length,

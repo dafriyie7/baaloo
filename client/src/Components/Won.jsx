@@ -13,9 +13,11 @@ const Won = ({ winner, onClaim, onHome, claimDisabled }) => {
 	}
 
 	const prizeAmount = Number(
-		winner.code?.prizeAmount ?? winner.code?.batchNumber?.winningPrize ?? 0
+		winner.amount ?? winner.code?.prizeAmount ?? 0
 	).toFixed(2);
-	const codeDisplay = winner.code?.plainCode ?? winner.code?.code ?? "N/A";
+	const codeDisplay = winner.scratchCode || winner.code?.plainCode || winner.code?.code || "N/A";
+	const playerName = winner.player?.name || winner.name || "Winner";
+	const playerPhone = winner.player?.phone || winner.phone || "N/A";
 
 	return (
 		<div className="w-full min-h-[100dvh] flex flex-col items-center justify-center bg-zinc-50 px-4 py-12 relative overflow-hidden">
@@ -42,7 +44,7 @@ const Won = ({ winner, onClaim, onHome, claimDisabled }) => {
 						Congratulations!
 					</h1>
 					<p className="text-lg text-zinc-600 font-medium mb-8">
-						{winner.name}, you just won a prize!
+						{playerName}, you just won a prize!
 					</p>
 				</div>
 
@@ -57,7 +59,7 @@ const Won = ({ winner, onClaim, onHome, claimDisabled }) => {
 					<div className="space-y-4 rounded-2xl bg-zinc-50/80 p-5 border border-zinc-100">
 						<div className="flex justify-between items-center">
 							<span className="font-semibold text-zinc-500">Phone</span>
-							<span className="font-bold text-zinc-900">{winner.phone}</span>
+							<span className="font-bold text-zinc-900">{playerPhone}</span>
 						</div>
 						<div className="flex justify-between items-center">
 							<span className="font-semibold text-zinc-500">Winning Code</span>

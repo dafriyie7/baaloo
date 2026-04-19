@@ -21,6 +21,7 @@ import {
 import axios from "../../../lib/api";
 import AdminEditModal from "../../Components/admin/AdminEditModal";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
+import AdminHeader from "../../Components/admin/AdminHeader";
 
 const Manage = () => {
 	const { user, setIsLoading, navigate, currency } = useAppcontext();
@@ -128,14 +129,14 @@ const Manage = () => {
 	return (
 		<div className="w-full">
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto">
-				<div className="mb-8">
-					<AdminPageHeading icon={LayoutDashboard}>
-						Welcome, {user?.name || "Admin"}!
-					</AdminPageHeading>
-					<p className="mt-1 text-stone-600 text-sm sm:text-base">
-						Revenue and pools from batches, plus admin access.
-					</p>
-				</div>
+				<AdminHeader 
+					title={`Welcome, ${user?.name || "Admin"}!`}
+					subtitle="Revenue and pools from batches, plus admin access."
+					icon={LayoutDashboard}
+					actions={[
+						{ label: "View Logs", icon: History, onClick: () => navigate("/admin/logs"), variant: 'dark' }
+					]}
+				/>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
 					<StatCard

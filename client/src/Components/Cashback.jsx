@@ -1,7 +1,7 @@
 import React from 'react';
 import { Wallet, Sparkles, RefreshCw } from 'lucide-react';
 
-const Cashback = ({ amount, message, onRetry, onClaim }) => {
+const Cashback = ({ amount, message, onRetry, onClaim, claimDisabled }) => {
 	const displayAmount = amount ? Number(amount).toFixed(2) : "0.00";
 
 	return (
@@ -44,9 +44,10 @@ const Cashback = ({ amount, message, onRetry, onClaim }) => {
 						{onClaim && (
 							<button 
 								onClick={onClaim}
-								className="group flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
+								disabled={claimDisabled}
+								className="group flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 py-4 text-lg font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
 							>
-								Claim Cashback
+								{claimDisabled ? "Processing..." : "Claim Cashback"}
 							</button>
 						)}
 						

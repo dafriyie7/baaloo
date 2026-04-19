@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "../../../lib/api";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 import { useAppcontext } from "../../context/AppContext";
-import { Search, Filter, Clock, User, Shield, Info, ArrowLeft, ArrowRight, Globe, Monitor, Laptop } from "lucide-react";
+import { Search, Filter, Clock, User, Shield, Info, ArrowLeft, ArrowRight, Globe, Monitor, Laptop, History } from "lucide-react";
+import AdminPagination from "../../Components/admin/AdminPagination";
+import AdminHeader from "../../Components/admin/AdminHeader";
 
 const ACTION_LABELS = {
 	LOGIN: { label: "Login", color: "bg-emerald-50 text-emerald-700 border-emerald-100" },
@@ -17,6 +19,7 @@ const ACTION_LABELS = {
 	REVEAL_OUTCOMES: { label: "Revealed Prizes", color: "bg-orange-50 text-orange-700 border-orange-100" },
 	REVEAL_SYMBOLS: { label: "Revealed Symbols", color: "bg-orange-50 text-orange-700 border-orange-100" },
 	FILTER_BY_TIER: { label: "Tier Filtered", color: "bg-orange-50 text-orange-700 border-orange-100" },
+	REDEMPTION: { label: "Ticket Redemption", color: "bg-sky-50 text-sky-700 border-sky-100" },
 };
 
 const AuditLogs = () => {
@@ -25,10 +28,18 @@ const AuditLogs = () => {
 	const [total, setTotal] = useState(0);
 	const [page, setPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
+	const [limit, setLimit] = useState(20);
 	const [actionFilter, setActionFilter] = useState("");
 	const [datePreset, setDatePreset] = useState("all"); // all, today, yesterday, 7d, 30d, custom
 	const [customStartDate, setCustomStartDate] = useState("");
 	const [customEndDate, setCustomEndDate] = useState("");
+	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
+
+	useEffect(() => {
+		const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+		return () => clearTimeout(t);
+	}, [search]);
 
 	const fetchLogs = useCallback(async () => {
 		setIsLoading(true);
@@ -66,7 +77,7 @@ const AuditLogs = () => {
 
 		try {
 			const { data } = await axios.get("/auth/audit-logs", {
-				params: { page, action: actionFilter, startDate, endDate, limit: 20 },
+				params: { page, action: actionFilter, search: debouncedSearch, startDate, endDate, limit },
 			});
 			if (data.success) {
 				setLogs(data.data);
@@ -83,6 +94,15 @@ const AuditLogs = () => {
 	useEffect(() => {
 		fetchLogs();
 	}, [fetchLogs]);
+
+	const clearFilters = () => {
+		setSearch("");
+		setActionFilter("");
+		setDatePreset("all");
+		setCustomStartDate("");
+		setCustomEndDate("");
+		setPage(1);
+	};
 
 	const formatMetadata = (details) => {
 		if (!details) return "—";
@@ -126,92 +146,78 @@ const AuditLogs = () => {
 
 	return (
 		<div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-			<AdminPageHeading icon={Shield}>
-				Activity Logs
-			</AdminPageHeading>
-			<p className="mt-1 mb-8 text-sm text-stone-600">
-				Monitor administrative actions, security reveals, and system events.
-			</p>
+			<AdminHeader 
+				title="Activity Logs"
+				subtitle="Monitor administrative actions, security reveals, and system events."
+				icon={History}
+				search={search}
+				setSearch={setSearch}
+				searchPlaceholder="Search events or administrators..."
+				showClear={search || actionFilter !== "" || datePreset !== "all"}
+				onClear={() => {
+					setSearch("");
+					setActionFilter("");
+					setDatePreset("all");
+					setPage(1);
+				}}
+				filters={[
+					{
+						label: "Event",
+						value: actionFilter,
+						onChange: (val) => { setActionFilter(val); setPage(1); },
+						options: Object.entries(ACTION_LABELS).map(([val, { label }]) => ({ value: val, label }))
+					},
+					{
+						label: "Timeframe",
+						value: datePreset,
+						onChange: (val) => { setDatePreset(val); setPage(1); },
+						options: [
+							{ value: "today", label: "Today" },
+							{ value: "yesterday", label: "Yesterday" },
+							{ value: "7d", label: "Last 7 Days" },
+							{ value: "30d", label: "Last 30 Days" },
+							{ value: "custom", label: "Custom Range" }
+						]
+					},
+					{
+						label: "Show",
+						value: limit,
+						onChange: (val) => { setLimit(Number(val)); setPage(1); },
+						options: [
+							{ value: 10, label: "10 per page" },
+							{ value: 20, label: "20 per page" },
+							{ value: 50, label: "50 per page" },
+							{ value: 100, label: "100 per page" }
+						]
+					}
+				]}
+			/>
 
-			{/* Filters */}
-			<div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-amber-100 bg-white p-4 shadow-sm">
-				<div className="w-56">
-					<label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-stone-400">Event</label>
-					<div className="relative">
-						<Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-						<select
-							value={actionFilter}
-							onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-							className="w-full rounded-lg border border-stone-200 bg-white py-1.5 pl-9 pr-4 text-xs font-semibold focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/10"
-						>
-							<option value="">All Activities</option>
-							{Object.entries(ACTION_LABELS).map(([val, { label }]) => (
-								<option key={val} value={val}>{label}</option>
-							))}
-						</select>
+			{datePreset === "custom" && (
+				<div className="mb-6 flex gap-4 p-4 bg-white border border-amber-100 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-2">
+					<div className="flex-1">
+						<label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-stone-400">From</label>
+						<input
+							type="date"
+							value={customStartDate}
+							onChange={(e) => { setCustomStartDate(e.target.value); setPage(1); }}
+							className="w-full rounded-md border border-amber-100 bg-white py-2 px-3 text-xs font-semibold focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 outline-none"
+						/>
+					</div>
+					<div className="flex-1">
+						<label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-stone-400">To</label>
+						<input
+							type="date"
+							value={customEndDate}
+							onChange={(e) => { setCustomEndDate(e.target.value); setPage(1); }}
+							className="w-full rounded-md border border-amber-100 bg-white py-2 px-3 text-xs font-semibold focus:ring-2 focus:ring-amber-500/10 focus:border-amber-400 outline-none"
+						/>
 					</div>
 				</div>
-
-				<div className="w-44">
-					<label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-stone-400">Timeframe</label>
-					<div className="relative">
-						<Clock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-						<select
-							value={datePreset}
-							onChange={(e) => { setDatePreset(e.target.value); setPage(1); }}
-							className="w-full rounded-lg border border-stone-200 bg-white py-1.5 pl-9 pr-4 text-xs font-semibold focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/10"
-						>
-							<option value="all">All Time</option>
-							<option value="today">Today</option>
-							<option value="yesterday">Yesterday</option>
-							<option value="7d">Last 7 Days</option>
-							<option value="30d">Last 30 Days</option>
-							<option value="custom">Custom Range</option>
-						</select>
-					</div>
-				</div>
-
-				{datePreset === "custom" && (
-					<>
-						<div className="w-36">
-							<label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-stone-400">From</label>
-							<input
-								type="date"
-								value={customStartDate}
-								onChange={(e) => { setCustomStartDate(e.target.value); setPage(1); }}
-								className="w-full rounded-lg border border-stone-200 bg-white py-1.5 px-3 text-xs font-semibold focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/10"
-							/>
-						</div>
-						<div className="w-36">
-							<label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-stone-400">To</label>
-							<input
-								type="date"
-								value={customEndDate}
-								onChange={(e) => { setCustomEndDate(e.target.value); setPage(1); }}
-								className="w-full rounded-lg border border-stone-200 bg-white py-1.5 px-3 text-xs font-semibold focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/10"
-							/>
-						</div>
-					</>
-				)}
-
-				<div className="pb-1.5 ml-auto">
-					<button 
-						onClick={() => { 
-							setActionFilter(""); 
-							setDatePreset("all"); 
-							setCustomStartDate("");
-							setCustomEndDate("");
-							setPage(1); 
-						}}
-						className="text-[10px] font-black uppercase tracking-widest text-amber-800 hover:text-amber-900 transition-colors"
-					>
-						Clear Filters
-					</button>
-				</div>
-			</div>
+			)}
 
 			{/* Logs Table */}
-			<div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">
+			<div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">
 				<div className="overflow-x-auto">
 					<table className="w-full text-left border-collapse">
 						<thead>
@@ -231,13 +237,13 @@ const AuditLogs = () => {
 									return (
 										<tr key={log._id} className="transition-colors hover:bg-stone-50/50">
 											<td className="px-6 py-4">
-												<span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight border ${actionInfo.color}`}>
+												<span className={`inline-flex rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight border ${actionInfo.color}`}>
 													{actionInfo.label}
 												</span>
 											</td>
 											<td className="px-6 py-4">
 												<div className="flex items-center gap-2.5">
-													<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xs font-bold text-stone-600 border border-stone-200">
+													<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-xs font-bold text-stone-600 border border-stone-200">
 														{log.user?.name?.[0]?.toUpperCase() ?? "?"}
 													</div>
 													<div className="min-w-0">
@@ -296,30 +302,12 @@ const AuditLogs = () => {
 					</table>
 				</div>
 
-				{/* Pagination */}
-				{totalPages > 1 && (
-					<div className="flex items-center justify-between border-t border-stone-200 bg-stone-50/50 px-6 py-4">
-						<p className="text-xs text-stone-500">
-							Showing page <span className="font-bold text-stone-900">{page}</span> of <span className="font-bold text-stone-900">{totalPages}</span>
-						</p>
-						<div className="flex gap-2">
-							<button
-								disabled={page === 1}
-								onClick={() => setPage(page - 1)}
-								className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-40"
-							>
-								<ArrowLeft size={16} />
-							</button>
-							<button
-								disabled={page === totalPages}
-								onClick={() => setPage(page + 1)}
-								className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-40"
-							>
-								<ArrowRight size={16} />
-							</button>
-						</div>
-					</div>
-				)}
+				{/* Pagination Controls */}
+					<AdminPagination 
+						currentPage={page} 
+						totalPages={totalPages} 
+						setCurrentPage={setPage} 
+					/>
 			</div>
 		</div>
 	);

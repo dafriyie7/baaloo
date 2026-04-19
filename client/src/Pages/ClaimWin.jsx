@@ -11,29 +11,25 @@ const ClaimWin = () => {
 	const [claiming, setClaiming] = useState(false);
 
 	const onClaim = async () => {
-		if (!winner?.phone) {
-			toast.error("Missing player details. Please register your ticket again.");
+		// Use player details from the verified redemption response
+		const phone = winner?.player?.phone || winner?.phone;
+		const ticket = winner?.scratchCode || winner?.code?.plainCode || winner?.code?.code;
+
+		if (!phone) {
+			toast.error("Missing phone number. Please scan your ticket again.");
 			return;
 		}
 
-		const ticket =
-			winner.code?.plainCode ??
-			(winner.code?.code && typeof winner.code.code === "string"
-				? winner.code.code
-				: null);
-
 		if (!ticket) {
-			toast.error(
-				"We could not read your ticket code. Open this page from the same device you used to play, or scan again."
-			);
+			toast.error("Missing ticket code. Please scan your ticket again.");
 			return;
 		}
 
 		setClaiming(true);
 		try {
 			const { data } = await axiosInstance.post("/players/claim-win", {
-				phone: String(winner.phone),
-				ticket,
+				phone: String(phone),
+				ticket: String(ticket),
 			});
 
 			if (data.success) {

@@ -1,22 +1,17 @@
-import axios from "../../../lib/api";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import CodeCard from "../../Components/admin/CodeCard";
-import {
-	ChevronsLeft,
-	ChevronsRight,
-	PlusCircle,
-	QrCode,
-	Download,
-	Search,
-} from "lucide-react";
 import GenerateBatchModal from "../../Components/admin/GenerateBatchModal";
 import ExportTicketsModal from "../../Components/admin/ExportTicketsModal";
 import AuditCodesModal from "../../Components/admin/AuditCodesModal";
 import SecurityRevealModal from "../../Components/admin/SecurityRevealModal";
 import { useAppcontext } from "../../context/AppContext";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
+import AdminHeader from "../../Components/admin/AdminHeader";
+import { PlusCircle, QrCode, Download, ShieldCheck, ChevronsLeft, ChevronsRight } from "lucide-react";
+import axios from "../../../lib/api";
+import AdminPagination from "../../Components/admin/AdminPagination";
 
 const TIER_OPTIONS = [
 	{ value: "all", label: "All tiers" },
@@ -342,193 +337,99 @@ const Codes = () => {
 			<div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto flex flex-col items-stretch">
 				{batches && batches.length > 0 ? (
 					<div className="w-full">
-						<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-							<div className="text-center sm:text-left">
-								<AdminPageHeading icon={QrCode}>
-									Scratch codes
-								</AdminPageHeading>
-								<p className="mt-1 text-sm text-stone-600">
-									Batch analysis, usage, filters, and printable
-									codes.
-								</p>
-							</div>
-							<div className="flex flex-wrap justify-center gap-2 sm:justify-end">
-								<button
-									type="button"
-									onClick={() => setExportModalOpen(true)}
-									disabled={!selectedBatchId}
-									className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-amber-200 bg-white px-5 py-3 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
-								>
-									<Download className="h-5 w-5" strokeWidth={2} />
-									Export
-								</button>
-								<button
-									type="button"
-									onClick={() => setAuditModalOpen(true)}
-									className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-amber-200 bg-white px-5 py-3 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-50"
-								>
-									<Search className="h-5 w-5" strokeWidth={2} />
-									Audit Batch
-								</button>
-								<button
-									type="button"
-									onClick={() => setGenerateModalOpen(true)}
-									className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
-								>
-									<PlusCircle className="h-5 w-5" strokeWidth={2} />
-									Generate batch
-								</button>
-							</div>
-						</div>
-
-						<div className="mb-4 flex flex-wrap items-end justify-center gap-3 sm:justify-start">
-							<div>
-								<label
-									htmlFor="batch-select"
-									className="mb-1 block text-center text-xs font-semibold uppercase tracking-wide text-stone-500 sm:text-left"
-								>
-									Batch
-								</label>
-								<select
-									id="batch-select"
-									value={selectedBatchId}
-									onChange={(e) => {
-										const id = e.target.value;
-										setSelectedBatchId(id);
-										setCurrentPage(1);
-										const next = new URLSearchParams(searchParams);
-										if (id) next.set("batch", id);
-										else next.delete("batch");
-										setSearchParams(next, { replace: true });
-									}}
-									className={`${selectClass} min-w-[12rem] max-w-xs`}
-								>
-									{batches.map((batch) => (
-										<option key={batch._id} value={batch._id}>
-											{batch.batchNumber}
-										</option>
-									))}
-								</select>
-							</div>
-							<div>
-								<label
-									htmlFor="status-filter"
-									className="mb-1 block text-center text-xs font-semibold uppercase tracking-wide text-stone-500 sm:text-left"
-								>
-									Status
-								</label>
-								<select
-									id="status-filter"
-									value={statusFilter}
-									onChange={(e) => {
-										setStatusFilter(e.target.value);
-										setCurrentPage(1);
-									}}
-									className={selectClass}
-								>
-									<option value="all">All</option>
-									<option value="available">Available</option>
-									<option value="redeemed">Redeemed</option>
-								</select>
-							</div>
-							<div>
-								<label
-									htmlFor="outcome-filter"
-									className="mb-1 block text-center text-xs font-semibold uppercase tracking-wide text-stone-500 sm:text-left"
-								>
-									Outcome
-								</label>
-								<select
-									id="outcome-filter"
-									value={outcomeFilter}
-									onChange={(e) => {
-										setOutcomeFilter(e.target.value);
-										setCurrentPage(1);
-									}}
-									className={selectClass}
-								>
-									<option value="all">All</option>
-									<option value="winner">Winner</option>
-									<option value="loser">Loser</option>
-									<option value="cashback">Cashback</option>
-								</select>
-							</div>
-							<div>
-								<label
-									htmlFor="tier-filter"
-									className="mb-1 block text-center text-xs font-semibold uppercase tracking-wide text-stone-500 sm:text-left"
-								>
-									Tier
-								</label>
-								<select
-									id="tier-filter"
-									value={tierFilter}
-									onChange={(e) => {
-										const val = e.target.value;
-										if (val && val !== "all") {
-											setPendingTier(val);
-											setPendingAction("FILTER_BY_TIER");
-											setSecurityModalOpen(true);
-										} else {
-											setTierFilter(val);
-											setCurrentPage(1);
-										}
-									}}
-									className={selectClass}
-								>
-									{tierFilterOptions.map((o) => (
-										<option key={o.value} value={o.value}>
-											{o.label}
-										</option>
-									))}
-								</select>
-							</div>
-							<div>
-								<label
-									htmlFor="sort-select"
-									className="mb-1 block text-center text-xs font-semibold uppercase tracking-wide text-stone-500 sm:text-left"
-								>
-									Sort
-								</label>
-								<select
-									id="sort-select"
-									value={sortBy}
-									onChange={(e) => {
-										setSortBy(e.target.value);
-										setCurrentPage(1);
-									}}
-									className={selectClass}
-								>
-									<option value="newest">Newest first</option>
-									<option value="oldest">Oldest first</option>
-									<option value="redeemed_newest">
-										Redeemed (recent)
-									</option>
-								</select>
-							</div>
-							<div>
-								<label
-									htmlFor="limit-select"
-									className="mb-1 block text-center text-xs font-semibold uppercase tracking-wide text-stone-500 sm:text-left"
-								>
-									Per page
-								</label>
-								<select
-									id="limit-select"
-									value={limit}
-									onChange={(e) => {
-										setLimit(Number(e.target.value));
-										setCurrentPage(1);
-									}}
-									className={selectClass}
-								>
-									<option value="10">10</option>
-									<option value="20">20</option>
-									<option value="50">50</option>
-									<option value="100">100</option>
-								</select>
-							</div>
-						</div>
+				<AdminHeader 
+					title="Tickets"
+					subtitle="Audit, export, and monitor every ticket in your system."
+					icon={QrCode}
+					actions={[
+						{ label: "Audit Batch", icon: ShieldCheck, onClick: () => setAuditModalOpen(true) },
+						{ label: "Export", icon: Download, onClick: () => setExportModalOpen(true) },
+						{ label: "Generate Batch", icon: PlusCircle, onClick: () => setGenerateModalOpen(true), variant: 'dark' }
+					]}
+					search={""}
+					showClear={selectedBatchId || statusFilter !== "all" || outcomeFilter !== "all" || tierFilter !== "all" || sortBy !== "newest"}
+					onClear={() => {
+						setSelectedBatchId("");
+						setStatusFilter("all");
+						setOutcomeFilter("all");
+						setTierFilter("all");
+						setSortBy("newest");
+						setCurrentPage(1);
+						const next = new URLSearchParams(searchParams);
+						next.delete("batch");
+						setSearchParams(next, { replace: true });
+					}}
+					filters={[
+						{
+							label: "Batch",
+							value: selectedBatchId,
+							onChange: (id) => {
+								setSelectedBatchId(id);
+								setCurrentPage(1);
+								const next = new URLSearchParams(searchParams);
+								if (id && id !== "all") next.set("batch", id);
+								else next.delete("batch");
+								setSearchParams(next, { replace: true });
+							},
+							options: batches.map(b => ({ value: b._id, label: b.batchNumber }))
+						},
+						{
+							label: "Status",
+							value: statusFilter,
+							onChange: (val) => { setStatusFilter(val); setCurrentPage(1); },
+							options: [
+								{ value: "available", label: "Available" },
+								{ value: "redeemed", label: "Redeemed" }
+							]
+						},
+						{
+							label: "Outcome",
+							value: outcomeFilter,
+							onChange: (val) => { setOutcomeFilter(val); setCurrentPage(1); },
+							options: [
+								{ value: "winner", label: "Winner" },
+								{ value: "loser", label: "Loser" },
+								{ value: "cashback", label: "Cashback" }
+							]
+						},
+						{
+							label: "Tier",
+							value: tierFilter,
+							onChange: (val) => {
+								if (val && val !== "all") {
+									setPendingTier(val);
+									setPendingAction("FILTER_BY_TIER");
+									setSecurityModalOpen(true);
+								} else {
+									setTierFilter(val);
+									setCurrentPage(1);
+								}
+							},
+							options: tierFilterOptions.map(o => ({ value: o.value, label: o.label }))
+						},
+						{
+							label: "Sort",
+							value: sortBy,
+							onChange: (val) => { setSortBy(val); setCurrentPage(1); },
+							options: [
+								{ value: "newest", label: "Newest First" },
+								{ value: "oldest", label: "Oldest First" },
+								{ value: "redeemed_newest", label: "Recently Redeemed" }
+							]
+						},
+						{
+							label: "Show",
+							value: limit,
+							onChange: (val) => { setLimit(Number(val)); setCurrentPage(1); },
+							options: [
+								{ value: 10, label: "10 per page" },
+								{ value: 20, label: "20 per page" },
+								{ value: 50, label: "50 per page" },
+								{ value: 100, label: "100 per page" }
+							]
+						}
+					]}
+				/>
 
 						{/* Unified Security Settings Row - Always Visible below filters */}
 						<div className="flex flex-wrap items-center gap-x-8 gap-y-4 mt-6 pb-6 border-t border-stone-100">
@@ -827,53 +728,11 @@ const Codes = () => {
 						</div>
 
 						{totalPages > 1 && (
-							<div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-								<button
-									type="button"
-									onClick={() =>
-										handlePageChange(currentPage - 1)
-									}
-									disabled={currentPage === 1}
-									className="rounded-md border border-amber-100 bg-white px-3 py-2 text-stone-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-45"
-								>
-									<ChevronsLeft className="h-5 w-5" />
-								</button>
-								{renderPagination().map((page, index) =>
-									typeof page === "number" ? (
-										<button
-											type="button"
-											key={index}
-											onClick={() =>
-												handlePageChange(page)
-											}
-											className={`h-10 min-w-[2.5rem] rounded-md px-2 text-sm font-medium transition-colors ${
-												currentPage === page
-													? "bg-amber-800 text-white shadow-sm"
-													: "border border-amber-100 bg-white text-stone-700 hover:bg-amber-50"
-											}`}
-										>
-											{page}
-										</button>
-									) : (
-										<span
-											key={index}
-											className="px-2 text-stone-400"
-										>
-											…
-										</span>
-									)
-								)}
-								<button
-									type="button"
-									onClick={() =>
-										handlePageChange(currentPage + 1)
-									}
-									disabled={currentPage === totalPages}
-									className="rounded-md border border-amber-100 bg-white px-3 py-2 text-stone-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-45"
-								>
-									<ChevronsRight className="h-5 w-5" />
-								</button>
-							</div>
+							<AdminPagination 
+								currentPage={currentPage} 
+								totalPages={totalPages} 
+								setCurrentPage={setCurrentPage} 
+							/>
 						)}
 					</div>
 				) : (

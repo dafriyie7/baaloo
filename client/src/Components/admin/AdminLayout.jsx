@@ -17,9 +17,9 @@ import {
 const navLinks = [
 	{ name: "Dashboard", path: "/admin", icon: LayoutDashboard },
 	{ name: "Batches", path: "/admin/batches", icon: Layers2 },
-	{ name: "Codes", path: "/admin/codes", icon: QrCode },
+	{ name: "Tickets", path: "/admin/codes", icon: QrCode },
 	{ name: "SVGs", path: "/admin/svgs", icon: Images },
-	{ name: "Players", path: "/admin/players", icon: Users },
+	{ name: "Scans", path: "/admin/players", icon: Users },
 	{ name: "Activity Logs", path: "/admin/logs", icon: History },
 ];
 
