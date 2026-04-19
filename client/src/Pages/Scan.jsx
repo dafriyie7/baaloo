@@ -12,6 +12,7 @@ import { useAppcontext } from "../context/AppContext";
 import Won from "../Components/Won";
 import Lost from "../Components/Lost";
 import Cashback from "../Components/Cashback";
+import Jackpot from "../Components/Jackpot";
 
 const Scanner = () => {
 	const [name, setname] = useState("");
@@ -409,7 +410,17 @@ const Scanner = () => {
 			}
 			if (isWinner) {
 				const winnerData = sessionStorage.getItem("winner") ? JSON.parse(sessionStorage.getItem("winner")) : null;
-				return <Won winner={winnerData} onHome={() => navigate("/")} />;
+				if (winnerData?.tier === "jackpot") {
+					return <Jackpot winner={winnerData} onHome={() => navigate("/")} />;
+				}
+				return (
+					<Won 
+						winner={winnerData} 
+						onHome={() => navigate("/")} 
+						onClaim={handleClaimPayout}
+						claimDisabled={isLoading}
+					/>
+				);
 			}
 			return <Lost message={message} onRetry={resetFlow} onHome={() => navigate("/")} />;
 		}

@@ -217,7 +217,7 @@ const Players = () => {
 												</p>
 											</td>
 											<td className="px-6 py-4 text-right">
-												{p.isWinner && p.payoutStatus !== "paid" ? (
+												{(p.isWinner || p.isCashback) && p.payoutStatus !== "paid" ? (
 													<button
 														onClick={() => claimPayout(p._id)}
 														className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-stone-600 hover:bg-amber-50 hover:text-amber-900 transition-all shadow-sm"
