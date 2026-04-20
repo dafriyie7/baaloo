@@ -162,16 +162,11 @@ const Players = () => {
 									players.map((p) => (
 										<tr key={p._id} className="transition-colors hover:bg-stone-50/50">
 											<td className="px-6 py-4 min-w-[200px]">
-												<div className="flex items-center gap-3">
-													<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 text-[10px] font-bold text-stone-600 border border-stone-200">
-														{p.player?.name?.[0]?.toUpperCase() ?? "?"}
-													</div>
-													<div className="min-w-0">
-														<p className="truncate text-xs font-bold text-stone-900">{p.player?.name || "Anonymous"}</p>
-														<div className="flex items-center gap-1.5 text-[10px] text-stone-400 font-medium">
-															<Phone size={10} className="text-stone-300" />
-															{p.player?.phone || "Unknown"}
-														</div>
+												<div className="min-w-0">
+													<p className="truncate text-xs font-bold text-stone-900">{p.player?.name || "Anonymous"}</p>
+													<div className="flex items-center gap-1.5 text-[10px] text-stone-400 font-medium">
+														<Phone size={10} className="text-stone-300" />
+														{p.player?.phone || "Unknown"}
 													</div>
 												</div>
 											</td>

@@ -242,14 +242,9 @@ const AuditLogs = () => {
 												</span>
 											</td>
 											<td className="px-6 py-4">
-												<div className="flex items-center gap-2.5">
-													<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-xs font-bold text-stone-600 border border-stone-200">
-														{log.user?.name?.[0]?.toUpperCase() ?? "?"}
-													</div>
-													<div className="min-w-0">
-														<p className="truncate text-xs font-bold text-stone-900">{log.user?.name ?? "Unknown Admin"}</p>
-														<p className="truncate text-[10px] text-stone-400">{log.user?.email}</p>
-													</div>
+												<div className="min-w-0">
+													<p className="truncate text-xs font-bold text-stone-900">{log.user?.name ?? "Unknown Admin"}</p>
+													<p className="truncate text-[10px] text-stone-400">{log.user?.email}</p>
 												</div>
 											</td>
 											<td className="px-6 py-4">
@@ -260,9 +255,8 @@ const AuditLogs = () => {
 											</td>
 											<td className="px-6 py-4">
 												<div className="flex flex-col gap-0.5">
-													<div className="flex items-center gap-1 text-[11px] font-bold text-stone-800">
-														<Globe size={11} className="text-amber-800" />
-														{log.location || "Unknown"}
+													<div className="text-[11px] font-bold text-stone-800">
+														{log.location || "Unknown Origin"}
 													</div>
 													<p className="text-[10px] font-mono text-stone-400 uppercase tracking-tighter">
 														{log.ipAddress || "—"}
@@ -282,8 +276,7 @@ const AuditLogs = () => {
 												</div>
 											</td>
 											<td className="px-6 py-4 text-right">
-												<div className="flex items-center justify-end gap-1.5 text-xs font-bold text-stone-800 whitespace-nowrap">
-													<Clock size={12} className="text-stone-400" />
+												<div className="text-xs font-bold text-stone-800 whitespace-nowrap">
 													{new Date(log.createdAt).toLocaleString()}
 												</div>
 											</td>
