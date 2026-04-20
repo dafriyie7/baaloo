@@ -15,15 +15,21 @@ export const logAudit = async (req, action, { resource, resourceId, details, use
 		if (!userId) return;
 
 		// Handle IP detection more robustly (Express 'trust proxy' helps here)
-		let ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+		// Prioritize headers often set by Cloudflare, Nginx, or other proxies for the REAL public IP
+		let ip = 
+			req.headers["cf-connecting-ip"] || 
+			req.headers["x-real-ip"] || 
+			req.headers["x-forwarded-for"] || 
+			req.ip || 
+			req.socket.remoteAddress;
 		
-		// If x-forwarded-for is a list, take the first one
-		if (ip && ip.includes(",")) {
+		// If x-forwarded-for is a list, take the first one (the original client)
+		if (ip && typeof ip === 'string' && ip.includes(",")) {
 			ip = ip.split(",")[0].trim();
 		}
 
 		// Normalize IPv6 mapped IPv4
-		if (ip && ip.startsWith("::ffff:")) {
+		if (ip && typeof ip === 'string' && ip.startsWith("::ffff:")) {
 			ip = ip.substring(7);
 		}
 
