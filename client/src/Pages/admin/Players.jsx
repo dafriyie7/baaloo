@@ -5,6 +5,7 @@ import AdminHeader from "../../Components/admin/AdminHeader";
 import { useAppcontext } from "../../context/AppContext";
 import { Users, Phone } from "lucide-react";
 import AdminPagination from "../../Components/admin/AdminPagination";
+import StatBadge from "../../Components/admin/StatBadge";
 
 const Players = () => {
 	const [players, setPlayers] = useState([]);
@@ -125,18 +126,20 @@ const Players = () => {
 				/>
 
 				<div className="mb-6 flex flex-wrap items-center justify-start gap-4">
-					<div className="flex items-center gap-2 rounded-md border border-stone-100 bg-white px-4 py-2 shadow-sm">
-						<span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Scans:</span>
-						<span className="text-sm font-black text-stone-900">{totalPlayers}</span>
-					</div>
-					<div className="flex items-center gap-2 rounded-md border border-emerald-100 bg-emerald-50/30 px-4 py-2 shadow-sm">
-						<span className="text-[10px] font-black uppercase tracking-widest text-emerald-600/60">Total Wins:</span>
-						<span className="text-sm font-black text-emerald-600">{winnerCount}</span>
-					</div>
-					<div className="flex items-center gap-2 rounded-md border border-stone-100 bg-stone-50/50 px-4 py-2 shadow-sm">
-						<span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Losses:</span>
-						<span className="text-sm font-black text-stone-500">{loserCount}</span>
-					</div>
+					<StatBadge label="Total Scans" value={totalPlayers} />
+					<StatBadge 
+						label="Total Wins" 
+						value={winnerCount} 
+						color="border-emerald-100 bg-emerald-50/30" 
+						labelColor="text-emerald-600/60" 
+						valueColor="text-emerald-600" 
+					/>
+					<StatBadge 
+						label="Total Losses" 
+						value={loserCount} 
+						color="border-stone-100 bg-stone-50/50" 
+						valueColor="text-stone-500" 
+					/>
 				</div>
 
 				<div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">

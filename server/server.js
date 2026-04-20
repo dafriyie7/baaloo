@@ -13,6 +13,7 @@ import scratchCodeRouter from "./routes/scratchCodeRoutes.js";
 import authRouter from "./routes/adminRoutes.js";
 import svgRouter from "./routes/svgRoutes.js";
 import systemRouter from "./routes/systemRoutes.js";
+import transactionRouter from "./routes/transactionRoutes.js";
 import { handleShikaWebhook } from "./controllers/scController.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -20,6 +21,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT;
 
 const app = express();
+app.set("trust proxy", 1);
 
 const defaultAllowedOrigins = [
 	"http://localhost:3000",
@@ -120,7 +122,8 @@ app.use("/api/players", playerRouter)
 	.use("/api/scratch-codes", scratchCodeRouter)
 	.use("/api/auth", authRouter)
 	.use("/api/svgs", svgRouter)
-	.use("/api/system", systemRouter);
+	.use("/api/system", systemRouter)
+	.use("/api/transactions", transactionRouter);
 
 const startServer = async () => {
 	try {

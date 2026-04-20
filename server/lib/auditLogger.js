@@ -14,18 +14,40 @@ export const logAudit = async (req, action, { resource, resourceId, details, use
 		const userId = manualUserId || req.user?._id || req.user?.id || req.userId;
 		if (!userId) return;
 
-		const ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+		// Handle IP detection more robustly (Express 'trust proxy' helps here)
+		let ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+		
+		// If x-forwarded-for is a list, take the first one
+		if (ip && ip.includes(",")) {
+			ip = ip.split(",")[0].trim();
+		}
+
+		// Normalize IPv6 mapped IPv4
+		if (ip && ip.startsWith("::ffff:")) {
+			ip = ip.substring(7);
+		}
+
 		const userAgent = req.headers["user-agent"];
 
 		// Resolve Location
-		let location = "Unknown";
-		if (ip && ip !== "127.0.0.1" && ip !== "::1") {
+		let location = "Unknown Origin";
+		
+		const isPrivateIP = (ipAddr) => {
+			if (!ipAddr) return false;
+			return /^(127\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.|::1|fe80:)/.test(ipAddr);
+		};
+
+		if (isPrivateIP(ip)) {
+			location = ip === "127.0.0.1" || ip === "::1" ? "Localhost" : "Private Network";
+		} else if (ip) {
 			const geo = geoip.lookup(ip);
 			if (geo) {
-				location = `${geo.city ? geo.city + ", " : ""}${geo.country}`;
+				const parts = [];
+				if (geo.city) parts.push(geo.city);
+				if (geo.region && !geo.city) parts.push(geo.region); // fallback if city is missing
+				if (geo.country) parts.push(geo.country);
+				location = parts.join(", ");
 			}
-		} else if (ip === "127.0.0.1" || ip === "::1") {
-			location = "Localhost";
 		}
 
 		// Parse User Agent
