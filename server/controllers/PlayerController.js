@@ -93,6 +93,140 @@ export const addPlayer = async (req, res) => {
 };
 
 /**
+ * Internal helper to process a Shika disbursement for a scratch code.
+ * @param {Object} scratchCode - The ScratchCode document.
+ * @param {Object} player - The Player document.
+ * @returns {Promise<{success: boolean, message: string, data?: Object}>}
+ */
+async function processAutomaticPayout(scratchCode, player) {
+	try {
+		const amount = Number(scratchCode.prizeAmount);
+		const eligible =
+			(scratchCode.isWinner || scratchCode.isCashback) &&
+			Number.isFinite(amount) &&
+			amount > 0;
+
+		if (!eligible) {
+			return { success: false, message: "This ticket is not eligible for a cash payout." };
+		}
+
+		if (scratchCode.payoutStatus === "paid") {
+			return { success: false, message: "Prize has already been paid for this ticket." };
+		}
+
+		const inFlight = await Transaction.findOne({
+			scratchCode: scratchCode._id,
+			status: { $in: ["pending", "processing"] },
+			gatewayTransactionId: { $exists: true, $nin: [null, ""] },
+		});
+
+		if (inFlight) {
+			return {
+				success: true,
+				message: "Payout is already being processed.",
+				data: { status: "processing", disbursementId: inFlight.gatewayTransactionId },
+			};
+		}
+
+		const moMoPhone = formatPhoneForGhanaMoMo(player.phone);
+		if (!moMoPhone) {
+			return { success: false, message: "Player has an invalid Ghana mobile number." };
+		}
+
+		const provider = shikaCreators.getProviderFromPhone(moMoPhone) || undefined;
+		if (!provider) {
+			return { success: false, message: "Could not detect mobile money network for this number." };
+		}
+
+		const currency = process.env.SC_CURRENCY || "GHS";
+
+		const tx = await Transaction.create({
+			scratchCode: scratchCode._id,
+			player: player._id,
+			amount,
+			phone: moMoPhone,
+			currency,
+			type: "payout",
+			status: "pending",
+		});
+
+		const idempotencyKey = shikaCreators.generateIdempotencyKey(
+			String(scratchCode._id),
+			"payout",
+			tx._id.toString()
+		);
+
+		try {
+			const disbursement = await shikaCreators.createDisbursement(
+				{
+					amount,
+					currency,
+					description: `Baaloo prize — ${String(scratchCode._id)}`,
+					reference: `baaloo_${scratchCode._id}_${tx._id}`,
+					metadata: {
+						player_id: String(player._id),
+						scratch_code_id: String(scratchCode._id),
+						transaction_id: String(tx._id),
+					},
+					destination: {
+						type: "mobile_money",
+						phone_number: moMoPhone,
+						provider,
+					},
+				},
+				idempotencyKey
+			);
+
+			const gatewayId =
+				disbursement?.id ??
+				disbursement?.data?.id ??
+				disbursement?.disbursement?.id;
+
+			if (!gatewayId) {
+				logger.error("Shika disbursement response missing id", { disbursement });
+				tx.status = "failed";
+				tx.note = "Gateway response missing disbursement id";
+				tx.gatewayResponse = { ...(tx.gatewayResponse || {}), raw: disbursement };
+				await tx.save();
+				return {
+					success: false,
+					message: "Payment provider returned an unexpected response.",
+				};
+			}
+
+			tx.gatewayTransactionId = gatewayId;
+			tx.gatewayResponse = {
+				...(tx.gatewayResponse || {}),
+				create: disbursement,
+			};
+			await tx.save();
+
+			return {
+				success: true,
+				message: "Payout started successfully.",
+				data: { status: "pending", disbursementId: gatewayId, amount, currency },
+			};
+		} catch (err) {
+			tx.status = "failed";
+			tx.note = (typeof err.message === "string" && err.message.slice(0, 500)) || "Disbursement request failed";
+			tx.gatewayResponse = {
+				...(tx.gatewayResponse || {}),
+				error: err.response?.data ?? err.message,
+			};
+			await tx.save();
+			logger.error("disbursement failed", { err: err.message, response: err.response?.data });
+			return {
+				success: false,
+				message: err.response?.data?.message || "Could not start payout.",
+			};
+		}
+	} catch (error) {
+		logger.error("processAutomaticPayout Error:", error);
+		return { success: false, message: "Internal error processing payout." };
+	}
+}
+
+/**
  * Start mobile-money payout for a redeemed winning ticket.
  * Body: { phone, ticket } — ticket is the same redemption code as on the card / QR (optional alias: code).
  */
@@ -155,165 +289,12 @@ export const claimWin = async (req, res) => {
 			});
 		}
 
-		if (scratchCode.tier === "jackpot") {
-			return res.status(400).json({
-				success: false,
-				message: "Jackpot prizes must be claimed manually at our office. Please contact support.",
-			});
+		const result = await processAutomaticPayout(scratchCode, player);
+		if (!result.success) {
+			return res.status(400).json(result);
 		}
 
-		const amount = Number(scratchCode.prizeAmount);
-		const eligible =
-			(scratchCode.isWinner || scratchCode.isCashback) &&
-			Number.isFinite(amount) &&
-			amount > 0;
-
-		if (!eligible) {
-			return res.status(400).json({
-				success: false,
-				message: "This ticket is not eligible for a cash payout.",
-			});
-		}
-
-		if (scratchCode.payoutStatus === "paid") {
-			return res.status(400).json({
-				success: false,
-				message: "Prize has already been paid for this ticket.",
-			});
-		}
-
-		const inFlight = await Transaction.findOne({
-			scratchCode: scratchCode._id,
-			status: "pending",
-			gatewayTransactionId: { $exists: true, $nin: [null, ""] },
-		});
-		if (inFlight) {
-			return res.status(200).json({
-				success: true,
-				message: "Your payout is already being processed.",
-				data: {
-					status: "processing",
-					disbursementId: inFlight.gatewayTransactionId,
-				},
-			});
-		}
-
-		const moMoPhone = formatPhoneForGhanaMoMo(phone);
-		if (!moMoPhone) {
-			return res.status(400).json({
-				success: false,
-				message: "Enter a valid Ghana mobile number.",
-			});
-		}
-
-		const provider =
-			shikaCreators.getProviderFromPhone(moMoPhone) || undefined;
-		if (!provider) {
-			return res.status(400).json({
-				success: false,
-				message:
-					"Could not detect mobile money network for this number. Use a supported Ghana number.",
-			});
-		}
-
-		const currency = process.env.SC_CURRENCY || "GHS";
-
-		const tx = await Transaction.create({
-			scratchCode: scratchCode._id,
-			player: player._id,
-			amount,
-			phone: moMoPhone,
-			currency,
-			type: "payout",
-			status: "pending",
-		});
-
-		const idempotencyKey = shikaCreators.generateIdempotencyKey(
-			String(scratchCode._id),
-			"payout",
-			tx._id.toString()
-		);
-
-		try {
-			const disbursement = await shikaCreators.createDisbursement(
-				{
-					amount,
-					currency,
-					description: `Baaloo prize — ${String(scratchCode._id)}`,
-					reference: `baaloo_${scratchCode._id}_${tx._id}`,
-					metadata: {
-						player_id: String(player._id),
-						scratch_code_id: String(scratchCode._id),
-						transaction_id: String(tx._id),
-					},
-					destination: {
-						type: "mobile_money",
-						phone_number: moMoPhone,
-						provider,
-					},
-				},
-				idempotencyKey
-			);
-
-			const gatewayId =
-				disbursement?.id ??
-				disbursement?.data?.id ??
-				disbursement?.disbursement?.id;
-
-			if (!gatewayId) {
-				logger.error("Shika disbursement response missing id", {
-					disbursement,
-				});
-				tx.status = "failed";
-				tx.note = "Gateway response missing disbursement id";
-				tx.gatewayResponse = { ...(tx.gatewayResponse || {}), raw: disbursement };
-				await tx.save();
-				return res.status(502).json({
-					success: false,
-					message:
-						"Payment provider returned an unexpected response. Try again later.",
-				});
-			}
-
-			tx.gatewayTransactionId = gatewayId;
-			tx.gatewayResponse = {
-				...(tx.gatewayResponse || {}),
-				create: disbursement,
-			};
-			await tx.save();
-
-			return res.status(200).json({
-				success: true,
-				message:
-					"Payout started. Funds should arrive after your mobile money network confirms.",
-				data: {
-					status: "pending",
-					disbursementId: gatewayId,
-					amount,
-					currency,
-				},
-			});
-		} catch (err) {
-			tx.status = "failed";
-			tx.note =
-				(typeof err.message === "string" && err.message.slice(0, 500)) ||
-				"Disbursement request failed";
-			tx.gatewayResponse = {
-				...(tx.gatewayResponse || {}),
-				error: err.response?.data ?? err.message,
-			};
-			await tx.save();
-			logger.error("claimWin disbursement failed", {
-				err: err.message,
-				response: err.response?.data,
-			});
-			return res.status(502).json({
-				success: false,
-				message:
-					err.response?.data?.message ||
-					"Could not start payout. Please try again later.",
-			});
-		}
+		return res.status(200).json(result);
 	} catch (error) {
 		logger.error(error?.stack ? `${error.message}\n${error.stack}` : error.message);
 		return res.status(500).json({
@@ -343,10 +324,17 @@ export const markAsPaid = async (req, res) => {
 			return res.status(400).json({ success: false, message: "This ticket is not a winner." });
 		}
 
-		code.payoutStatus = "paid";
-		await code.save();
+		const player = await Player.findById(code.redeemedBy);
+		if (!player) {
+			return res.status(404).json({ success: false, message: "Winner record not found." });
+		}
 
-		return res.status(200).json({ success: true, message: "Marked as paid" });
+		const result = await processAutomaticPayout(code, player);
+		if (!result.success) {
+			return res.status(400).json(result);
+		}
+
+		return res.status(200).json({ success: true, message: "Payout initiated successfully via gateway." });
 	} catch (error) {
 		console.error(error);
 		return res.status(500).json({ success: false, message: error.message });
@@ -452,12 +440,21 @@ export const getAllPlayers = async (req, res) => {
 
 		const batchOptions = await playerBatchOptionsForFilter();
 
+		const codeIds = codes.map(c => c._id);
+		const transactions = await Transaction.find({ 
+			scratchCode: { $in: codeIds },
+			type: "payout" 
+		}).sort({ createdAt: -1 });
+
 		// Decrypt codes and format for frontend
 		const data = codes.map(c => {
 			let plainCode = "-";
 			try {
 				if (c.code) plainCode = decrypt(c.code);
 			} catch (e) {}
+
+			// Find the latest transaction for this code
+			const lastTx = transactions.find(t => String(t.scratchCode) === String(c._id));
 
 			return {
 				_id: c._id,
@@ -470,6 +467,7 @@ export const getAllPlayers = async (req, res) => {
 				redeemedAt: c.redeemedAt,
 				createdAt: c.redeemedAt || c.updatedAt,
 				batch: c.batchNumber?.batchNumber || "Unknown",
+				lastTransactionId: lastTx?._id,
 				player: c.redeemedBy ? {
 					_id: c.redeemedBy._id,
 					name: c.redeemedBy.name,

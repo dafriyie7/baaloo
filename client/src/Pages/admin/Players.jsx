@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axiosInstance from "../../../lib/api";
 import AdminHeader from "../../Components/admin/AdminHeader";
 import { useAppcontext } from "../../context/AppContext";
-import { Users, Phone } from "lucide-react";
+import { Users, Phone, RefreshCw } from "lucide-react";
 import AdminPagination from "../../Components/admin/AdminPagination";
 import StatBadge from "../../Components/admin/StatBadge";
 
@@ -66,18 +66,36 @@ const Players = () => {
 	};
 
 	const claimPayout = async (id) => {
-		if (!window.confirm("Mark this payout as paid?")) return;
+		if (!window.confirm("Initiate automatic payout via Shika Creators?")) return;
 		try {
 			setIsLoading(true);
 			const { data } = await axiosInstance.post(`/players/claim/${id}`);
 			if (data.success) {
-				toast.success("Payout marked as paid!");
+				toast.success(data.message || "Payout initiated!");
 				fetchPlayers();
 			} else {
-				toast.error(data.message || "Failed to mark as paid.");
+				toast.error(data.message || "Failed to initiate payout.");
 			}
 		} catch (error) {
-			toast.error("An error occurred.");
+			toast.error(error.response?.data?.message || "An error occurred.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const syncPayout = async (txId) => {
+		if (!txId) return;
+		setIsLoading(true);
+		try {
+			const { data } = await axiosInstance.post(`/transactions/sync/${txId}`);
+			if (data.success) {
+				toast.success(data.message);
+				fetchPlayers();
+			} else {
+				toast.error(data.message);
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Failed to sync status.");
 		} finally {
 			setIsLoading(false);
 		}
@@ -201,12 +219,23 @@ const Players = () => {
 												)}
 											</td>
 											<td className="px-6 py-4">
-												<span className={`text-[10px] font-black uppercase tracking-widest ${
-													p.payoutStatus === "paid" ? "text-emerald-600" : 
-													p.payoutStatus === "pending" ? "text-amber-600" : "text-stone-400"
-												}`}>
-													{p.payoutStatus || "NONE"}
-												</span>
+												<div className="flex items-center gap-2">
+													<span className={`text-[10px] font-black uppercase tracking-widest ${
+														p.payoutStatus === "paid" ? "text-emerald-600" : 
+														p.payoutStatus === "pending" || p.payoutStatus === "processing" ? "text-amber-600" : "text-stone-400"
+													}`}>
+														{p.payoutStatus || "NONE"}
+													</span>
+													{(p.payoutStatus === "pending" || p.payoutStatus === "processing") && p.lastTransactionId && (
+														<button 
+															onClick={() => syncPayout(p.lastTransactionId)}
+															className="p-1 rounded hover:bg-stone-100 text-stone-400 hover:text-amber-800 transition-colors"
+															title="Sync Payout Status"
+														>
+															<RefreshCw size={12} />
+														</button>
+													)}
+												</div>
 											</td>
 											<td className="px-6 py-4 text-right">
 												<p className="text-xs font-bold text-stone-800 tabular-nums">{new Date(p.createdAt).toLocaleDateString()}</p>

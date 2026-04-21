@@ -146,13 +146,24 @@ export const syncTransactionStatus = async (req, res) => {
 		const scPayload = disbursement.data || disbursement;
 
 		// Map Shika status to our internal status
-		// created | pending | completed | failed | canceled
+		// created | pending | processing | completed | failed | canceled
 		if (scStatus === "completed") {
 			await shikaWebhookService.handlePayoutCompleted(scPayload, "MANUAL_SYNC");
 		} else if (scStatus === "failed") {
 			await shikaWebhookService.handlePayoutFailed(scPayload, "MANUAL_SYNC");
 		} else if (scStatus === "canceled" || scStatus === "cancelled") {
 			await shikaWebhookService.handlePayoutCanceled(scPayload, "MANUAL_SYNC");
+		} else if (scStatus === "processing" || scStatus === "pending") {
+			// Update to processing/pending if it was just 'created' or we want to reflect current SC state
+			if (transaction.status !== scStatus) {
+				transaction.status = scStatus === "pending" ? "pending" : "processing";
+				transaction.gatewayResponse = {
+					...(transaction.gatewayResponse || {}),
+					lastSyncAt: new Date(),
+					lastPayload: scPayload
+				};
+				await transaction.save();
+			}
 		}
 
 		const updatedTx = await Transaction.findById(id);
@@ -167,5 +178,29 @@ export const syncTransactionStatus = async (req, res) => {
 	} catch (error) {
 		logger.error("Sync Transaction Status Error:", error);
 		res.status(500).json({ success: false, message: error.message || "Server error syncing status." });
+	}
+};
+
+/**
+ * Get raw disbursement details directly from the gateway.
+ */
+export const getGatewayDetails = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const transaction = await Transaction.findById(id);
+
+		if (!transaction || !transaction.gatewayTransactionId) {
+			return res.status(404).json({ success: false, message: "Gateway transaction record not found." });
+		}
+
+		const disbursement = await shikaCreators.getDisbursement(transaction.gatewayTransactionId);
+		
+		res.status(200).json({
+			success: true,
+			disbursement
+		});
+	} catch (error) {
+		logger.error("Get Gateway Details Error:", error);
+		res.status(500).json({ success: false, message: "Could not fetch gateway details." });
 	}
 };
