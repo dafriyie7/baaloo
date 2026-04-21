@@ -56,6 +56,16 @@ const authLimiter = rateLimit({
 
 // ---------------------------
 
+// Shika webhook: must use raw body for signature verification; handle here so body is not parsed by express.json()
+app.get('/api/shika-webhook', (req, res) => {
+	res.status(200).json({ ok: true, message: 'Shika webhook endpoint is reachable; use POST for events.' });
+});
+app.post(
+	'/api/shika-webhook',
+	express.raw({ type: 'application/json' }),
+	handleShikaWebhook,
+);
+
 app.use(express.json())
 	.use((req, res, next) => {
 		// Custom stable NoSQL Sanitizer
@@ -100,15 +110,6 @@ app.use("/api/scratch-codes/redeem", rateLimit({
 
 app.get("/", (req, res) => res.send("server running"));
 
-// Shika webhook: must use raw body for signature verification; handle here so body is not parsed by express.json()
-app.get('/api/shika-webhook', (req, res) => {
-	res.status(200).json({ ok: true, message: 'Shika webhook endpoint is reachable; use POST for events.' });
-});
-app.post(
-	'/api/shika-webhook',
-	express.raw({ type: 'application/json' }),
-	handleShikaWebhook,
-);
 
 app.use(
 	"/uploads",

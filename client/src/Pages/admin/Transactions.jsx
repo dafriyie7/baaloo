@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axiosInstance from "../../../lib/api";
 import AdminHeader from "../../Components/admin/AdminHeader";
 import { useAppcontext } from "../../context/AppContext";
-import { Receipt, Search, Filter, ArrowRight, Download, Calendar, ExternalLink, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Receipt, Search, Filter, ArrowRight, Download, Calendar, ExternalLink, Clock, CheckCircle2, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import AdminPagination from "../../Components/admin/AdminPagination";
 import StatBadge from "../../Components/admin/StatBadge";
 
@@ -69,6 +69,24 @@ const Transactions = () => {
 		setSearch("");
 		setStatusFilter("all");
 		setCurrentPage(1);
+	};
+
+	const handleSyncStatus = async (id) => {
+		setIsLoading(true);
+		try {
+			const { data } = await axiosInstance.post(`/transactions/sync/${id}`);
+			if (data.success) {
+				toast.success(data.message);
+				fetchTransactions();
+				fetchStats();
+			} else {
+				toast.error(data.message);
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Failed to sync status.");
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	const getStatusColor = (status) => {
@@ -194,9 +212,20 @@ const Transactions = () => {
 												</div>
 											</td>
 											<td className="px-6 py-5">
-												<div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
-													{getStatusIcon(t.status)}
-													{t.status}
+												<div className="flex items-center gap-2">
+													<div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider ${getStatusColor(t.status)}`}>
+														{getStatusIcon(t.status)}
+														{t.status}
+													</div>
+													{t.status === "pending" && (
+														<button 
+															onClick={() => handleSyncStatus(t._id)}
+															className="p-1.5 rounded-md hover:bg-stone-100 text-stone-400 hover:text-amber-800 transition-colors"
+															title="Sync Status"
+														>
+															<RefreshCw size={14} />
+														</button>
+													)}
 												</div>
 											</td>
 											<td className="px-6 py-5 text-right">
