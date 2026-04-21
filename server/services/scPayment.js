@@ -158,70 +158,84 @@ class ShikaCreatorsClient {
 	/**
 	 * Verify webhook signature (Stripe-style t=..,v1=.. or raw HMAC-SHA256 hex of body).
 	 */
-	verifySignature(rawBody, signatureHeader, secret, logContext = {}) {
-		if (!rawBody || !secret) return false;
-		const sigRaw = signatureHeader
-			? Array.isArray(signatureHeader)
-				? signatureHeader[0]
-				: String(signatureHeader)
-			: "";
-		if (!sigRaw) {
-			(logContext.logger || logger).warn?.(
-				"Shika webhook: empty signature",
-				logContext
-			);
-			return false;
+	verifySignature(rawBody, signature, secret, logContext = null) {
+		if (!signature || !secret) return false;
+
+		const sigRaw = Array.isArray(signature) ? signature[0] : signature;
+		const body = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(String(rawBody), "utf8");
+		const bodyUtf8 = body.toString("utf8");
+
+		// Shika uses Stripe-style: t=timestamp,v1=hex_signature. Signed payload = "timestamp.body"
+		const stripeParts = sigRaw
+			.trim()
+			.split(",")
+			.reduce((acc, p) => {
+				const eq = p.indexOf("=");
+				if (eq > 0) {
+					acc[p.slice(0, eq).trim()] = p.slice(eq + 1).trim();
+				}
+				return acc;
+			}, {});
+		if (stripeParts.t != null && stripeParts.v1 != null && /^[a-fA-F0-9]{64}$/.test(stripeParts.v1)) {
+			const signedPayload = `${stripeParts.t}.${bodyUtf8}`;
+			const tryStripe = (hmacSecret) => {
+				const computed = crypto.createHmac("sha256", hmacSecret).update(signedPayload, "utf8").digest("hex");
+				try {
+					return crypto.timingSafeEqual(
+						Buffer.from(stripeParts.v1, "hex"),
+						Buffer.from(computed, "hex"),
+					);
+				} catch (e) {
+					return false;
+				}
+			};
+			if (tryStripe(secret)) return true;
+			if (secret.startsWith("whsec_") && tryStripe(secret.slice(6))) return true;
 		}
 
-		const sig = sigRaw.trim();
-		const buf = Buffer.isBuffer(rawBody)
-			? rawBody
-			: Buffer.from(String(rawBody), "utf8");
-		const bodyStr = buf.toString("utf8");
+		// Extract value: "sha256=hex" or "v1=hex" or raw hex (64 chars) or raw base64 (44 chars)
+		const extract = (val) => {
+			const trimmed = val.trim();
+			for (const prefix of ["sha256=", "v1="]) {
+				if (trimmed.startsWith(prefix)) return { value: trimmed.slice(prefix.length).trim(), format: "hex" };
+			}
+			if (/^[A-Za-z0-9+/]+=*$/.test(trimmed) && trimmed.length === 44) return { value: trimmed, format: "base64" };
+			if (/^[a-fA-F0-9]{64}$/.test(trimmed)) return { value: trimmed, format: "hex" };
+			return { value: trimmed, format: "hex" };
+		};
 
-		const parts = sig.split(",").map((s) => s.trim());
-		const tPart = parts.find((p) => p.startsWith("t="));
-		const v1Part = parts.find((p) => p.startsWith("v1="));
-		if (tPart && v1Part) {
-			const t = tPart.slice(2);
-			const v1 = v1Part.slice(3);
-			const signed = `${t}.${bodyStr}`;
-			const expected = crypto
-				.createHmac("sha256", secret)
-				.update(signed, "utf8")
-				.digest("hex");
-			try {
-				if (expected.length === v1.length) {
-					return crypto.timingSafeEqual(
-						Buffer.from(expected, "utf8"),
-						Buffer.from(v1, "utf8")
-					);
+		const { value: expected, format: expectedFormat } = extract(sigRaw);
+
+		const tryVerifyHex = (hmacSecret) => {
+			const computedHex = crypto.createHmac("sha256", hmacSecret).update(body).digest("hex");
+			if (expectedFormat === "base64") {
+				const computedBase64 = crypto.createHmac("sha256", hmacSecret).update(body).digest("base64");
+				try {
+					return crypto.timingSafeEqual(Buffer.from(computedBase64, "utf8"), Buffer.from(expected, "utf8"));
+				} catch (e) {
+					return false;
 				}
-			} catch {
+			}
+			try {
+				const bufExpected = Buffer.from(expected, "hex");
+				const bufComputed = Buffer.from(computedHex, "hex");
+				return bufExpected.length === 32 && bufComputed.length === 32 && crypto.timingSafeEqual(bufExpected, bufComputed);
+			} catch (e) {
 				return false;
 			}
-		}
+		};
 
-		const expectedHex = crypto
-			.createHmac("sha256", secret)
-			.update(buf)
-			.digest("hex");
-		const normalized = sig.replace(/^sha256=/i, "").trim();
-		try {
-			if (normalized.length === expectedHex.length) {
-				return crypto.timingSafeEqual(
-					Buffer.from(expectedHex, "utf8"),
-					Buffer.from(normalized, "utf8")
-				);
-			}
-		} catch {
-			/* fall through */
-		}
+		if (tryVerifyHex(secret)) return true;
+		if (secret.startsWith("whsec_") && tryVerifyHex(secret.slice(6))) return true;
 
-		logger.warn("Shika webhook signature did not match", {
-			...logContext,
-			sigPrefix: sig.slice(0, 24),
-		});
+		if (logContext?.logger) {
+			logContext.logger.warn("Shika webhook signature invalid", {
+				eventId: logContext.eventId,
+				eventType: logContext.eventType,
+				secretPrefix: secret.slice(0, 6),
+				secretIsApiKey: secret.startsWith("sk_"),
+			});
+		}
 		return false;
 	}
 }

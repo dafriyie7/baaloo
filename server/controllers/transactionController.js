@@ -139,8 +139,14 @@ export const syncTransactionStatus = async (req, res) => {
 		const disbursement = await shikaCreators.getDisbursement(transaction.gatewayTransactionId);
 		
 		if (!disbursement) {
+			logger.warn(`Manual sync for transaction ${id}: No response from gateway.`);
 			return res.status(502).json({ success: false, message: "Could not fetch data from payment gateway." });
 		}
+
+		logger.info(`Manual sync for transaction ${id}: Gateway response received`, { 
+			gatewayId: transaction.gatewayTransactionId,
+			response: disbursement 
+		});
 
 		const scStatus = disbursement.status || disbursement.data?.status;
 		const scPayload = disbursement.data || disbursement;
