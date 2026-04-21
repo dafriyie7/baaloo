@@ -5,12 +5,14 @@ import axiosInstance from "../../lib/api";
 import {
 	QrCode,
 	Sparkles,
+	AlertTriangle,
 } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAppcontext } from "../context/AppContext";
 import Won from "../Components/Won";
 import Lost from "../Components/Lost";
 import Cashback from "../Components/Cashback";
+import Jackpot from "../Components/Jackpot";
 
 const Scanner = () => {
 	const [name, setname] = useState("");
@@ -23,7 +25,7 @@ const Scanner = () => {
 	const [isCashback, setIsCashback] = useState(false);
 	const [cashbackAmount, setCashbackAmount] = useState(null);
 
-	const { setWinner, isLoading, setIsLoading } = useAppcontext();
+	const { setWinner, isLoading, setIsLoading, systemSettings } = useAppcontext();
 	const { code } = useParams();
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -120,36 +122,34 @@ const Scanner = () => {
 		setIsLoading(true);
 
 		try {
-			const { data } = await axiosInstance.post("/players/add", {
+			const { data } = await axiosInstance.post("/scratch-codes/redeem", {
 				name,
 				phone,
-				code: getCodeFromUrl(scratchCode),
+				scratchCode: getCodeFromUrl(scratchCode),
 			});
 
 			if (data.success) {
-				const isWinner = data.data.code.isWinner;
-				const isCashbackFlag = data.data.code.isCashback || false;
+				const isWinner = data.prize;
+				const isCashbackFlag = data.cashback || false;
 				
 				setIsWinner(isWinner);
 				setIsCashback(isCashbackFlag);
-				const cbAmt = Number(data.data?.code?.prizeAmount);
+				const cbAmt = Number(data.amount);
 				setCashbackAmount(
 					isCashbackFlag && Number.isFinite(cbAmt) ? cbAmt : null
 				);
 				
-				toast.success("Your entry has been recorded!");
+				toast.success(isWinner ? "Congratulations! You won!" : "Ticket validated.");
 
-				sessionStorage.setItem("winner", JSON.stringify(data.data));
-				setWinner(data.data);
+				sessionStorage.setItem("winner", JSON.stringify(data));
+				setWinner(data);
 
-				if (isWinner) {
-					navigate("/claim");
+				if (isWinner || isCashbackFlag) {
+					// Stay on this page to show the Won/Cashback component 
+					// which will then have its own "Claim" button
+					setStep("end");
 				} else {
-					if (isCashbackFlag) {
-						setMessage("You got your cashback!");
-					} else {
-						setMessage("Sorry, not a winner this time.");
-					}
+					setMessage("Sorry, not a winner this time.");
 					setStep("end");
 				}
 			}
@@ -168,8 +168,8 @@ const Scanner = () => {
 	const handleDetailsSubmit = (e) => {
 		if (e) e.preventDefault();
 		if (name && phone) {
-			if (!/^\d{10}$/.test(phone)) {
-				toast.error("Phone number must be exactly 10 digits.");
+			if (!/^0[235]\d{8}$/.test(phone)) {
+				toast.error("Please enter a valid 10-digit Ghanaian phone number (starting with 02, 03, or 05).");
 				return;
 			}
 			code ? validateAndSubmit(code) : setStep("scan");
@@ -178,12 +178,36 @@ const Scanner = () => {
 		}
 	};
 
-	// Effectively auto-submit if we arrive with details and a code
-	useEffect(() => {
-		if (step === "details" && name && phone && code) {
-			handleDetailsSubmit();
+	// No auto-submit - user must click manually
+
+	const handleClaimPayout = async () => {
+		const resultData = sessionStorage.getItem("winner") ? JSON.parse(sessionStorage.getItem("winner")) : null;
+		const phoneNum = resultData?.player?.phone || phone;
+		const ticketCode = resultData?.scratchCode;
+
+		if (!phoneNum || !ticketCode) {
+			toast.error("Missing claim details. Please scan again.");
+			return;
 		}
-	}, [step, name, phone, code]);
+
+		setIsLoading(true);
+		try {
+			const { data } = await axiosInstance.post("/players/claim-win", {
+				phone: String(phoneNum),
+				ticket: String(ticketCode),
+			});
+
+			if (data.success) {
+				toast.success(data.message || "Payout started!");
+			} else {
+				toast.error(data.message || "Payout failed.");
+			}
+		} catch (error) {
+			toast.error(error.response?.data?.message || "Could not start payout.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const resetFlow = () => {
 		setname("");
@@ -198,7 +222,7 @@ const Scanner = () => {
 	};
 
 	const renderDetailsForm = () => (
-		<div className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-zinc-50 px-4 py-20 relative overflow-hidden">
+		<div className="flex min-h-[100dvh] w-full flex-col items-center justify-center bg-zinc-50 px-4 pt-32 pb-20 relative overflow-hidden">
 			{/* Background soft blob */}
 			<div className="absolute top-1/2 left-1/2 -z-10 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-orange-200/40 blur-[80px]" aria-hidden />
 
@@ -210,55 +234,75 @@ const Scanner = () => {
 					Confirm your details
 				</h2>
 				<p className="mt-2 text-center text-base text-zinc-600">
-					Enter your information to proceed with validation.
+					{systemSettings.allowNewRedemptions 
+						? "Enter your information to proceed with validation." 
+						: "New ticket validations are temporarily paused for routine system maintenance."}
 				</p>
 				
-				<form
-					onSubmit={handleDetailsSubmit}
-					className="mt-10 w-full space-y-5 text-left"
-				>
-					<div>
-						<label
-							htmlFor="name"
-							className="mb-1.5 block text-sm font-bold text-zinc-700"
-						>
-							Name
-						</label>
-						<input
-							type="text"
-							id="name"
-							value={name}
-							onChange={(e) => setname(e.target.value)}
-							required
-							placeholder="Enter your full name"
-							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
-						/>
-					</div>
-					<div>
-						<label
-							htmlFor="phone"
-							className="mb-1.5 block text-sm font-bold text-zinc-700"
-						>
-							Phone Number
-						</label>
-						<input
-							type="tel"
-							id="phone"
-							value={phone}
-							onChange={(e) => setPhone(e.target.value)}
-							required
-							pattern="\d{10}"
-							placeholder="e.g. 0240000000"
-							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
-						/>
-					</div>
-					<button
-						type="submit"
-						className="mt-4 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+				{systemSettings.allowNewRedemptions ? (
+					<form
+						onSubmit={handleDetailsSubmit}
+						className="mt-10 w-full space-y-5 text-left"
 					>
-						{code ? "Validate code" : "Continue to scan"}
-					</button>
-				</form>
+						<div>
+							<label
+								htmlFor="name"
+								className="mb-1.5 block text-sm font-bold text-zinc-700"
+							>
+								Name
+							</label>
+							<input
+								type="text"
+								id="name"
+								value={name}
+								onChange={(e) => setname(e.target.value)}
+								required
+								placeholder="Enter your full name"
+								className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+							/>
+						</div>
+						<div>
+							<label
+								htmlFor="phone"
+								className="mb-1.5 block text-sm font-bold text-zinc-700"
+							>
+								Phone Number
+							</label>
+							<input
+								type="tel"
+								id="phone"
+								value={phone}
+								onChange={(e) => setPhone(e.target.value)}
+								required
+								pattern="0[235]\d{8}"
+								placeholder="e.g. 0240000000"
+								className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+							/>
+						</div>
+						<button
+							type="submit"
+							className="mt-4 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+						>
+							Continue to scan
+						</button>
+					</form>
+				) : (
+					<div className="mt-10 flex flex-col items-center gap-6 text-center">
+						<div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+							<AlertTriangle size={40} />
+						</div>
+						<div className="space-y-2">
+							<p className="font-bold text-zinc-900">Validations Paused</p>
+							<p className="text-sm text-zinc-500">We are currently performing routine maintenance on our scanning system. Please keep your ticket and try again in a few hours.</p>
+						</div>
+						<button 
+							onClick={() => navigate("/")}
+							className="w-full rounded-full bg-zinc-900 py-4 text-sm font-bold text-white transition-all hover:bg-zinc-800"
+						>
+							Return Home
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -359,13 +403,24 @@ const Scanner = () => {
 								? String(cashbackAmount)
 								: "0"
 						}
-						onClaim={() => toast.success("Cashback claimed!")}
+						onClaim={handleClaimPayout}
+						claimDisabled={isLoading}
 					/>
 				);
 			}
 			if (isWinner) {
 				const winnerData = sessionStorage.getItem("winner") ? JSON.parse(sessionStorage.getItem("winner")) : null;
-				return <Won winner={winnerData} onHome={() => navigate("/")} />;
+				if (winnerData?.tier === "jackpot") {
+					return <Jackpot winner={winnerData} onHome={() => navigate("/")} />;
+				}
+				return (
+					<Won 
+						winner={winnerData} 
+						onHome={() => navigate("/")} 
+						onClaim={handleClaimPayout}
+						claimDisabled={isLoading}
+					/>
+				);
 			}
 			return <Lost message={message} onRetry={resetFlow} onHome={() => navigate("/")} />;
 		}

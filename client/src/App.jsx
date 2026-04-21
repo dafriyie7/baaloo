@@ -16,14 +16,23 @@ import Profile from "./Pages/admin/Profile";
 import Manage from "./Pages/admin/Manage";
 import Batches from "./Pages/admin/Batches";
 import Svgs from "./Pages/admin/Svgs";
+import AuditLogs from "./Pages/admin/AuditLogs";
+import Transactions from "./Pages/admin/Transactions";
 import NotFound from "./Pages/NotFound";
 import HowToPlay from "./Pages/HowToPlay";
+import Maintenance from "./Pages/Maintenance";
 
 const App = () => {
-	const { isLoading, isLoggedIn, authChecked } = useAppcontext();
+	const { isLoading, isLoggedIn, authChecked, systemSettings, user } = useAppcontext();
 
 	if (!authChecked) {
 		return <Loading />;
+	}
+
+	// Maintenance Mode Check: 
+	// If maintenanceMode is ON and user is NOT an admin, show Maintenance page.
+	if (systemSettings.maintenanceMode && !isLoggedIn) {
+		return <Maintenance />;
 	}
 
 	return (
@@ -50,6 +59,8 @@ const App = () => {
 					<Route path="codes" element={<Codes />} />
 					<Route path="svgs" element={<Svgs />} />
 					<Route path="profile" element={<Profile />} />
+					<Route path="logs" element={<AuditLogs />} />
+					<Route path="transactions" element={<Transactions />} />
 				</Route>
 
 				<Route path="*" element={<NotFound />} />

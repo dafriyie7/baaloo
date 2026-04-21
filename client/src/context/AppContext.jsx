@@ -11,6 +11,11 @@ export const AppContextProvider = ({ children }) => {
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
 	const [authChecked, setAuthChecked] = useState(true);
 	const [user, setUser] = useState(null);
+	const [systemSettings, setSystemSettings] = useState({
+		payoutsEnabled: true,
+		maintenanceMode: false,
+		allowNewRedemptions: true
+	});
 	const navigate = useNavigate()
 	const location = window.location.pathname;
 
@@ -55,12 +60,23 @@ export const AppContextProvider = ({ children }) => {
 			console.log(error);
 		}
 	};
+	const getSystemSettings = async () => {
+		try {
+			const { data } = await axiosInstance.get("/system/settings");
+			if (data.success) {
+				setSystemSettings(data.settings);
+			}
+		} catch (error) {
+			console.log("Failed to fetch system settings", error);
+		}
+	};
 
 	useEffect(() => {
 		if (location.includes("admin")) {
 			getUser()
 		}
 		getStoredWinner();
+		getSystemSettings();
 	}, []);
 
 	const logout = async () => {
@@ -90,7 +106,10 @@ export const AppContextProvider = ({ children }) => {
 		user,
 		setUser,
 		logout,
-		navigate
+		navigate,
+		systemSettings,
+		setSystemSettings,
+		getSystemSettings
 	};
 
 	return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

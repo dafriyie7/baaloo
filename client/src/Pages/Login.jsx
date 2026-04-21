@@ -26,7 +26,7 @@ const Login = () => {
 				sessionStorage.setItem("user", JSON.stringify(data.user));
 				setUser(data.user);
 				setIsLoggedIn(true);
-				navigate("/admin/codes");
+				navigate("/admin");
 			} else {
 				toast.error(data.message || "Login failed.");
 			}
@@ -62,7 +62,7 @@ const Login = () => {
 
 				<form
 					onSubmit={handleLogin}
-					className="w-full space-y-4 text-left p-8 rounded-[2rem] border border-amber-200/40 bg-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl"
+					className="w-full space-y-4 text-left p-8 rounded-xl border border-amber-200/40 bg-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl"
 				>
 					<div>
 						<label
@@ -78,7 +78,7 @@ const Login = () => {
 							onChange={(e) => setIdentifier(e.target.value)}
 							required
 							placeholder="you@example.com"
-							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+							className="block w-full rounded-xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
 						/>
 					</div>
 					<div>
@@ -95,13 +95,13 @@ const Login = () => {
 							onChange={(e) => setPassword(e.target.value)}
 							required
 							placeholder="••••••••"
-							className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
+							className="block w-full rounded-xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
 						/>
 					</div>
 					<div className="pt-4">
 						<button
 							type="submit"
-							className="mt-2 w-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+							className="mt-2 w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
 						>
 							Sign in
 						</button>

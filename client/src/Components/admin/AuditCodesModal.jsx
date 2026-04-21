@@ -3,10 +3,11 @@ import { X, Search, FileSpreadsheet, Download, AlertCircle, CheckCircle2 } from 
 import toast from "react-hot-toast";
 import axios from "../../../lib/api";
 
-const AuditCodesModal = ({ isOpen, onClose }) => {
+const AuditCodesModal = ({ isOpen, onClose, batchId, batchNumber }) => {
 	const [file, setFile] = useState(null);
 	const [column, setColumn] = useState("A");
 	const [range, setRange] = useState("100");
+	const [includeDetailedList, setIncludeDetailedList] = useState(true);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [results, setResults] = useState(null);
 
@@ -46,6 +47,7 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 		formData.append("file", file);
 		formData.append("column", column);
 		formData.append("range", range);
+		if (batchId) formData.append("batchId", batchId);
 
 		try {
 			const { data } = await axios.post("/scratch-codes/audit", formData, {
@@ -68,17 +70,39 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 	const downloadResults = () => {
 		if (!results?.results) return;
 		
-		const headers = ["Code", "Found", "Tier", "Prize Amount", "Winner", "Redeemed"];
-		const rows = results.results.map(r => [
-			r.code,
-			r.found ? "Yes" : "No",
-			r.tier,
-			r.prizeAmount,
-			r.isWinner ? "Yes" : "No",
-			r.isUsed ? "Yes" : "No"
-		]);
+		const headers = ["Code", "Outcome", "Prize Amount", "Redeemed", "Tier", "Batch"];
+		const rows = results.results.map(r => {
+			const outcome = r.isWinner ? "Winner" : (r.isCashback ? "Cashback" : (r.found ? "Loser" : "Missing"));
+			return [
+				r.code,
+				outcome,
+				r.prizeAmount,
+				r.isUsed ? "Yes" : "No",
+				r.tier,
+				r.batchName
+			];
+		});
 
-		const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
+		const csvContent = includeDetailedList ? [
+			headers.join(","), 
+			...rows.map(row => row.join(",")),
+			"",
+			"SUMMARY",
+			`Total Analyzed,${results.totalAnalyzed}`,
+			`Total Found,${results.totalFound}`,
+			`Winners,${results.winnersCount}`,
+			`Cashback,${results.cashbackCount}`,
+			`Losers,${results.losersCount}`,
+			`Missing,${results.missingCount}`
+		].join("\n") : [
+			"AUDIT SUMMARY",
+			`Total Analyzed,${results.totalAnalyzed}`,
+			`Total Found,${results.totalFound}`,
+			`Winners,${results.winnersCount}`,
+			`Cashback,${results.cashbackCount}`,
+			`Losers,${results.losersCount}`,
+			`Missing,${results.missingCount}`
+		].join("\n");
 		const blob = new Blob([csvContent], { type: "text/csv" });
 		const url = window.URL.createObjectURL(blob);
 		const link = document.createElement("a");
@@ -108,6 +132,11 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 							<Search size={24} />
 						</div>
 						<h2 className="text-xl font-bold text-stone-900">Batch Audit</h2>
+						{batchNumber && (
+							<span className="ml-2 px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-900/60 rounded text-[10px] font-black uppercase tracking-widest">
+								{batchNumber}
+							</span>
+						)}
 					</div>
 					<button 
 						onClick={onClose} 
@@ -159,16 +188,34 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 										<p className="text-[10px] text-stone-400 mt-1 uppercase font-bold">Use A, B, C...</p>
 									</div>
 									<div>
-										<label className="block text-xs font-bold uppercase tracking-widest text-stone-500 mb-2">Rows to Check</label>
+										<label className="block text-xs font-bold text-stone-500 uppercase mb-2">Rows to Analyze</label>
 										<input 
-											type="number"
+											type="number" 
 											value={range}
 											onChange={(e) => setRange(e.target.value)}
-											placeholder="e.g. 100"
-											className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400 font-bold"
+											className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+											placeholder="e.g. 500"
 										/>
 										<p className="text-[10px] text-stone-400 mt-1 uppercase font-bold">Max 500 recommended</p>
 									</div>
+								</div>
+
+								<div className="flex items-center justify-between p-4 bg-stone-50 rounded-xl border border-stone-100">
+									<div className="flex items-center gap-3">
+										<div className={`p-2 rounded-lg ${includeDetailedList ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-500'}`}>
+											<FileSpreadsheet size={18} />
+										</div>
+										<div>
+											<p className="text-sm font-bold text-stone-900">Include Detailed List</p>
+											<p className="text-[10px] text-stone-400 font-bold uppercase">Export codes & individual outcomes</p>
+										</div>
+									</div>
+									<button 
+										onClick={() => setIncludeDetailedList(!includeDetailedList)}
+										className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${includeDetailedList ? 'bg-amber-800' : 'bg-stone-300'}`}
+									>
+										<span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${includeDetailedList ? 'translate-x-5' : 'translate-x-0'}`} />
+									</button>
 								</div>
 							</div>
 
@@ -190,15 +237,25 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 					) : (
 						<div className="space-y-6">
 							<div className="flex flex-col sm:flex-row gap-4 items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-100">
-								<div className="flex items-center gap-4">
+								<div className="flex flex-wrap items-center gap-x-6 gap-y-3">
 									<div className="text-center sm:text-left">
-										<p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Total Analyzed</p>
-										<p className="text-2xl font-black text-stone-900">{results.totalAnalyzed}</p>
+										<p className="text-[9px] font-black uppercase tracking-widest text-stone-400">Analyzed</p>
+										<p className="text-xl font-black text-stone-900">{results.totalAnalyzed}</p>
 									</div>
-									<div className="h-8 w-px bg-stone-200" />
+									<div className="h-6 w-px bg-stone-200 hidden sm:block" />
 									<div className="text-center sm:text-left">
-										<p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Found in DB</p>
-										<p className="text-2xl font-black text-stone-900">{results.totalFound}</p>
+										<p className="text-[9px] font-black uppercase tracking-widest text-emerald-500/60">Winners</p>
+										<p className="text-xl font-black text-emerald-600">{results.winnersCount}</p>
+									</div>
+									<div className="h-6 w-px bg-stone-200 hidden sm:block" />
+									<div className="text-center sm:text-left">
+										<p className="text-[9px] font-black uppercase tracking-widest text-amber-500/60">Cashback</p>
+										<p className="text-xl font-black text-amber-600">{results.cashbackCount}</p>
+									</div>
+									<div className="h-6 w-px bg-stone-200 hidden sm:block" />
+									<div className="text-center sm:text-left">
+										<p className="text-[9px] font-black uppercase tracking-widest text-rose-500/60">Missing</p>
+										<p className="text-xl font-black text-rose-600">{results.missingCount}</p>
 									</div>
 								</div>
 								<button 
@@ -206,54 +263,74 @@ const AuditCodesModal = ({ isOpen, onClose }) => {
 									className="flex items-center gap-2 px-6 py-2 bg-white border border-stone-200 rounded-full text-sm font-bold text-stone-700 hover:bg-stone-50 transition-all shadow-sm"
 								>
 									<Download size={16} />
-									Download Results (CSV)
+									{includeDetailedList ? "Download Full Report" : "Download Summary Only"}
 								</button>
 							</div>
 
-							<div className="overflow-hidden rounded-xl border border-stone-100 shadow-sm">
-								<table className="w-full text-left border-collapse">
-									<thead className="bg-stone-50">
-										<tr>
-											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Status</th>
-											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Code</th>
-											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Tier</th>
-											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Prize</th>
-											<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">Outcome</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-stone-100">
-										{results.results.map((r, i) => (
-											<tr key={i} className="hover:bg-stone-50/50 transition-colors">
-												<td className="px-4 py-3">
-													{r.found ? (
-														<CheckCircle2 size={18} className="text-emerald-500" />
-													) : (
-														<AlertCircle size={18} className="text-rose-500" />
-													)}
-												</td>
-												<td className="px-4 py-3 font-mono text-xs font-bold text-stone-900">
-													{r.code}
-												</td>
-												<td className="px-4 py-3 text-xs font-bold text-stone-600 uppercase">
-													{r.tier}
-												</td>
-												<td className="px-4 py-3 text-right font-black text-stone-900 tabular-nums">
-													{r.prizeAmount > 0 ? `GH₵ ${r.prizeAmount}` : '—'}
-												</td>
-												<td className="px-4 py-3 text-center">
-													{r.isWinner ? (
-														<span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-black uppercase tracking-tighter">Winner</span>
-													) : r.found ? (
-														<span className="inline-block px-2 py-0.5 bg-stone-100 text-stone-500 rounded text-[10px] font-black uppercase tracking-tighter">Loser</span>
-													) : (
-														<span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-600 rounded text-[10px] font-black uppercase tracking-tighter">Missing</span>
-													)}
-												</td>
+							{includeDetailedList ? (
+								<div className="overflow-hidden rounded-xl border border-stone-100 shadow-sm">
+									<table className="w-full text-left border-collapse">
+										<thead className="bg-stone-50">
+											<tr>
+												<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Status</th>
+												<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Code</th>
+												<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">Outcome</th>
+												<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Prize</th>
+												<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500 text-center">Redeemed</th>
+												<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Tier</th>
+												<th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-stone-500">Batch</th>
 											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
+										</thead>
+										<tbody className="divide-y divide-stone-100">
+											{results.results.map((r, i) => (
+												<tr key={i} className="hover:bg-stone-50/50 transition-colors">
+													<td className="px-4 py-3">
+														{r.found ? (
+															<CheckCircle2 size={18} className="text-emerald-500" />
+														) : (
+															<AlertCircle size={18} className="text-rose-500" />
+														)}
+													</td>
+													<td className="px-4 py-3 font-mono text-xs font-bold text-stone-900">
+														{r.code}
+													</td>
+													<td className="px-4 py-3 text-center">
+														{r.isWinner ? (
+															<span className="inline-block px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-black uppercase tracking-tighter">Winner</span>
+														) : r.isCashback ? (
+															<span className="inline-block px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-black uppercase tracking-tighter">Cashback</span>
+														) : r.found ? (
+															<span className="inline-block px-2 py-0.5 bg-stone-100 text-stone-500 rounded text-[10px] font-black uppercase tracking-tighter">Loser</span>
+														) : (
+															<span className="inline-block px-2 py-0.5 bg-rose-100 text-rose-600 rounded text-[10px] font-black uppercase tracking-tighter">Missing</span>
+														)}
+													</td>
+													<td className="px-4 py-3 text-right font-black text-stone-900 tabular-nums">
+														{r.prizeAmount > 0 ? `GH₵ ${r.prizeAmount}` : '—'}
+													</td>
+													<td className="px-4 py-3 text-center">
+														{r.isUsed ? (
+															<span className="text-[10px] font-black text-stone-900 bg-stone-100 px-1.5 py-0.5 rounded uppercase">Yes</span>
+														) : (
+															<span className="text-[10px] font-bold text-stone-300 uppercase">No</span>
+														)}
+													</td>
+													<td className="px-4 py-3 text-xs font-bold text-stone-600 uppercase">
+														{r.tier}
+													</td>
+													<td className="px-4 py-3 text-[10px] font-black text-amber-900/60 uppercase">
+														{r.batchName}
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							) : (
+								<div className="p-12 text-center bg-stone-50 rounded-xl border border-dashed border-stone-200">
+									<p className="text-stone-400 text-sm font-bold italic">Detailed list is hidden for security.</p>
+								</div>
+							)}
 
 							<div className="flex justify-center">
 								<button 

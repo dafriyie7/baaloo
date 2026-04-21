@@ -7,6 +7,7 @@ import Batch from "../models/Batch.js";
 import Player from "../models/Player.js";
 import Svg from "../models/Svg.js";
 import QRCode from "qrcode";
+import { logger } from "../lib/logger.js";
 import {
 	encrypt,
 	decrypt,
@@ -31,6 +32,7 @@ import {
 	isValidManualBatchNumber,
 } from "../lib/generateBatchNumber.js";
 import { buildSymbolToUrlMap } from "../lib/svgSymbolMap.js";
+import { logAudit } from "../lib/auditLogger.js";
 
 const ALLOWED_TIERS = new Set([
 	"loser",
@@ -496,6 +498,16 @@ export const generateBatchStructured = async (req, res) => {
 
 		await ScratchCode.insertMany(docs);
 
+		await logAudit(req, "GENERATE_BATCH", {
+			resource: "Batch",
+			resourceId: batch._id,
+			details: {
+				batchNumber: batch.batchNumber,
+				totalCodes: batch.totalCodes,
+				tierBreakdown: batch.tierCountsSnapshot,
+			},
+		});
+
 		console.log(LOG_GEN_STRUCTURED, "done", {
 			batchNumber: resolvedBatchNumber,
 			codesInserted: docs.length,
@@ -581,27 +593,30 @@ export const listBatches = async (req, res) => {
 		const search = String(req.query.search ?? "").trim();
 		const period = String(req.query.period ?? "all").toLowerCase();
 		const sort = String(req.query.sort ?? "newest").toLowerCase();
+		const page = parseInt(req.query.page ?? 1);
+		const limit = parseInt(req.query.limit ?? 20);
+		const skip = (page - 1) * limit;
 
-		const [totalAll, batches] = await Promise.all([
-			Batch.countDocuments(),
-			(async () => {
-				const match = {};
-				if (search) {
-					match.batchNumber = {
-						$regex: escapeRegex(search),
-						$options: "i",
-					};
-				}
-				if (period === "7d" || period === "30d" || period === "90d") {
-					const days =
-						period === "7d" ? 7 : period === "30d" ? 30 : 90;
-					match.createdAt = {
-						$gte: new Date(Date.now() - days * 86400000),
-					};
-				}
-				return Batch.find(match).lean();
-			})(),
-		]);
+		const match = {};
+		if (search) {
+			match.batchNumber = {
+				$regex: escapeRegex(search),
+				$options: "i",
+			};
+		}
+		if (period === "7d" || period === "30d" || period === "90d") {
+			const days =
+				period === "7d" ? 7 : period === "30d" ? 30 : 90;
+			match.createdAt = {
+				$gte: new Date(Date.now() - days * 86400000),
+			};
+		}
+
+		const totalAll = await Batch.countDocuments();
+		const totalMatching = await Batch.countDocuments(match);
+		const totalPages = Math.ceil(totalMatching / limit);
+
+		const batches = await Batch.find(match).lean();
 
 		if (batches.length === 0) {
 			return res.status(200).json({
@@ -609,8 +624,11 @@ export const listBatches = async (req, res) => {
 				data: [],
 				totalAll,
 				totalMatching: 0,
+				totalPages: 0,
 			});
 		}
+
+		// Sort all first
 		const ids = batches.map((b) => b._id);
 		const counts = await ScratchCode.aggregate([
 			{ $match: { batchNumber: { $in: ids } } },
@@ -623,12 +641,18 @@ export const listBatches = async (req, res) => {
 			...b,
 			codesInserted: byId.get(b._id.toString()) ?? 0,
 		}));
+
 		sortBatchesList(data, sort);
+
+		// Now paginate
+		const paginatedData = data.slice(skip, skip + limit);
+
 		return res.status(200).json({
 			success: true,
-			data,
+			data: paginatedData,
 			totalAll,
-			totalMatching: data.length,
+			totalMatching,
+			totalPages,
 		});
 	} catch (error) {
 		console.error("[scratch batches list]", error);
@@ -680,6 +704,12 @@ export const deleteBatch = async (req, res) => {
 			session.endSession();
 		}
 
+		await logAudit(req, "DELETE_BATCH", {
+			resource: "Batch",
+			resourceId: id,
+			details: { batchNumber: batch.batchNumber, codesDeleted: codeIdList.length },
+		});
+
 		return res.json({
 			success: true,
 			message: `Batch "${batch.batchNumber}" and ${codeIdList.length} scratch code(s) were deleted.`,
@@ -693,47 +723,108 @@ export const deleteBatch = async (req, res) => {
 
 export const redeemScratchCode = async (req, res) => {
 	try {
-		const { scratchCode } = req.body;
+		const { scratchCode, phone: rawPhone, name } = req.body;
+		const { formatPhoneForGhanaMoMo } = await import("../lib/phoneNormalize.js");
+		const phone = formatPhoneForGhanaMoMo(rawPhone);
 
-		const normalized = normalizeScratchCodeForLookup(scratchCode);
-		if (!normalized) {
-			return res
-				.status(400)
-				.json({ success: false, message: "Enter a valid redemption code." });
-		}
-		const lookupHash = hashForLookup(normalized);
-
-		const code = await ScratchCode.findOne({ lookupHash });
-
-		if (!code) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Invalid scratch code." });
-		}
-
-		if (code.isUsed) {
-			return res.status(400).json({
-				success: false,
-				message: "This scratch code has already been used.",
+		if (!phone || !scratchCode) {
+			return res.status(400).json({ 
+				success: false, 
+				message: "Valid phone number and ticket code are required." 
 			});
 		}
 
+		const normalized = normalizeScratchCodeForLookup(scratchCode);
+		if (!normalized) {
+			return res.status(400).json({ 
+				success: false, 
+				message: "Enter a valid ticket code." 
+			});
+		}
+		const lookupHash = hashForLookup(normalized);
+
+		const code = await ScratchCode.findOne({ lookupHash })
+			.populate("batchNumber")
+			.populate("redeemedBy");
+
+		if (!code) {
+			return res.status(404).json({ 
+				success: false, 
+				message: "Invalid ticket code." 
+			});
+		}
+
+		// IDENTITY CHECK: If already used, check if it's the same user
+		if (code.isUsed && code.redeemedBy) {
+			const { phonesMatch } = await import("../lib/phoneNormalize.js");
+			if (!phonesMatch(phone, code.redeemedBy.phone)) {
+				return res.status(403).json({
+					success: false,
+					message: "This ticket has already been used by another player.",
+				});
+			}
+			// Same user - allow them to see the results again
+		}
+
+		// FIRST TIME SCAN: Mark as used and link to player
+		if (!code.isUsed) {
+			const Player = (await import("../models/Player.js")).default;
+			
+			// Find or create player by phone
+			let player = await Player.findOne({ phone });
+			if (!player) {
+				player = await Player.create({ name: name || "Guest", phone });
+			}
+
+			code.isUsed = true;
+			code.redeemedBy = player._id;
+			code.redeemedAt = new Date();
+			code.payoutStatus = "pending";
+			await code.save();
+			
+			// Link the latest code back to the player record for admin tracking
+			player.code = code._id;
+			await player.save();
+
+			// Refresh the populated field
+			await code.populate("redeemedBy");
+		}
+
 		const won = code.isWinner === true;
+		const isCashback = code.isCashback === true;
+		
+		// Log the audit event
+		const { logAudit } = await import("../lib/auditLogger.js");
+		await logAudit(req, "REDEMPTION", {
+			resource: "ScratchCode",
+			resourceId: code._id,
+			details: {
+				outcome: won ? (isCashback ? "CASHBACK" : "WINNER") : "LOSER",
+				tier: code.tier,
+				phone: phone,
+				isRevisit: code.isUsed && code.redeemedAt < new Date(Date.now() - 1000)
+			}
+		});
+
 		let message = "Sorry, not a winner this time.";
 		if (won) {
-			message =
-				code.tier === R_STAKE_TIER
-					? "You won your stake back."
-					: "Congratulations! You've won!";
+			message = isCashback ? "You won your stake back!" : "Congratulations! You've won!";
 		}
+
 		return res.status(200).json({
 			success: true,
 			prize: won,
+			cashback: isCashback,
+			amount: code.prizeAmount,
+			tier: code.tier,
 			message,
+			batchNumber: code.batchNumber?.batchNumber,
+			player: code.redeemedBy,
+			scratchCode: scratchCode // The original plain text code
 		});
 	} catch (error) {
-		console.error(error);
-		return res.status(500).json({ success: false, message: error.message });
+		console.error("Redemption Error:", error);
+		return res.status(500).json({ success: false, message: "Server error during redemption." });
 	}
 };
 
@@ -1018,6 +1109,12 @@ export const exportBatchCodes = async (req, res) => {
 
 		const csvContent = [headers.join(","), ...rows].join("\n");
 
+		await logAudit(req, "EXPORT_CODES", {
+			resource: "Batch",
+			resourceId: batchId,
+			details: { batchNumber: batch.batchNumber, totalCodes: codes.length },
+		});
+
 		res.setHeader("Content-Type", "text/csv");
 		res.setHeader(
 			"Content-Disposition",
@@ -1032,7 +1129,7 @@ export const exportBatchCodes = async (req, res) => {
 
 export const auditBatchCodes = async (req, res) => {
 	try {
-		const { column: colIndicator, range: rangeRaw } = req.body;
+		const { column: colIndicator, range: rangeRaw, batchId } = req.body;
 		if (!req.file) {
 			return res
 				.status(400)
@@ -1089,9 +1186,15 @@ export const auditBatchCodes = async (req, res) => {
 		const lookupHashes = extractedCodes.map((c) =>
 			hashForLookup(normalizeScratchCodeForLookup(c))
 		);
-		const dbCodes = await ScratchCode.find({
-			lookupHash: { $in: lookupHashes },
-		}).lean();
+
+		const query = { lookupHash: { $in: lookupHashes } };
+		if (batchId && mongoose.Types.ObjectId.isValid(batchId)) {
+			query.batchNumber = new mongoose.Types.ObjectId(batchId);
+		}
+
+		const dbCodes = await ScratchCode.find(query)
+			.populate("batchNumber", "batchNumber")
+			.lean();
 
 		const lookupMap = new Map(dbCodes.map((c) => [c.lookupHash, c]));
 
@@ -1108,13 +1211,23 @@ export const auditBatchCodes = async (req, res) => {
 				isWinner: dbCode?.isWinner || false,
 				isCashback: dbCode?.isCashback || false,
 				isUsed: dbCode?.isUsed || false,
+				batchName: dbCode?.batchNumber?.batchNumber || "N/A",
 			};
+		});
+
+		await logAudit(req, "AUDIT_BATCH", {
+			resource: "Batch",
+			details: { codesAudited: extractedCodes.length },
 		});
 
 		return res.status(200).json({
 			success: true,
 			totalAnalyzed: extractedCodes.length,
 			totalFound: dbCodes.length,
+			winnersCount: results.filter(r => r.isWinner).length,
+			cashbackCount: results.filter(r => r.isCashback).length,
+			losersCount: results.filter(r => r.found && !r.isWinner && !r.isCashback).length,
+			missingCount: results.filter(r => !r.found).length,
 			results,
 		});
 	} catch (error) {

@@ -7,20 +7,13 @@ import {
 	PlusCircle,
 	QrCode,
 	RefreshCw,
-	Search,
 	Trash2,
-	X,
 } from "lucide-react";
+import AdminPagination from "../../Components/admin/AdminPagination";
 import { useAppcontext } from "../../context/AppContext";
-import AdminPageHeading from "../../Components/admin/AdminPageHeading";
 import ConfirmDeleteByNameModal from "../../Components/admin/ConfirmDeleteByNameModal";
 import GenerateBatchModal from "../../Components/admin/GenerateBatchModal";
-
-const selectClass =
-	"w-full min-w-[10rem] px-3 py-2 border border-amber-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/35 focus:border-amber-300 bg-white text-stone-900 text-sm";
-
-const inputClass =
-	"w-full min-w-[12rem] flex-1 px-3 py-2 border border-amber-100 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400/35 focus:border-amber-300 bg-white text-stone-900 text-sm placeholder:text-stone-400";
+import AdminHeader from "../../Components/admin/AdminHeader";
 
 function formatCount(n) {
 	const x = Number(n);
@@ -59,6 +52,10 @@ const Batches = () => {
 	const [sort, setSort] = useState("newest");
 	const [generateModalOpen, setGenerateModalOpen] = useState(false);
 	const [batchPendingDelete, setBatchPendingDelete] = useState(null);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [totalPages, setTotalPages] = useState(1);
+	const [limit, setLimit] = useState(20);
+	const [totalMatching, setTotalMatching] = useState(0);
 
 	useEffect(() => {
 		const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
@@ -73,6 +70,8 @@ const Batches = () => {
 					search: debouncedSearch || undefined,
 					period,
 					sort,
+					page: currentPage,
+					limit,
 				},
 			});
 			if (data.success) {
@@ -80,6 +79,8 @@ const Batches = () => {
 				setTotalAll(
 					typeof data.totalAll === "number" ? data.totalAll : 0
 				);
+				setTotalMatching(data.totalMatching ?? 0);
+				setTotalPages(data.totalPages ?? 1);
 			} else {
 				toast.error(data.message || "Could not load batches.");
 			}
@@ -91,7 +92,7 @@ const Batches = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [debouncedSearch, period, sort, setIsLoading]);
+	}, [debouncedSearch, period, sort, currentPage, limit, setIsLoading]);
 
 	const handleGenerationSuccess = useCallback(() => {
 		setGenerateModalOpen(false);
@@ -108,9 +109,7 @@ const Batches = () => {
 			maximumFractionDigits: 2,
 		})}`;
 
-	const searchTrim = search.trim().toLowerCase();
-
-	const filtersActive = searchTrim !== "" || period !== "all" || sort !== "newest";
+	const filtersActive = search.trim() !== "" || period !== "all" || sort !== "newest";
 
 	const clearFilters = () => {
 		setSearch("");
@@ -127,14 +126,8 @@ const Batches = () => {
 				description={
 					batchPendingDelete ? (
 						<>
-							<p>
-								This permanently deletes the batch and every scratch code in
-								it. Players linked to those codes will no longer have a code
-								attached.
-							</p>
-							<p className="mt-3 text-stone-700">
-								Type this batch number exactly (case-sensitive):
-							</p>
+							<p>This permanently deletes the batch and every scratch code in it.</p>
+							<p className="mt-3 text-stone-700">Type this batch number exactly:</p>
 							<p className="mt-1 rounded-md border border-amber-100 bg-stone-50 px-3 py-2 text-center font-mono text-sm font-semibold text-stone-900">
 								{batchPendingDelete.batchNumber}
 							</p>
@@ -147,22 +140,15 @@ const Batches = () => {
 				onDelete={async () => {
 					if (!batchPendingDelete?._id) return false;
 					try {
-						const { data } = await axios.delete(
-							`/scratch-codes/batches/${batchPendingDelete._id}`
-						);
+						const { data } = await axios.delete(`/scratch-codes/batches/${batchPendingDelete._id}`);
 						if (data.success) {
 							toast.success(data.message);
 							await fetchBatches();
 							return true;
 						}
-						toast.error(data.message || "Delete failed.");
 						return false;
 					} catch (error) {
-						toast.error(
-							error.response?.data?.message ||
-								error.message ||
-								"Delete failed."
-						);
+						toast.error(error.response?.data?.message || "Delete failed.");
 						return false;
 					}
 				}}
@@ -172,245 +158,147 @@ const Batches = () => {
 				onClose={() => setGenerateModalOpen(false)}
 				onGenerationSuccess={handleGenerationSuccess}
 			/>
-			<div className="mx-auto flex w-full max-w-6xl flex-col">
-				<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<div className="text-center sm:text-left">
-						<AdminPageHeading icon={Layers2}>
-							Batches
-						</AdminPageHeading>
-						<p className="mt-1 text-sm text-stone-600">
-							All scratch batches. Filter, sort, generate new ones, or open
-							a batch in Codes to print and analyze.
-						</p>
-					</div>
-					<div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-						<button
-							type="button"
-							onClick={() => setGenerateModalOpen(true)}
-							className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-amber-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
-						>
-							<PlusCircle className="h-5 w-5" strokeWidth={2} />
-							Generate batch
-						</button>
-						<button
-							type="button"
-							onClick={() => fetchBatches()}
-							className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-amber-200 bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-50"
-						>
-							<RefreshCw className="h-4 w-4" strokeWidth={2} />
-							Refresh
-						</button>
-					</div>
-				</div>
+
+			<div className="mx-auto flex w-full max-w-7xl flex-col">
+				<AdminHeader 
+					title="Batches"
+					subtitle="Filter, sort, generate new ones, or open a batch in Codes to print and analyze."
+					icon={Layers2}
+					search={search}
+					setSearch={setSearch}
+					searchPlaceholder="Search batch ID..."
+					showClear={filtersActive}
+					onClear={clearFilters}
+					actions={[
+						{ label: "Generate Batch", icon: PlusCircle, onClick: () => setGenerateModalOpen(true), variant: 'dark' }
+					]}
+					filters={[
+						{
+							label: "Created",
+							value: period,
+							onChange: setPeriod,
+							options: [
+								{ value: "7d", label: "Last 7 Days" },
+								{ value: "30d", label: "Last 30 Days" },
+								{ value: "90d", label: "Last 90 Days" }
+							]
+						},
+						{
+							label: "Sort By",
+							value: sort,
+							onChange: (val) => { setSort(val); setCurrentPage(1); },
+							options: [
+								{ value: "newest", label: "Newest First" },
+								{ value: "oldest", label: "Oldest First" },
+								{ value: "codes_desc", label: "Most Codes" },
+								{ value: "codes_asc", label: "Fewest Codes" },
+								{ value: "price_desc", label: "Price (High)" },
+								{ value: "price_asc", label: "Price (Low)" }
+							]
+						},
+						{
+							label: "Show",
+							value: limit,
+							onChange: (val) => { setLimit(Number(val)); setCurrentPage(1); },
+							options: [
+								{ value: 10, label: "10 per page" },
+								{ value: 20, label: "20 per page" },
+								{ value: 50, label: "50 per page" },
+								{ value: 100, label: "100 per page" }
+							]
+						}
+					]}
+				/>
 
 				{totalAll < 0 ? (
-					<p className="py-10 text-center text-sm text-stone-500">
-						Loading batches…
-					</p>
+					<div className="py-20 text-center">
+						<p className="text-sm text-stone-500 animate-pulse">Loading batches...</p>
+					</div>
 				) : totalAll === 0 ? (
-					<div className="rounded-md border border-dashed border-amber-200 bg-amber-50/40 px-6 py-14 text-center">
-						<p className="text-stone-600">
-							No batches yet. Generate your first batch here or from the
-							Codes page.
-						</p>
-						<div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-							<button
-								type="button"
-								onClick={() => setGenerateModalOpen(true)}
-								className="inline-flex items-center gap-2 rounded-md bg-amber-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
-							>
-								<PlusCircle className="h-5 w-5" strokeWidth={2} />
-								Generate batch
-							</button>
-							<Link
-								to="/admin/codes"
-								className="inline-flex items-center gap-2 text-sm font-semibold text-amber-900 underline-offset-2 hover:underline"
-							>
-								<QrCode className="h-4 w-4" strokeWidth={2} />
-								Go to Codes
-							</Link>
-						</div>
+					<div className="rounded-lg border border-dashed border-amber-200 bg-amber-50/20 px-6 py-20 text-center">
+						<p className="text-stone-600 font-medium">No batches yet. Generate your first one to get started.</p>
+						<button
+							onClick={() => setGenerateModalOpen(true)}
+							className="mt-4 inline-flex items-center gap-2 rounded-md bg-amber-800 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-amber-700 transition-all"
+						>
+							<PlusCircle size={18} /> Generate First Batch
+						</button>
 					</div>
 				) : (
-					<>
-						<div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-100/90 bg-white p-4 shadow-sm lg:flex-row lg:flex-wrap lg:items-end">
-							<label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-left">
-								<span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-									Search batch ID
-								</span>
-								<span className="relative block">
-									<Search
-										className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
-										strokeWidth={2}
-										aria-hidden
-									/>
-									<input
-										type="search"
-										value={search}
-										onChange={(e) => setSearch(e.target.value)}
-										placeholder="e.g. AA-2603-010"
-										className={`${inputClass} pl-9 font-mono text-sm`}
-									/>
-								</span>
-							</label>
-							<label className="flex min-w-[10rem] flex-col gap-1 text-left sm:max-w-[12rem]">
-								<span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-									Created
-								</span>
-								<select
-									value={period}
-									onChange={(e) => setPeriod(e.target.value)}
-									className={selectClass}
-								>
-									<option value="all">All time</option>
-									<option value="7d">Last 7 days</option>
-									<option value="30d">Last 30 days</option>
-									<option value="90d">Last 90 days</option>
-								</select>
-							</label>
-							<label className="flex min-w-[10rem] flex-col gap-1 text-left sm:max-w-[14rem]">
-								<span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-									Sort by
-								</span>
-								<select
-									value={sort}
-									onChange={(e) => setSort(e.target.value)}
-									className={selectClass}
-								>
-									<option value="newest">Newest first</option>
-									<option value="oldest">Oldest first</option>
-									<option value="codes_desc">Most codes</option>
-									<option value="codes_asc">Fewest codes</option>
-									<option value="price_desc">Price / code (high)</option>
-									<option value="price_asc">Price / code (low)</option>
-								</select>
-							</label>
-							{filtersActive ? (
-								<button
-									type="button"
-									onClick={clearFilters}
-									className="inline-flex items-center justify-center gap-1.5 self-stretch rounded-md border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 lg:self-auto lg:shrink-0"
-								>
-									<X className="h-4 w-4" strokeWidth={2} />
-									Reset
-								</button>
-							) : null}
-						</div>
-						<p className="mb-3 text-center text-xs text-stone-500 sm:text-left">
-							Showing{" "}
-							<span className="font-semibold text-stone-700">
-								{batches.length}
-							</span>{" "}
-							of {totalAll} batches
+					<div className="mt-4">
+						<p className="mb-4 text-xs font-bold text-stone-400 uppercase tracking-widest">
+							Showing {batches.length} of {totalMatching > 0 ? totalMatching : totalAll} batches
 						</p>
 
-						{batches.length === 0 ? (
-							<div className="rounded-md border border-dashed border-amber-200 bg-amber-50/40 px-6 py-12 text-center text-stone-600">
-								<p>No batches match these filters.</p>
-								<button
-									type="button"
-									onClick={clearFilters}
-									className="mt-3 text-sm font-semibold text-amber-900 underline-offset-2 hover:underline"
-								>
-									Reset filters
-								</button>
-							</div>
-						) : (
-							<div className="overflow-hidden rounded-md border border-amber-100 bg-white shadow-sm">
-								<div className="overflow-x-auto">
-									<table className="w-full min-w-[640px] text-left text-sm">
-										<thead>
-											<tr className="border-b border-amber-100 bg-stone-50/90 text-xs font-semibold uppercase tracking-wide text-stone-500">
-												<th className="px-4 py-3">Batch ID</th>
-												<th className="px-4 py-3">Mechanic</th>
-												<th className="px-4 py-3 text-right tabular-nums">
-													Codes
-												</th>
-												<th className="px-4 py-3 text-right tabular-nums">
-													Price / code
-												</th>
-												<th className="px-4 py-3 text-right tabular-nums">
-													Giveaway %
-												</th>
-												<th className="px-4 py-3 text-right tabular-nums">
-													Jackpot each
-												</th>
-												<th className="px-4 py-3">Created</th>
-												<th className="px-4 py-3 text-right">
-													Actions
-												</th>
+						<div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">
+							<div className="overflow-x-auto">
+								<table className="w-full text-left text-sm border-collapse">
+									<thead>
+										<tr className="bg-stone-50 border-b border-stone-200">
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Batch ID</th>
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Mechanic</th>
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Codes</th>
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Price / code</th>
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Giveaway %</th>
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Jackpot</th>
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Created</th>
+											<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Actions</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-stone-100">
+										{batches.length === 0 ? (
+											<tr>
+												<td colSpan={8} className="py-12 text-center text-stone-400 italic">No matches found.</td>
 											</tr>
-										</thead>
-										<tbody className="divide-y divide-stone-100">
-											{batches.map((b) => (
-												<tr
-													key={b._id}
-													className="text-stone-800 transition-colors hover:bg-amber-50/40"
-												>
-													<td className="px-4 py-3 font-mono text-xs font-semibold text-stone-900 sm:text-sm">
-														{b.batchNumber}
+										) : (
+											batches.map((b) => (
+												<tr key={b._id} className="transition-colors hover:bg-stone-50/50">
+													<td className="px-6 py-4 font-mono text-xs font-bold text-stone-900">{b.batchNumber}</td>
+													<td className="px-6 py-4 text-xs text-stone-500">
+														{b.gameMode === "price_tag_v1" ? "Price Tag" : "Classic"}
 													</td>
-													<td className="px-4 py-3 text-xs text-stone-600">
-														{b.gameMode === "price_tag_v1"
-															? "Price tag"
-															: "Classic"}
-													</td>
-													<td className="px-4 py-3 text-right tabular-nums">
-														<span className="font-medium">
-															{formatCount(b.codesInserted)}
-														</span>
-														{b.totalCodes != null &&
-														Number(b.totalCodes) !==
-															Number(b.codesInserted) ? (
-															<span className="ml-1 text-xs text-stone-400">
-																/ {formatCount(b.totalCodes)}{" "}
-																planned
-															</span>
-														) : null}
-													</td>
-													<td className="px-4 py-3 text-right tabular-nums">
-														{fmtMoney(b.costPerCode)}
-													</td>
-													<td className="px-4 py-3 text-right tabular-nums">
-														{formatDecimal(b.giveawayPercentage)}%
-													</td>
-													<td className="px-4 py-3 text-right tabular-nums">
-														{fmtMoney(
-															b.jackpotPrizeEach ??
-																b.winningPrize ??
-																0
+													<td className="px-6 py-4 text-right tabular-nums">
+														<span className="font-bold">{formatCount(b.codesInserted)}</span>
+														{b.totalCodes != null && Number(b.totalCodes) !== Number(b.codesInserted) && (
+															<span className="ml-1.5 text-[10px] text-stone-400">/ {formatCount(b.totalCodes)}</span>
 														)}
 													</td>
-													<td className="px-4 py-3 text-stone-600">
-														{formatDate(b.createdAt)}
-													</td>
-													<td className="px-4 py-3 text-right">
-														<div className="flex flex-wrap items-center justify-end gap-2">
+													<td className="px-6 py-4 text-right tabular-nums font-semibold">{fmtMoney(b.costPerCode)}</td>
+													<td className="px-6 py-4 text-right tabular-nums text-emerald-600 font-bold">{formatDecimal(b.giveawayPercentage)}%</td>
+													<td className="px-6 py-4 text-right tabular-nums font-semibold">{fmtMoney(b.jackpotPrizeEach ?? b.winningPrize ?? 0)}</td>
+													<td className="px-6 py-4 text-stone-500 text-xs">{formatDate(b.createdAt)}</td>
+													<td className="px-6 py-4 text-right">
+														<div className="flex items-center justify-end gap-2">
 															<Link
 																to={`/admin/codes?batch=${encodeURIComponent(b._id)}`}
-																className="inline-flex items-center gap-1 rounded-md bg-amber-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+																className="inline-flex items-center gap-1.5 rounded-md bg-amber-100/50 border border-amber-200 px-3 py-1.5 text-[11px] font-black uppercase tracking-tighter text-amber-900 hover:bg-amber-100 transition-colors"
 															>
-																<QrCode className="h-3.5 w-3.5" />
-																Codes
+																<QrCode size={14} /> Codes
 															</Link>
 															<button
 																type="button"
 																onClick={() => setBatchPendingDelete(b)}
-																className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-900 shadow-sm transition-colors hover:bg-rose-100"
+																className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50/50 px-3 py-1.5 text-[11px] font-black uppercase tracking-tighter text-rose-800 hover:bg-rose-100 transition-colors"
 															>
-																<Trash2 className="h-3.5 w-3.5" />
-																Delete
+																<Trash2 size={14} /> Delete
 															</button>
 														</div>
 													</td>
 												</tr>
-											))}
-										</tbody>
-									</table>
-								</div>
+											))
+										)}
+									</tbody>
+								</table>
 							</div>
-						)}
-					</>
+
+							{/* Pagination Controls */}
+							<AdminPagination 
+								currentPage={currentPage} 
+								totalPages={totalPages} 
+								setCurrentPage={setCurrentPage} 
+							/>
+						</div>
+					</div>
 				)}
 			</div>
 		</div>

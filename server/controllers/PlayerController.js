@@ -14,16 +14,18 @@ import {
 } from "../lib/phoneNormalize.js";
 import shikaCreators from "../services/scPayment.js";
 import { logger } from "../lib/logger.js";
+import SystemSetting from "../models/SystemSetting.js";
 
 // add a player
 export const addPlayer = async (req, res) => {
 	try {
-		const { name, phone, code } = req.body;
+		const { name, phone: rawPhone, code } = req.body;
+		const phone = formatPhoneForGhanaMoMo(rawPhone);
 
 		if (!name || !phone || !code) {
 			return res
 				.status(400)
-				.json({ success: false, message: "all fields are required" });
+				.json({ success: false, message: "Valid name, Ghana phone, and ticket code are required." });
 		}
 
 		const normalized = normalizeScratchCodeForLookup(code);
@@ -91,67 +93,13 @@ export const addPlayer = async (req, res) => {
 };
 
 /**
- * Start mobile-money payout for a redeemed winning ticket.
- * Body: { phone, ticket } — ticket is the same redemption code as on the card / QR (optional alias: code).
+ * Internal helper to process a Shika disbursement for a scratch code.
+ * @param {Object} scratchCode - The ScratchCode document.
+ * @param {Object} player - The Player document.
+ * @returns {Promise<{success: boolean, message: string, data?: Object}>}
  */
-export const claimWin = async (req, res) => {
+async function processAutomaticPayout(scratchCode, player) {
 	try {
-		const ticket = req.body.ticket ?? req.body.code;
-		const { phone } = req.body;
-
-		if (!phone || !ticket) {
-			return res.status(400).json({
-				success: false,
-				message: "Phone and ticket are required.",
-			});
-		}
-
-		const normalized = normalizeScratchCodeForLookup(ticket);
-		if (!normalized) {
-			return res.status(400).json({
-				success: false,
-				message: "Enter a valid ticket code.",
-			});
-		}
-		const lookupHash = hashForLookup(normalized);
-
-		const scratchCode = await ScratchCode.findOne({ lookupHash });
-		if (!scratchCode) {
-			return res.status(404).json({
-				success: false,
-				message: "Invalid ticket.",
-			});
-		}
-
-		if (!scratchCode.isUsed || !scratchCode.redeemedBy) {
-			return res.status(400).json({
-				success: false,
-				message: "This ticket has not been redeemed yet.",
-			});
-		}
-
-		const player = await Player.findById(scratchCode.redeemedBy);
-		if (!player) {
-			return res.status(400).json({
-				success: false,
-				message: "Winner record not found.",
-			});
-		}
-
-		if (!phonesMatch(phone, player.phone)) {
-			return res.status(403).json({
-				success: false,
-				message: "Phone number does not match this ticket.",
-			});
-		}
-
-		if (scratchCode.tier === "jackpot") {
-			return res.status(400).json({
-				success: false,
-				message: "Jackpot prizes must be claimed manually at our office. Please contact support.",
-			});
-		}
-
 		const amount = Number(scratchCode.prizeAmount);
 		const eligible =
 			(scratchCode.isWinner || scratchCode.isCashback) &&
@@ -159,51 +107,35 @@ export const claimWin = async (req, res) => {
 			amount > 0;
 
 		if (!eligible) {
-			return res.status(400).json({
-				success: false,
-				message: "This ticket is not eligible for a cash payout.",
-			});
+			return { success: false, message: "This ticket is not eligible for a cash payout." };
 		}
 
 		if (scratchCode.payoutStatus === "paid") {
-			return res.status(400).json({
-				success: false,
-				message: "Prize has already been paid for this ticket.",
-			});
+			return { success: false, message: "Prize has already been paid for this ticket." };
 		}
 
 		const inFlight = await Transaction.findOne({
 			scratchCode: scratchCode._id,
-			status: "pending",
+			status: { $in: ["pending", "processing"] },
 			gatewayTransactionId: { $exists: true, $nin: [null, ""] },
 		});
+
 		if (inFlight) {
-			return res.status(200).json({
+			return {
 				success: true,
-				message: "Your payout is already being processed.",
-				data: {
-					status: "processing",
-					disbursementId: inFlight.gatewayTransactionId,
-				},
-			});
+				message: "Payout is already being processed.",
+				data: { status: "processing", disbursementId: inFlight.gatewayTransactionId },
+			};
 		}
 
-		const moMoPhone = formatPhoneForGhanaMoMo(phone);
+		const moMoPhone = formatPhoneForGhanaMoMo(player.phone);
 		if (!moMoPhone) {
-			return res.status(400).json({
-				success: false,
-				message: "Enter a valid Ghana mobile number.",
-			});
+			return { success: false, message: "Player has an invalid Ghana mobile number." };
 		}
 
-		const provider =
-			shikaCreators.getProviderFromPhone(moMoPhone) || undefined;
+		const provider = shikaCreators.getProviderFromPhone(moMoPhone) || undefined;
 		if (!provider) {
-			return res.status(400).json({
-				success: false,
-				message:
-					"Could not detect mobile money network for this number. Use a supported Ghana number.",
-			});
+			return { success: false, message: "Could not detect mobile money network for this number." };
 		}
 
 		const currency = process.env.SC_CURRENCY || "GHS";
@@ -251,18 +183,15 @@ export const claimWin = async (req, res) => {
 				disbursement?.disbursement?.id;
 
 			if (!gatewayId) {
-				logger.error("Shika disbursement response missing id", {
-					disbursement,
-				});
+				logger.error("Shika disbursement response missing id", { disbursement });
 				tx.status = "failed";
 				tx.note = "Gateway response missing disbursement id";
 				tx.gatewayResponse = { ...(tx.gatewayResponse || {}), raw: disbursement };
 				await tx.save();
-				return res.status(502).json({
+				return {
 					success: false,
-					message:
-						"Payment provider returned an unexpected response. Try again later.",
-				});
+					message: "Payment provider returned an unexpected response.",
+				};
 			}
 
 			tx.gatewayTransactionId = gatewayId;
@@ -272,38 +201,100 @@ export const claimWin = async (req, res) => {
 			};
 			await tx.save();
 
-			return res.status(200).json({
+			return {
 				success: true,
-				message:
-					"Payout started. Funds should arrive after your mobile money network confirms.",
-				data: {
-					status: "pending",
-					disbursementId: gatewayId,
-					amount,
-					currency,
-				},
-			});
+				message: "Payout started successfully.",
+				data: { status: "pending", disbursementId: gatewayId, amount, currency },
+			};
 		} catch (err) {
 			tx.status = "failed";
-			tx.note =
-				(typeof err.message === "string" && err.message.slice(0, 500)) ||
-				"Disbursement request failed";
+			tx.note = (typeof err.message === "string" && err.message.slice(0, 500)) || "Disbursement request failed";
 			tx.gatewayResponse = {
 				...(tx.gatewayResponse || {}),
 				error: err.response?.data ?? err.message,
 			};
 			await tx.save();
-			logger.error("claimWin disbursement failed", {
-				err: err.message,
-				response: err.response?.data,
-			});
-			return res.status(502).json({
+			logger.error("disbursement failed", { err: err.message, response: err.response?.data });
+			return {
 				success: false,
-				message:
-					err.response?.data?.message ||
-					"Could not start payout. Please try again later.",
+				message: err.response?.data?.message || "Could not start payout.",
+			};
+		}
+	} catch (error) {
+		logger.error("processAutomaticPayout Error:", error);
+		return { success: false, message: "Internal error processing payout." };
+	}
+}
+
+/**
+ * Start mobile-money payout for a redeemed winning ticket.
+ * Body: { phone, ticket } — ticket is the same redemption code as on the card / QR (optional alias: code).
+ */
+export const claimWin = async (req, res) => {
+	try {
+		const { phone, ticket } = req.body;
+
+		// 1. Check Global Payout Status
+		const settings = await SystemSetting.getSettings();
+		if (!settings.payoutsEnabled) {
+			return res.status(403).json({
+				success: false,
+				message: "Automatic payouts are temporarily paused for maintenance. Please try again later or contact support."
 			});
 		}
+
+		if (!phone || !ticket) {
+			return res.status(400).json({
+				success: false,
+				message: "Phone and ticket are required.",
+			});
+		}
+
+		const normalized = normalizeScratchCodeForLookup(ticket);
+		if (!normalized) {
+			return res.status(400).json({
+				success: false,
+				message: "Enter a valid ticket code.",
+			});
+		}
+		const lookupHash = hashForLookup(normalized);
+
+		const scratchCode = await ScratchCode.findOne({ lookupHash });
+		if (!scratchCode) {
+			return res.status(404).json({
+				success: false,
+				message: "Invalid ticket.",
+			});
+		}
+
+		if (!scratchCode.isUsed || !scratchCode.redeemedBy) {
+			return res.status(400).json({
+				success: false,
+				message: "This ticket has not been redeemed yet.",
+			});
+		}
+
+		const player = await Player.findById(scratchCode.redeemedBy);
+		if (!player) {
+			return res.status(400).json({
+				success: false,
+				message: "Winner record not found.",
+			});
+		}
+
+		if (!phonesMatch(phone, player.phone)) {
+			return res.status(403).json({
+				success: false,
+				message: "Phone number does not match this ticket.",
+			});
+		}
+
+		const result = await processAutomaticPayout(scratchCode, player);
+		if (!result.success) {
+			return res.status(400).json(result);
+		}
+
+		return res.status(200).json(result);
 	} catch (error) {
 		logger.error(error?.stack ? `${error.message}\n${error.stack}` : error.message);
 		return res.status(500).json({
@@ -313,22 +304,50 @@ export const claimWin = async (req, res) => {
 	}
 };
 
+/**
+ * Administrative action: manually mark a winner as paid.
+ * Param: id is the ScratchCode ID.
+ */
+export const markAsPaid = async (req, res) => {
+	try {
+		const { id } = req.params;
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			return res.status(400).json({ success: false, message: "Invalid ID" });
+		}
+
+		const code = await ScratchCode.findById(id);
+		if (!code) {
+			return res.status(404).json({ success: false, message: "Ticket not found" });
+		}
+
+		if (!code.isWinner && !code.isCashback) {
+			return res.status(400).json({ success: false, message: "This ticket is not a winner." });
+		}
+
+		const player = await Player.findById(code.redeemedBy);
+		if (!player) {
+			return res.status(404).json({ success: false, message: "Winner record not found." });
+		}
+
+		const result = await processAutomaticPayout(code, player);
+		if (!result.success) {
+			return res.status(400).json(result);
+		}
+
+		return res.status(200).json({ success: true, message: "Payout initiated successfully via gateway." });
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ success: false, message: error.message });
+	}
+};
+
 async function playerBatchOptionsForFilter() {
-	const rows = await Player.aggregate([
-		{ $match: { code: { $exists: true, $ne: null } } },
-		{
-			$lookup: {
-				from: "scratchcodes",
-				localField: "code",
-				foreignField: "_id",
-				as: "sc",
-			},
-		},
-		{ $unwind: "$sc" },
+	const rows = await ScratchCode.aggregate([
+		{ $match: { isUsed: true } },
 		{
 			$lookup: {
 				from: "batches",
-				localField: "sc.batchNumber",
+				localField: "batchNumber",
 				foreignField: "_id",
 				as: "b",
 			},
@@ -352,129 +371,122 @@ async function playerBatchOptionsForFilter() {
 	return rows;
 }
 
-// get all players (optional search / outcome / batch — query params)
 export const getAllPlayers = async (req, res) => {
 	try {
 		const search = String(req.query.search ?? "").trim();
 		const outcome = String(req.query.outcome ?? "all").toLowerCase();
 		const batchId = String(req.query.batch ?? "all");
+		const page = parseInt(req.query.page ?? 1);
+		const limit = parseInt(req.query.limit ?? 20);
+		const skip = (page - 1) * limit;
 
-		const [globalAgg, totalPlayers] = await Promise.all([
-			Player.aggregate([
-				{ $match: { code: { $exists: true, $ne: null } } },
-				{
-					$lookup: {
-						from: "scratchcodes",
-						localField: "code",
-						foreignField: "_id",
-						as: "sc",
-					},
-				},
-				{ $unwind: { path: "$sc", preserveNullAndEmptyArrays: true } },
+		// Global stats for the header
+		const [stats, totalScanned] = await Promise.all([
+			ScratchCode.aggregate([
+				{ $match: { isUsed: true } },
 				{
 					$group: {
 						_id: null,
-						winners: {
-							$sum: {
-								$cond: [{ $eq: ["$sc.isWinner", true] }, 1, 0],
-							},
-						},
-						losers: {
-							$sum: {
-								$cond: [{ $eq: ["$sc.isWinner", false] }, 1, 0],
-							},
-						},
+						winners: { $sum: { $cond: [{ $or: ["$isWinner", "$isCashback"] }, 1, 0] } },
+						losers: { $sum: { $cond: [{ $or: ["$isWinner", "$isCashback"] }, 0, 1] } },
 					},
 				},
 			]),
-			Player.countDocuments({ code: { $exists: true, $ne: null } }),
+			ScratchCode.countDocuments({ isUsed: true }),
 		]);
-		const winnersCount = globalAgg[0]?.winners ?? 0;
-		const losersCount = globalAgg[0]?.losers ?? 0;
+		
+		const winnersCount = stats[0]?.winners ?? 0;
+		const losersCount = stats[0]?.losers ?? 0;
 
-		const codeFilter = {};
-		if (outcome === "winner") codeFilter.isWinner = true;
-		else if (outcome === "loser") codeFilter.isWinner = false;
+		const query = { isUsed: true };
+		if (outcome === "winner") query.$or = [{ isWinner: true }, { isCashback: true }];
+		else if (outcome === "loser") query.isWinner = false, query.isCashback = false;
 
 		if (batchId !== "all") {
 			if (!mongoose.Types.ObjectId.isValid(batchId)) {
-				return res.status(400).json({
-					success: false,
-					message: "Invalid batch id",
-				});
+				return res.status(400).json({ success: false, message: "Invalid batch id" });
 			}
-			codeFilter.batchNumber = new mongoose.Types.ObjectId(batchId);
+			query.batchNumber = new mongoose.Types.ObjectId(batchId);
 		}
 
-		let codeIds = null;
-		if (Object.keys(codeFilter).length > 0) {
-			codeIds = await ScratchCode.find(codeFilter).distinct("_id");
-			if (codeIds.length === 0) {
-				const batchOptions = await playerBatchOptionsForFilter();
-				return res.status(200).json({
-					success: true,
-					data: {
-						players: [],
-						totalPlayers,
-						winnersCount,
-						losersCount,
-						filteredTotal: 0,
-						filteredWinners: 0,
-						filteredLosers: 0,
-						batchOptions,
-					},
-				});
-			}
-		}
-
-		const andParts = [];
-		if (codeIds) andParts.push({ code: { $in: codeIds } });
 		if (search) {
 			const esc = escapeRegex(search);
-			andParts.push({
-				$or: [
-					{ name: { $regex: esc, $options: "i" } },
-					{
-						$expr: {
-							$regexMatch: {
-								input: { $toString: "$phone" },
-								regex: esc,
-								options: "i",
-							},
-						},
-					},
-				],
-			});
+			const regex = { $regex: esc, $options: "i" };
+			
+			// Find players matching search to filter codes by user
+			const playerIds = await Player.find({
+				$or: [{ name: regex }, { phone: { $regex: esc } }]
+			}).distinct("_id");
+
+			query.$or = [
+				{ redeemedBy: { $in: playerIds } },
+				{ lookupHash: regex } // Maybe they searched for the code?
+			];
 		}
 
-		const query =
-			andParts.length === 0
-				? {}
-				: andParts.length === 1
-					? andParts[0]
-					: { $and: andParts };
-
-		const [players, batchOptions] = await Promise.all([
-			Player.find(query).populate({
-				path: "code",
-				populate: { path: "batchNumber" },
-			}),
-			playerBatchOptionsForFilter(),
+		const [filteredTotal, filteredWinners] = await Promise.all([
+			ScratchCode.countDocuments(query),
+			ScratchCode.countDocuments({ ...query, $or: [{ isWinner: true }, { isCashback: true }] })
 		]);
 
-		const filteredWinners = players.filter((p) => p.code?.isWinner).length;
-		const filteredLosers = players.length - filteredWinners;
+		const totalPages = Math.ceil(filteredTotal / limit);
+
+		const codes = await ScratchCode.find(query)
+			.populate("redeemedBy")
+			.populate("batchNumber")
+			.sort({ redeemedAt: -1 })
+			.skip(skip)
+			.limit(limit);
+
+		const batchOptions = await playerBatchOptionsForFilter();
+
+		const codeIds = codes.map(c => c._id);
+		const transactions = await Transaction.find({ 
+			scratchCode: { $in: codeIds },
+			type: "payout" 
+		}).sort({ createdAt: -1 });
+
+		// Decrypt codes and format for frontend
+		const data = codes.map(c => {
+			let plainCode = "-";
+			try {
+				if (c.code) plainCode = decrypt(c.code);
+			} catch (e) {}
+
+			// Find the latest transaction for this code
+			const lastTx = transactions.find(t => String(t.scratchCode) === String(c._id));
+
+			return {
+				_id: c._id,
+				code: plainCode,
+				tier: c.tier,
+				isWinner: c.isWinner,
+				isCashback: c.isCashback,
+				prizeAmount: c.prizeAmount,
+				payoutStatus: c.payoutStatus,
+				redeemedAt: c.redeemedAt,
+				createdAt: c.redeemedAt || c.updatedAt,
+				batch: c.batchNumber?.batchNumber || "Unknown",
+				lastTransactionId: lastTx?._id,
+				player: c.redeemedBy ? {
+					_id: c.redeemedBy._id,
+					name: c.redeemedBy.name,
+					phone: c.redeemedBy.phone
+				} : null
+			};
+		});
 
 		return res.status(200).json({
 			success: true,
 			data: {
-				players,
-				totalPlayers,
+				players: data,
+				totalPlayers: totalScanned,
 				winnersCount,
 				losersCount,
-				filteredTotal: players.length,
+				filteredTotal,
 				filteredWinners,
-				filteredLosers,
+				filteredLosers: filteredTotal - filteredWinners,
+				totalPages,
 				batchOptions,
 			},
 		});

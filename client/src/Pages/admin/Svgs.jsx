@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import axios from "../../../lib/api";
 import { Images, LayoutGrid, List, Save, Trash2, Upload } from "lucide-react";
 import AdminPageHeading from "../../Components/admin/AdminPageHeading";
+import AdminHeader from "../../Components/admin/AdminHeader";
 import SvgUploadModal from "../../Components/admin/SvgUploadModal";
 import { useAppcontext } from "../../context/AppContext";
 
@@ -211,104 +212,81 @@ const Svgs = () => {
 	return (
 		<div className="w-full p-4 sm:p-6 lg:p-8">
 			<div className="mx-auto max-w-5xl">
-				<div className="mb-8 text-center sm:text-left">
-					<AdminPageHeading icon={Images}>SVGs</AdminPageHeading>
-					<p className="mt-1 text-sm text-stone-600 sm:text-base">
-						Upload SVGs in bulk per theme (<code className="text-xs">type</code>
-						). File names become asset names (e.g.{" "}
-						<code className="text-xs">A.svg</code> →{" "}
-						<code className="text-xs">a</code>). Set each asset&apos;s{" "}
-						<strong>prize</strong> for the price tag scratch mechanic (use{" "}
-						<code className="text-xs">0</code> for decoys).
-					</p>
-				</div>
 
-				<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-					<p className="text-sm text-stone-600">
-						Add files in the uploader: preview, remove from queue, then
-						upload.
-					</p>
-					<button
-						type="button"
-						onClick={() => setUploadModalOpen(true)}
-						className="inline-flex items-center gap-2 rounded-md bg-amber-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+			<AdminHeader 
+				title="SVGs"
+				subtitle="Upload SVGs in bulk per theme. File names become asset names. Set each asset's prize for the price tag mechanic."
+				icon={Images}
+				actions={[
+					{ label: "Upload SVGs", icon: Upload, onClick: () => setUploadModalOpen(true), variant: 'dark' }
+				]}
+				filters={[
+					{
+						label: "Theme",
+						value: filterType,
+						onChange: setFilterType,
+						options: types.map(t => ({ value: t, label: t }))
+					}
+				]}
+			/>
+
+			<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+				<p className="text-sm text-stone-600">
+					Add files in the uploader: preview, remove from queue, then upload.
+				</p>
+				<div className="flex flex-wrap items-center gap-2 sm:justify-end">
+					<div
+						className="inline-flex rounded-lg border border-amber-200/90 bg-stone-50/90 p-0.5 shadow-sm"
+						role="group"
+						aria-label="SVG layout"
 					>
-						<Upload className="h-4 w-4" strokeWidth={2} />
-						Upload SVGs
-					</button>
-				</div>
-
-				<SvgUploadModal
-					isOpen={uploadModalOpen}
-					onClose={() => setUploadModalOpen(false)}
-					onUploadSuccess={handleModalUploadSuccess}
-				/>
-
-				<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-					<label className="block min-w-[12rem] flex-1">
-						<span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500">
-							Filter by theme
-						</span>
-						<select
-							value={filterType}
-							onChange={(e) => setFilterType(e.target.value)}
-							className={selectClass}
+						<button
+							type="button"
+							aria-pressed={layout === "list"}
+							onClick={() => setLayoutPersist("list")}
+							className={`${layoutToggleBtn} ${
+								layout === "list"
+									? "bg-white text-amber-950 shadow-sm ring-1 ring-amber-100"
+									: "text-stone-600 hover:bg-white/70 hover:text-stone-900"
+							}`}
 						>
-							<option value="">All themes</option>
-							{types.map((t) => (
-								<option key={t} value={t}>
-									{t}
-								</option>
-							))}
-						</select>
-					</label>
-					<div className="flex flex-wrap items-center gap-2 sm:justify-end">
-						<div
-							className="inline-flex rounded-lg border border-amber-200/90 bg-stone-50/90 p-0.5 shadow-sm"
-							role="group"
-							aria-label="SVG layout"
+							<List className="h-4 w-4" strokeWidth={2} aria-hidden />
+							List
+						</button>
+						<button
+							type="button"
+							aria-pressed={layout === "grid"}
+							onClick={() => setLayoutPersist("grid")}
+							className={`${layoutToggleBtn} ${
+								layout === "grid"
+									? "bg-white text-amber-950 shadow-sm ring-1 ring-amber-100"
+									: "text-stone-600 hover:bg-white/70 hover:text-stone-900"
+							}`}
 						>
-							<button
-								type="button"
-								aria-pressed={layout === "list"}
-								onClick={() => setLayoutPersist("list")}
-								className={`${layoutToggleBtn} ${
-									layout === "list"
-										? "bg-white text-amber-950 shadow-sm ring-1 ring-amber-100"
-										: "text-stone-600 hover:bg-white/70 hover:text-stone-900"
-								}`}
-							>
-								<List className="h-4 w-4" strokeWidth={2} aria-hidden />
-								List
-							</button>
-							<button
-								type="button"
-								aria-pressed={layout === "grid"}
-								onClick={() => setLayoutPersist("grid")}
-								className={`${layoutToggleBtn} ${
-									layout === "grid"
-										? "bg-white text-amber-950 shadow-sm ring-1 ring-amber-100"
-										: "text-stone-600 hover:bg-white/70 hover:text-stone-900"
-								}`}
-							>
-								<LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden />
-								Grid
-							</button>
-						</div>
-						{filterType ? (
-							<button
-								type="button"
-								onClick={deleteTheme}
-								className="inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-900 transition-colors hover:bg-rose-100"
-							>
-								<Trash2 className="h-4 w-4" strokeWidth={2} />
-								Delete entire theme
-							</button>
-						) : null}
+							<LayoutGrid className="h-4 w-4" strokeWidth={2} aria-hidden />
+							Grid
+						</button>
 					</div>
+					{filterType && (
+						<button
+							type="button"
+							onClick={deleteTheme}
+							className="inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-900 transition-colors hover:bg-rose-100"
+						>
+							<Trash2 className="h-4 w-4" strokeWidth={2} />
+							Delete Theme
+						</button>
+					)}
 				</div>
+			</div>
 
-				<div className="overflow-hidden rounded-md border border-amber-100 bg-white shadow-sm">
+			<SvgUploadModal
+				isOpen={uploadModalOpen}
+				onClose={() => setUploadModalOpen(false)}
+				onUploadSuccess={handleModalUploadSuccess}
+			/>
+
+				<div className="overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm ring-1 ring-black/[0.03]">
 					{loading ? (
 						<p className="p-8 text-center text-sm text-stone-500">
 							Loading…
@@ -319,50 +297,50 @@ const Svgs = () => {
 						</p>
 					) : layout === "list" ? (
 						<div className="overflow-x-auto">
-							<table className="w-full min-w-[640px] text-left text-sm">
+							<table className="w-full min-w-[640px] text-left border-collapse">
 								<thead>
-									<tr className="border-b border-amber-100 bg-stone-50/90 text-xs font-semibold uppercase tracking-wide text-stone-500">
-										<th className="px-4 py-3">Preview</th>
-										<th className="px-4 py-3">Theme</th>
-										<th className="px-4 py-3">Name</th>
-										<th className="px-4 py-3">Prize ({currency})</th>
-										<th className="px-4 py-3">File</th>
-										<th className="px-4 py-3 text-right">Actions</th>
+									<tr className="bg-stone-50 border-b border-stone-200">
+										<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Preview</th>
+										<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Theme</th>
+										<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Name</th>
+										<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">Prize ({currency})</th>
+										<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500">File</th>
+										<th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-stone-500 text-right">Actions</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-stone-100">
 									{items.map((row) => (
 										<tr
 											key={row._id}
-											className="text-stone-800 hover:bg-amber-50/30"
+											className="transition-colors hover:bg-stone-50/50"
 										>
-											<td className="px-4 py-2">
+											<td className="px-6 py-4">
 												<img
 													src={`${origin}${row.urlPath}`}
 													alt=""
 													className="h-10 w-10 object-contain"
 												/>
 											</td>
-											<td className="px-4 py-2 font-mono text-xs">
+											<td className="px-6 py-4 font-mono text-[10px] font-bold uppercase tracking-widest text-stone-500">
 												{row.type}
 											</td>
-											<td className="px-4 py-2 font-mono text-sm font-semibold">
+											<td className="px-6 py-4 font-mono text-xs font-black text-stone-900">
 												{row.name}
 											</td>
-											<td className="px-4 py-2">
+											<td className="px-6 py-4">
 												<SvgPrizeEditor
 													row={row}
 													onSaved={mergeSvgRow}
 												/>
 											</td>
-											<td className="px-4 py-2 text-xs text-stone-500">
+											<td className="px-6 py-4 text-[10px] font-bold text-stone-400 uppercase tracking-tight">
 												{row.originalFileName || "—"}
 											</td>
-											<td className="px-4 py-2 text-right">
+											<td className="px-6 py-4 text-right">
 												<button
 													type="button"
 													onClick={() => deleteOne(row._id)}
-													className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+													className="inline-flex items-center gap-1.5 rounded-md border border-rose-100 bg-rose-50/50 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-rose-800 hover:bg-rose-100 transition-colors"
 												>
 													<Trash2 className="h-3.5 w-3.5" />
 													Delete

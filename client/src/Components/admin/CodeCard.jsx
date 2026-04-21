@@ -102,6 +102,8 @@ const CodeCard = ({
 	symbolSvgMap = null,
 	svgStaticOrigin = "",
 	symbolPrizeMap = null,
+	showDetails = false,
+	showSymbols = false,
 }) => {
 	const { currency } = useAppcontext();
 
@@ -159,145 +161,151 @@ const CodeCard = ({
 						</p>
 					</div>
 
-					<div>
-						<p className="text-[0.65rem] font-semibold uppercase tracking-wide text-stone-400">
-							Symbol panel
-						</p>
-						{showCellPrizes ? (
-							<p className="-mt-0.5 mb-1 text-[0.58rem] leading-snug text-stone-500">
-								Footer = SVG tag prize (0 = decoy).
+					{showSymbols && (
+						<div>
+							<p className="text-[0.65rem] font-semibold uppercase tracking-wide text-stone-400">
+								Symbol panel
 							</p>
-						) : null}
-						{panelGrid ? (
-							<div
-								className="mt-1 grid grid-cols-4 gap-1 rounded-sm border border-stone-200 bg-white p-1.5"
-								role="img"
-								aria-label={
-									showCellPrizes
-										? "Scratch symbols with price tag amounts per cell"
-										: svgPanelOnly
-											? "Scratch SVG symbols in four by four grid"
-											: "Scratch symbols in four by four grid"
-								}
-							>
-								{symbolChars.map((ch, i) => {
-									const src = symbolImageSrc(
-										ch,
-										symbolSvgMap,
-										svgStaticOrigin
-									);
-									return (
-										<div
-											key={`cell-${i}-${ch}`}
-											className={`flex aspect-square flex-col overflow-hidden rounded-sm border border-stone-100 bg-stone-50/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ${
-												showCellPrizes ? "min-h-0" : ""
-											}`}
-										>
-											<div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-0.5">
-												{svgPanelOnly ? (
-													src ? (
-														<img
-															src={src}
-															alt=""
-															className="max-h-full max-w-full object-contain"
-														/>
-													) : (
-														<SvgCellPlaceholder />
-													)
-												) : (
-													<span className="font-mono text-sm font-semibold text-stone-800 sm:text-base">
-														{ch}
-													</span>
-												)}
-											</div>
-											{showCellPrizes ? (
-												<p
-													className="shrink-0 border-t border-stone-200/80 bg-white/90 px-0.5 py-0.5 text-center text-[0.5rem] font-bold tabular-nums leading-tight text-stone-800 sm:text-[0.55rem]"
-													title="Tag prize on SVG asset"
-												>
-													{cellPrizeText(ch)}
-												</p>
-											) : null}
-										</div>
-									);
-								})}
-							</div>
-						) : (
-							<div className="mt-1 flex flex-wrap justify-center gap-1 rounded-sm border border-stone-200 bg-white p-2">
-								{symbolChars.length > 0 ? (
-									symbolChars.map((ch, i) => {
+							{showCellPrizes && showDetails ? (
+								<p className="-mt-0.5 mb-1 text-[0.58rem] leading-snug text-stone-500">
+									Footer = SVG tag prize (0 = decoy).
+								</p>
+							) : null}
+							{panelGrid ? (
+								<div
+									className="mt-1 grid grid-cols-4 gap-1 rounded-sm border border-stone-200 bg-white p-1.5"
+									role="img"
+									aria-label={
+										showCellPrizes
+											? "Scratch symbols with price tag amounts per cell"
+											: svgPanelOnly
+												? "Scratch SVG symbols in four by four grid"
+												: "Scratch symbols in four by four grid"
+									}
+								>
+									{symbolChars.map((ch, i) => {
 										const src = symbolImageSrc(
 											ch,
 											symbolSvgMap,
 											svgStaticOrigin
 										);
 										return (
-											<span
+											<div
 												key={`cell-${i}-${ch}`}
-												className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-sm border border-stone-100 bg-stone-50 px-1 py-1"
+												className={`flex aspect-square flex-col overflow-hidden rounded-sm border border-stone-100 bg-stone-50/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] ${
+													showCellPrizes ? "min-h-0" : ""
+												}`}
 											>
-												{svgPanelOnly ? (
-													src ? (
-														<img
-															src={src}
-															alt=""
-															className="max-h-7 max-w-7 object-contain"
-														/>
+												<div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-0.5">
+													{svgPanelOnly ? (
+														src ? (
+															<img
+																src={src}
+																alt=""
+																className="max-h-full max-w-full object-contain"
+															/>
+														) : (
+															<SvgCellPlaceholder />
+														)
 													) : (
-														<span
-															className="inline-block h-6 w-6 rounded-sm bg-stone-200/75 ring-1 ring-stone-300/40"
-															aria-hidden
-														/>
-													)
-												) : (
-													<span className="font-mono text-xs font-semibold text-stone-800">
-														{ch}
-													</span>
-												)}
-											</span>
+														<span className="font-mono text-sm font-semibold text-stone-800 sm:text-base">
+															{ch}
+														</span>
+													)}
+												</div>
+												{showCellPrizes && showDetails ? (
+													<p
+														className="shrink-0 border-t border-stone-200/80 bg-white/90 px-0.5 py-0.5 text-center text-[0.5rem] font-bold tabular-nums leading-tight text-stone-800 sm:text-[0.55rem]"
+														title="Tag prize on SVG asset"
+													>
+														{cellPrizeText(ch)}
+													</p>
+												) : null}
+											</div>
 										);
-									})
-								) : (
-									<span className="text-xs font-medium text-stone-400">
-										—
-									</span>
-								)}
-							</div>
-						)}
-					</div>
-				</div>
-
-				<div className="mt-2 border-t border-stone-100 pt-2">
-					<p className="text-[0.65rem] font-semibold uppercase tracking-wide text-stone-400">
-						Prize
-					</p>
-					{code.isWinner || code.isCashback ? (
-						<p className="mt-0.5 text-center text-base font-bold tabular-nums tracking-tight text-amber-950">
-							{fmtMoney(code.prizeAmount)}
-						</p>
-					) : (
-						<p className="mt-0.5 text-center text-xs font-medium text-stone-400">
-							No prize
-						</p>
+									})}
+								</div>
+							) : (
+								<div className="mt-1 flex flex-wrap justify-center gap-1 rounded-sm border border-stone-200 bg-white p-2">
+									{symbolChars.length > 0 ? (
+										symbolChars.map((ch, i) => {
+											const src = symbolImageSrc(
+												ch,
+												symbolSvgMap,
+												svgStaticOrigin
+											);
+											return (
+												<span
+													key={`cell-${i}-${ch}`}
+													className="inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center rounded-sm border border-stone-100 bg-stone-50 px-1 py-1"
+												>
+													{svgPanelOnly ? (
+														src ? (
+															<img
+																src={src}
+																alt=""
+																className="max-h-7 max-w-7 object-contain"
+															/>
+														) : (
+															<span
+																className="inline-block h-6 w-6 rounded-sm bg-stone-200/75 ring-1 ring-stone-300/40"
+																aria-hidden
+															/>
+														)
+													) : (
+														<span className="font-mono text-xs font-semibold text-stone-800">
+															{ch}
+														</span>
+													)}
+												</span>
+											);
+										})
+									) : (
+										<span className="text-xs font-medium text-stone-400">
+											—
+										</span>
+									)}
+								</div>
+							)}
+						</div>
 					)}
 				</div>
 
-				<div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-2.5">
-					<div className="min-w-0">
-						<span
-							className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${tierBadgeClass(
-								code.tier,
-								code
-							)}`}
-						>
-							{formatTierLabel(code.tier, code)}
-						</span>
-						{peakCaption ? (
-							<p className="mt-1 text-[0.62rem] leading-snug text-stone-500">
-								{peakCaption}
+				{showDetails && (
+					<div className="mt-2 border-t border-stone-100 pt-2">
+						<p className="text-[0.65rem] font-semibold uppercase tracking-wide text-stone-400">
+							Prize
+						</p>
+						{code.isWinner || code.isCashback ? (
+							<p className="mt-0.5 text-center text-base font-bold tabular-nums tracking-tight text-amber-950">
+								{fmtMoney(code.prizeAmount)}
 							</p>
-						) : null}
+						) : (
+							<p className="mt-0.5 text-center text-xs font-medium text-stone-400">
+								No prize
+							</p>
+						)}
 					</div>
+				)}
+
+				<div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-2.5">
+					{showDetails && (
+						<div className="min-w-0">
+							<span
+								className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide ${tierBadgeClass(
+									code.tier,
+									code
+								)}`}
+							>
+								{formatTierLabel(code.tier, code)}
+							</span>
+							{peakCaption ? (
+								<p className="mt-1 text-[0.62rem] leading-snug text-stone-500">
+									{peakCaption}
+								</p>
+							) : null}
+						</div>
+					)}
 					<span
 						className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold ${
 							code.isUsed

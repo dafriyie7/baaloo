@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import axios from "../../../lib/api";
-import { UserCircle } from "lucide-react";
+import { UserCircle, LogOut } from "lucide-react";
 import { useAppcontext } from "../../context/AppContext";
-import AdminPageHeading from "../../Components/admin/AdminPageHeading";
+import AdminHeader from "../../Components/admin/AdminHeader";
 
 const Profile = () => {
 	const { user, setIsLoading, login } = useAppcontext();
@@ -29,7 +29,6 @@ const Profile = () => {
 			});
 			if (data.success) {
 				toast.success("Profile updated successfully!");
-				// Update user in context and local storage
 				login(data.data);
 			} else {
 				toast.error(data.message || "Failed to update profile.");
@@ -68,30 +67,28 @@ const Profile = () => {
 	};
 
 	return (
-		<div className="w-full flex flex-col items-center px-4 py-8 sm:py-12">
-			<div className="w-full max-w-md bg-white p-8 rounded-md border border-amber-100/90 shadow-sm space-y-10">
+		<div className="w-full flex flex-col px-4 py-8 sm:py-12 max-w-7xl mx-auto">
+			<AdminHeader 
+				title="Your Profile"
+				subtitle="Name and phone shown in the admin area."
+				icon={UserCircle}
+				actions={[
+					{ label: "Logout", icon: LogOut, onClick: () => { localStorage.removeItem("token"); window.location.href = "/login"; } }
+				]}
+			/>
+
+			<div className="w-full max-w-md bg-white p-8 rounded-md border border-amber-100/90 shadow-sm space-y-10 mx-auto">
 				<div>
-					<AdminPageHeading
-						icon={UserCircle}
-						align="center"
-						className="mb-1"
-					>
-						Your profile
-					</AdminPageHeading>
+					<h2 className="text-xl font-bold text-stone-900 mb-1 text-center">Update Details</h2>
 					<p className="text-sm text-stone-500 text-center mb-6">
-						Name and phone shown in the admin area.
+						Manage your administrative identity.
 					</p>
 					<form
 						onSubmit={handleProfileUpdate}
 						className="w-full space-y-4 text-left"
 					>
 						<div>
-							<label
-								htmlFor="name"
-								className="block text-sm font-medium text-stone-700 mb-1"
-							>
-								Name
-							</label>
+							<label htmlFor="name" className="block text-sm font-medium text-stone-700 mb-1">Name</label>
 							<input
 								type="text"
 								id="name"
@@ -101,12 +98,7 @@ const Profile = () => {
 							/>
 						</div>
 						<div>
-							<label
-								htmlFor="phone"
-								className="block text-sm font-medium text-stone-700 mb-1"
-							>
-								Phone
-							</label>
+							<label htmlFor="phone" className="block text-sm font-medium text-stone-700 mb-1">Phone</label>
 							<input
 								type="text"
 								id="phone"
@@ -115,10 +107,10 @@ const Profile = () => {
 								className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 							/>
 						</div>
-						<div className="pt-2 w-full flex justify-center">
+						<div className="pt-2">
 							<button
 								type="submit"
-								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-amber-800 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-700 transition-colors"
+								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-amber-800 hover:bg-amber-700 transition-colors"
 							>
 								Save changes
 							</button>
@@ -127,11 +119,9 @@ const Profile = () => {
 				</div>
 
 				<div className="border-t border-amber-100 pt-10">
-					<h2 className="text-xl font-bold text-stone-900 mb-1 text-center">
-						Change password
-					</h2>
+					<h2 className="text-xl font-bold text-stone-900 mb-1 text-center">Change password</h2>
 					<p className="text-sm text-stone-500 text-center mb-6">
-						Use a strong password you do not reuse elsewhere.
+						Keep your account secure with a strong password.
 					</p>
 					<form
 						onSubmit={handlePasswordChange}
@@ -155,10 +145,10 @@ const Profile = () => {
 							required
 							className="block w-full px-4 py-3 bg-stone-50 border border-amber-100 text-stone-900 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-300"
 						/>
-						<div className="pt-2 w-full flex justify-center">
+						<div className="pt-2">
 							<button
 								type="submit"
-								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-stone-800 hover:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 transition-colors"
+								className="w-full py-3 px-6 rounded-md text-sm font-semibold text-white bg-stone-800 hover:bg-stone-700 transition-colors"
 							>
 								Update password
 							</button>
