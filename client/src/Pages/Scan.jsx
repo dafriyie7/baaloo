@@ -168,8 +168,8 @@ const Scanner = () => {
 	const handleDetailsSubmit = (e) => {
 		if (e) e.preventDefault();
 		if (name && phone) {
-			if (!/^\d{10}$/.test(phone)) {
-				toast.error("Phone number must be exactly 10 digits.");
+			if (!/^0[235]\d{8}$/.test(phone)) {
+				toast.error("Please enter a valid 10-digit Ghanaian phone number (starting with 02, 03, or 05).");
 				return;
 			}
 			code ? validateAndSubmit(code) : setStep("scan");
@@ -274,7 +274,7 @@ const Scanner = () => {
 								value={phone}
 								onChange={(e) => setPhone(e.target.value)}
 								required
-								pattern="\d{10}"
+								pattern="0[235]\d{8}"
 								placeholder="e.g. 0240000000"
 								className="block w-full rounded-2xl border-none bg-zinc-100/80 px-5 py-4 text-zinc-900 shadow-inner outline-none ring-1 ring-zinc-200 transition-all focus:bg-white focus:ring-2 focus:ring-orange-500"
 							/>
